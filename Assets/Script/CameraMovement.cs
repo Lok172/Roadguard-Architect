@@ -8,9 +8,6 @@ public class CameraRotate : MonoBehaviour
 
     [SerializeField] private Transform cameraTransform;
     
-
-
-    private float currentLocation = 0;
     private int direction = 1;
 
     void Update()
