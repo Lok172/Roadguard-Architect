@@ -16,11 +16,13 @@ public class PageManager : MonoBehaviour
 
     private string currentLoadedUI = "";
     private string pageManagerSceneName;
+    private UIThemeManager uiThemeManager;
 
     private void Awake()
     {
         pageManagerSceneName = gameObject.scene.name;
         DontDestroyOnLoad(this.gameObject);
+        uiThemeManager = GetComponent<UIThemeManager>();
     }
 
     private void Start()
@@ -75,6 +77,9 @@ public class PageManager : MonoBehaviour
         SceneManager.SetActiveScene(SceneManager.GetSceneByName(newSceneName));
 
         Debug.Log($"Successfully switched to: {newSceneName}");
+
+        uiThemeManager?.ApplyThemeToAllButtons();
+        Debug.Log($"Successfully applied theme to all buttons in: {newSceneName}");
     }
 
     private void CleanupStrayScenes()
