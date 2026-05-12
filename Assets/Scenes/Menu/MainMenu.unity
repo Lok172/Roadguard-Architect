@@ -367,9 +367,9 @@ MonoBehaviour:
   - button: {fileID: 3176636699853835745}
     sceneName: LevelSelect
   - button: {fileID: 1676465995}
-    sceneName: 
-  - button: {fileID: 0}
-    sceneName: 
+    sceneName: ProgressBar and Sliders
+  - button: {fileID: 2001815560}
+    sceneName: Settings
 --- !u!4 &939454454
 Transform:
   m_ObjectHideFlags: 0
@@ -863,6 +863,17 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 8094030167775919522, guid: 246d4a4cfa5156c489abb55324c2f5e9, type: 3}
   m_PrefabInstance: {fileID: 834602654289877234}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &2001815560 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2702666861077299654, guid: 246d4a4cfa5156c489abb55324c2f5e9, type: 3}
+  m_PrefabInstance: {fileID: 834602654289877234}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1 &2086900395
 GameObject:
   m_ObjectHideFlags: 0
