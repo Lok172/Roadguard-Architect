@@ -196,12 +196,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 09329eb77080c4d45a6cf5147312ad29, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PageManager
-  environmentScene: Environment
-  cityScene: City
-  mainMenuUI: MainMenu
-  levelSelectUI: LevelSelect
-  settingsUI: Settings
-  safetyRecordUI: SafetyRecord
+  masterPermanentScenes:
+  - Environment
+  - BootStrap
+  uiSceneGroups:
+  - uiSceneName: MainMenu
+    additionalScenes:
+    - City
 --- !u!4 &1730907750
 Transform:
   m_ObjectHideFlags: 0

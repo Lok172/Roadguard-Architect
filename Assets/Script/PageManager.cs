@@ -1,27 +1,38 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections;
+using System.Collections.Generic;
+
+[System.Serializable]
+public class UISceneGroup
+{
+    [Header("UI Scene")]
+    public string uiSceneName;
+
+    [Header("Additional Scenes To Load With This UI")]
+    public string[] additionalScenes;
+}
 
 public class PageManager : MonoBehaviour
 {
-    [Header("Permanent Scenes")]
-    [SerializeField] private string environmentScene = "Environment";
-    [SerializeField] private string cityScene = "City";
+    [Header("Master Permanent Scenes (Always Loaded)")]
+    [SerializeField] private string[] masterPermanentScenes;
 
-    [Header("UI Scenes")]
-    [SerializeField] private string mainMenuUI = "MainMenu";
-    [SerializeField] private string levelSelectUI = "LevelSelect";
-    [SerializeField] private string settingsUI = "Settings";
-    [SerializeField] private string safetyRecordUI = "SafetyRecord";
+    [Header("UI Scene Groups")]
+    [SerializeField] private UISceneGroup[] uiSceneGroups;
 
     private string currentLoadedUI = "";
     private string pageManagerSceneName;
     private UIThemeManager uiThemeManager;
 
+    private readonly List<string> currentAdditionalScenes = new List<string>();
+
     private void Awake()
     {
         pageManagerSceneName = gameObject.scene.name;
-        DontDestroyOnLoad(this.gameObject);
+        DontDestroyOnLoad(gameObject);
+
+        //Check later necessary to put here or not
         uiThemeManager = GetComponent<UIThemeManager>();
     }
 
@@ -32,20 +43,39 @@ public class PageManager : MonoBehaviour
 
     private IEnumerator InitialBoot()
     {
-        yield return StartCoroutine(LoadEnvironment(environmentScene));
-        yield return StartCoroutine(LoadEnvironment(cityScene));
+        // Load all permanent scenes
+        foreach (string sceneName in masterPermanentScenes)
+        {
+            yield return StartCoroutine(LoadSceneIfNotLoaded(sceneName));
+        }
 
-        yield return StartCoroutine(SwitchUIScene(mainMenuUI));
+        if (uiSceneGroups.Length > 0)
+        {
+            yield return StartCoroutine(SwitchUIScene(uiSceneGroups[0].uiSceneName));
+        }
 
         CleanupStrayScenes();
     }
 
-    private IEnumerator LoadEnvironment(string sceneName)
+    private IEnumerator LoadSceneIfNotLoaded(string sceneName)
     {
-        // Only load if it's not already there
+        if (string.IsNullOrWhiteSpace(sceneName))
+            yield break;
+
         if (!SceneManager.GetSceneByName(sceneName).isLoaded)
         {
             yield return SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
+        }
+    }
+
+    private IEnumerator UnloadSceneIfLoaded(string sceneName)
+    {
+        if (string.IsNullOrWhiteSpace(sceneName))
+            yield break;
+
+        if (SceneManager.GetSceneByName(sceneName).isLoaded)
+        {
+            yield return SceneManager.UnloadSceneAsync(sceneName); 
         }
     }
 
@@ -56,30 +86,59 @@ public class PageManager : MonoBehaviour
 
     private IEnumerator SwitchUIScene(string newSceneName)
     {
-        if (currentLoadedUI == newSceneName) yield break;
+        if (currentLoadedUI == newSceneName)
+            yield break;
 
-        //Unload the old UI
+        UISceneGroup targetGroup = GetUISceneGroup(newSceneName);
+
+        // 1. Unload current UI scene
         if (!string.IsNullOrEmpty(currentLoadedUI))
         {
-            if (SceneManager.GetSceneByName(currentLoadedUI).isLoaded)
+            yield return StartCoroutine(UnloadSceneIfLoaded(currentLoadedUI));
+        }
+
+        // 2. Unload current additional scenes
+        foreach (string sceneName in currentAdditionalScenes)
+        {
+            yield return StartCoroutine(UnloadSceneIfLoaded(sceneName));
+        }
+        currentAdditionalScenes.Clear();
+
+        // 3. Load new UI scene
+        yield return StartCoroutine(LoadSceneIfNotLoaded(newSceneName));
+        currentLoadedUI = newSceneName;
+
+        // 4. Load additional scenes associated with this UI
+        if (targetGroup != null && targetGroup.additionalScenes != null)
+        {
+            foreach (string sceneName in targetGroup.additionalScenes)
             {
-                yield return SceneManager.UnloadSceneAsync(currentLoadedUI);
+                yield return StartCoroutine(LoadSceneIfNotLoaded(sceneName));
+                currentAdditionalScenes.Add(sceneName);
             }
         }
 
-        //Load the new UI
-        AsyncOperation loadOp = SceneManager.LoadSceneAsync(newSceneName, LoadSceneMode.Additive);
-        yield return loadOp;
-
-        currentLoadedUI = newSceneName;
-
-        // Set as Active scnee
+        // 5. Set the new UI as the active scene
         SceneManager.SetActiveScene(SceneManager.GetSceneByName(newSceneName));
 
         Debug.Log($"Successfully switched to: {newSceneName}");
 
+        // 6. Apply UI theme to all buttons
         uiThemeManager?.ApplyThemeToAllButtons();
         Debug.Log($"Successfully applied theme to all buttons in: {newSceneName}");
+    }
+
+    private UISceneGroup GetUISceneGroup(string uiSceneName)
+    {
+        foreach (UISceneGroup group in uiSceneGroups)
+        {
+            if (group.uiSceneName == uiSceneName)
+            {
+                return group;
+            }
+        }
+
+        return null;
     }
 
     private void CleanupStrayScenes()
@@ -88,19 +147,34 @@ public class PageManager : MonoBehaviour
 
         for (int i = sceneCount - 1; i >= 0; i--)
         {
-            Scene s = SceneManager.GetSceneAt(i);
+            Scene scene = SceneManager.GetSceneAt(i);
 
-            bool isProtected = s.name == environmentScene ||
-                               s.name == cityScene ||
-                               s.name == currentLoadedUI ||
-                               s.name == pageManagerSceneName;
+            bool isProtected =
+                scene.name == pageManagerSceneName ||
+                scene.name == currentLoadedUI ||
+                IsInArray(masterPermanentScenes, scene.name) ||
+                currentAdditionalScenes.Contains(scene.name);
 
-            if (!isProtected && s.isLoaded)
+            if (!isProtected && scene.isLoaded)
             {
-                Debug.Log("Cleaning up stray editor scene: " + s.name);
-                SceneManager.UnloadSceneAsync(s);
+                Debug.Log("Cleaning up stray editor scene: " + scene.name);
+                SceneManager.UnloadSceneAsync(scene);
             }
         }
+    }
+
+    private bool IsInArray(string[] array, string value)
+    {
+        if (array == null)
+            return false;
+
+        foreach (string item in array)
+        {
+            if (item == value)
+                return true;
+        }
+
+        return false;
     }
 
     public void QuitApplication()
