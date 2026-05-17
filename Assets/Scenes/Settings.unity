@@ -869,7 +869,7 @@ MonoBehaviour:
     m_Left: 0
     m_Right: 0
     m_Top: 40
-    m_Bottom: 0
+    m_Bottom: 45
   m_ChildAlignment: 4
   m_Spacing: 71
   m_ChildForceExpandWidth: 0
@@ -2120,8 +2120,8 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 359176764}
   m_HandleRect: {fileID: 359176763}
   m_Direction: 2
-  m_Value: 1.0000007
-  m_Size: 0.6033409
+  m_Value: 1.0000006
+  m_Size: 0.58856845
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:

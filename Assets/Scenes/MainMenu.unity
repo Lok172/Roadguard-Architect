@@ -227,6 +227,55 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!1 &801832299
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 801832301}
+  - component: {fileID: 801832300}
+  m_Layer: 0
+  m_Name: CameraMovement
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &801832300
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 801832299}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a09564face4af7643a7a38861dad5229, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CameraRotate
+  movementSpeed: 5
+  minLocation: 180
+  maxLocation: 287
+  cameraTransform: {fileID: 0}
+  cameraDisplay: {fileID: 0}
+--- !u!4 &801832301
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 801832299}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.2597295, y: -0.6576782, z: 0.2597295, w: 0.6576782}
+  m_LocalPosition: {x: 291.89, y: 59.03, z: 104.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 43.1, y: -90, z: 0}
 --- !u!1 &855967160
 GameObject:
   m_ObjectHideFlags: 0
@@ -1311,3 +1360,4 @@ SceneRoots:
   m_Roots:
   - {fileID: 547880436}
   - {fileID: 2003310881}
+  - {fileID: 801832301}

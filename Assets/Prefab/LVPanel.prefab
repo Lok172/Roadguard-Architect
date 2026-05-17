@@ -204,7 +204,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Accident Rate
+  m_text: 'Accident Rate (100k)
 
 '
   m_isRightToLeft: 0

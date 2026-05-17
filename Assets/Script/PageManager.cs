@@ -7,9 +7,11 @@ using System.Collections.Generic;
 public class UISceneGroup
 {
     [Header("UI Scene")]
+    [SceneName]
     public string uiSceneName;
 
     [Header("Additional Scenes To Load With This UI")]
+    [SceneName]
     public string[] additionalScenes;
 }
 
@@ -30,7 +32,6 @@ public class PageManager : MonoBehaviour
     private void Awake()
     {
         pageManagerSceneName = gameObject.scene.name;
-        DontDestroyOnLoad(gameObject);
 
         //Check later necessary to put here or not
         uiThemeManager = GetComponent<UIThemeManager>();
@@ -43,16 +44,17 @@ public class PageManager : MonoBehaviour
 
     private IEnumerator InitialBoot()
     {
+        if (uiSceneGroups.Length > 0)
+        {
+            yield return StartCoroutine(SwitchUIScene(uiSceneGroups[0].uiSceneName));
+        }
+
         // Load all permanent scenes
         foreach (string sceneName in masterPermanentScenes)
         {
             yield return StartCoroutine(LoadSceneIfNotLoaded(sceneName));
         }
 
-        if (uiSceneGroups.Length > 0)
-        {
-            yield return StartCoroutine(SwitchUIScene(uiSceneGroups[0].uiSceneName));
-        }
 
         CleanupStrayScenes();
     }
@@ -91,34 +93,48 @@ public class PageManager : MonoBehaviour
 
         UISceneGroup targetGroup = GetUISceneGroup(newSceneName);
 
-        // 1. Unload current UI scene
+        // 1. Load the new UI first
+        yield return StartCoroutine(LoadSceneIfNotLoaded(newSceneName));
+
+        // 2. Load additional scenes
+        if (targetGroup != null && targetGroup.additionalScenes != null)
+        {
+            foreach (string sceneName in targetGroup.additionalScenes)
+            {
+                if (!currentAdditionalScenes.Contains(sceneName))
+                {
+                    yield return StartCoroutine(LoadSceneIfNotLoaded(sceneName));
+                }
+            }
+        }
+
+        // 3. Unload old UI
         if (!string.IsNullOrEmpty(currentLoadedUI))
         {
             yield return StartCoroutine(UnloadSceneIfLoaded(currentLoadedUI));
         }
 
-        // 2. Unload current additional scenes
+        // 4. Unload old additional scenes
         foreach (string sceneName in currentAdditionalScenes)
         {
-            yield return StartCoroutine(UnloadSceneIfLoaded(sceneName));
-        }
-        currentAdditionalScenes.Clear();
-
-        // 3. Load new UI scene
-        yield return StartCoroutine(LoadSceneIfNotLoaded(newSceneName));
-        currentLoadedUI = newSceneName;
-
-        // 4. Load additional scenes associated with this UI
-        if (targetGroup != null && targetGroup.additionalScenes != null)
-        {
-            foreach (string sceneName in targetGroup.additionalScenes)
+            if (targetGroup == null ||
+                targetGroup.additionalScenes == null ||
+                System.Array.IndexOf(targetGroup.additionalScenes, sceneName) < 0)
             {
-                yield return StartCoroutine(LoadSceneIfNotLoaded(sceneName));
-                currentAdditionalScenes.Add(sceneName);
+                yield return StartCoroutine(UnloadSceneIfLoaded(sceneName));
             }
         }
 
-        // 5. Set the new UI as the active scene
+        // 5. Update tracking
+        currentLoadedUI = newSceneName;
+        currentAdditionalScenes.Clear();
+
+        if (targetGroup != null && targetGroup.additionalScenes != null)
+        {
+            currentAdditionalScenes.AddRange(targetGroup.additionalScenes);
+        }
+
+        // 6. Set active scene
         SceneManager.SetActiveScene(SceneManager.GetSceneByName(newSceneName));
 
         Debug.Log($"Successfully switched to: {newSceneName}");

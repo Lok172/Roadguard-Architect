@@ -7,10 +7,21 @@ public class CameraRotate : MonoBehaviour
     [SerializeField] private float maxLocation = 270f;
 
     [SerializeField] private Transform cameraTransform;
-    
+    [SerializeField] private Camera cameraDisplay;
+
     private int direction = 1;
 
-    void Update()
+    private void Start()
+    {
+        cameraDisplay = FindObjectOfType<Camera>();
+
+        if (cameraDisplay != null && cameraTransform == null)
+        {
+            cameraTransform = cameraDisplay.transform;
+        }
+    }
+
+    private void Update()
     {
         float movement = movementSpeed * Time.deltaTime * direction;
 

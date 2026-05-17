@@ -7,7 +7,10 @@ public class ButtonNavigation : MonoBehaviour
     public class UIButtonData
     {
         public Button button;
+
+        [SceneName]
         public string sceneName;
+
     }
 
     [Header("Page Manager")]
@@ -21,7 +24,7 @@ public class ButtonNavigation : MonoBehaviour
         // Auto-find PageManager
         if (pageManager == null)
         {
-            pageManager = FindObjectOfType<PageManager>();
+            pageManager = Object.FindFirstObjectByType<PageManager>();
         }
 
         // Assign listeners dynamically

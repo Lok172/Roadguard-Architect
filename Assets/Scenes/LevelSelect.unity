@@ -119,6 +119,17 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!114 &295450576 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8669958934193099211, guid: dee19dac054d7c242b9eab50bf23c61d, type: 3}
+  m_PrefabInstance: {fileID: 1346413665}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!224 &335901085 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 3573231939996192587, guid: 6e5dbfe1fb4339340a0dbb958dd95f92, type: 3}
@@ -252,6 +263,28 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!114 &857454823 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8669958934193099211, guid: dee19dac054d7c242b9eab50bf23c61d, type: 3}
+  m_PrefabInstance: {fileID: 6059538013645627780}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
+--- !u!114 &1246302158 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8669958934193099211, guid: dee19dac054d7c242b9eab50bf23c61d, type: 3}
+  m_PrefabInstance: {fileID: 1458147222}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1001 &1346413665
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -893,6 +926,18 @@ PrefabInstance:
       propertyPath: uiButtons.Array.data[0].button
       value: 
       objectReference: {fileID: 335901088}
+    - target: {fileID: 514985646173826140, guid: ec5576539293e474d9f19e75c6d5e76a, type: 3}
+      propertyPath: uiButtons.Array.data[1].button
+      value: 
+      objectReference: {fileID: 857454823}
+    - target: {fileID: 514985646173826140, guid: ec5576539293e474d9f19e75c6d5e76a, type: 3}
+      propertyPath: uiButtons.Array.data[2].button
+      value: 
+      objectReference: {fileID: 295450576}
+    - target: {fileID: 514985646173826140, guid: ec5576539293e474d9f19e75c6d5e76a, type: 3}
+      propertyPath: uiButtons.Array.data[3].button
+      value: 
+      objectReference: {fileID: 1246302158}
     - target: {fileID: 514985646173826140, guid: ec5576539293e474d9f19e75c6d5e76a, type: 3}
       propertyPath: uiButtons.Array.data[0].sceneName
       value: MainMenu
