@@ -7,7 +7,7 @@ public class ClickProxy : MonoBehaviour, IPointerClickHandler
     public void Setup(System.Action action) => onClickAction = action;
     public void OnPointerClick(PointerEventData eventData) => onClickAction?.Invoke();
 }
-public class UniversalNavigation : MonoBehaviour, IPointerClickHandler
+public class Navigation : MonoBehaviour, IPointerClickHandler
 {
     [System.Serializable]
     public class NavigationData

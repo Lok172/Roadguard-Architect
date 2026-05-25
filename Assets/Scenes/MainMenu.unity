@@ -256,11 +256,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a09564face4af7643a7a38861dad5229, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraRotate
-  movementSpeed: 5
-  minLocation: 180
-  maxLocation: 287
   cameraTransform: {fileID: 0}
   cameraDisplay: {fileID: 0}
+  movementSpeed: 5
+  minLocationX: 120
+  maxLocationX: 271
+  posX: 270
+  posY: 70
+  posZ: 110
+  rotX: 53
+  rotY: -90
+  rotZ: 0
 --- !u!4 &801832301
 Transform:
   m_ObjectHideFlags: 0
