@@ -26,6 +26,7 @@ public class CameraRotate : MonoBehaviour
         if (cameraDisplay == null)
         {
             cameraDisplay = Object.FindFirstObjectByType<Camera>();
+            Debug.LogWarning("Camera Display not assigned. Automatically found: " + cameraDisplay.name);
         }
 
         if (cameraDisplay != null && cameraTransform == null)
@@ -33,6 +34,7 @@ public class CameraRotate : MonoBehaviour
             cameraTransform = cameraDisplay.transform;
             cameraTransform.position = new Vector3 (posX, posY, posZ);
             cameraTransform.rotation = Quaternion.Euler(rotX, rotY, rotZ);
+            Debug.LogWarning("Camera Transform not assigned. Automatically found: " + cameraTransform.name);
         }
     }
 

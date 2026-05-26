@@ -6,11 +6,12 @@ TagManager:
   tags:
   - MenuButton
   - LVButton
+  - RoadTile
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - RoadTile
   - Water
   - UI
   - 
