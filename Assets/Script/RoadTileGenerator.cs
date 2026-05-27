@@ -5,60 +5,64 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
+// ─────────────────────────────────────────────────────────────────
+//  RoadTileGenerator
+//  Attach to any empty GameObject in your scene.
+//  Configure in the Inspector, then click "Generate Tiles".
+//  All tiles are parented under this GameObject.
+// ─────────────────────────────────────────────────────────────────
+
 public class RoadTileGenerator : MonoBehaviour
 {
+    // ── Layout ────────────────────────────────────────────────────
     [Header("Layout")]
-
-    [Tooltip("World-space position of the FIRST tile's centre")]
+    [Tooltip("World-space centre of the FIRST tile")]
     public Vector3 startPosition = Vector3.zero;
 
-    [Tooltip("Direction the road runs (will be normalised automatically)")]
+    [Tooltip("Direction the road runs (auto-normalised)")]
     public Vector3 direction = Vector3.forward;
 
-    [Tooltip("Number of tiles to generate along the road")]
+    [Tooltip("Number of tiles to generate")]
     public int tileCount = 5;
 
-    [Tooltip("Gap between consecutive tile centres (usually equals tile length)")]
+    [Tooltip("Distance between tile centres — usually equals tile length")]
     public float tileSpacing = 5f;
-    
 
+    // ── Collider ──────────────────────────────────────────────────
     [Header("Collider Size")]
+    [Tooltip("X=road width, Y=collider height (keep thin e.g. 0.1), Z=tile length")]
+    public Vector3 colliderSize   = new Vector3(4f, 0.1f, 5f);
 
-    [Tooltip("X = road width, Y = collider height (keep thin, e.g. 0.1), Z = tile length")]
-    public Vector3 colliderSize = new Vector3(4f, 0.1f, 5f);
-
-    [Tooltip("Offset the collider centre relative to the tile pivot (leave at zero for flush to ground)")]
+    [Tooltip("Offset of the collider centre relative to tile pivot")]
     public Vector3 colliderOffset = Vector3.zero;
 
-    // ── Tile Data Defaults ────────────────────────────────────────
-    [Header("Tile Defaults (applied to all generated tiles)")]
-
+    // ── Tile defaults ─────────────────────────────────────────────
+    [Header("Tile Defaults")]
     public TileType defaultTileType = TileType.Residential;
     public ZoneType defaultZoneType = ZoneType.Residential;
 
-    [Range(0f, 1f)]
-    public float defaultAccidentRate    = 0.3f;
+    [Tooltip("Accident-rate points this tile contributes at baseline (before devices)")]
+    [Min(0)]
+    public int defaultAccidentContribution = 1;
 
-    [Tooltip("Devices that will be allowed on every generated tile")]
+    [Tooltip("Devices allowed on every generated tile. Leave empty to allow all.")]
     public List<TrafficDeviceType> defaultAllowedDevices = new List<TrafficDeviceType>
     {
         TrafficDeviceType.StopSign,
-        TrafficDeviceType.SpeedBump,
-        TrafficDeviceType.TrafficLight
+        TrafficDeviceType.SpeedBump
+        // Note: TrafficLight intentionally omitted for residential — poor placement
     };
 
-    [Tooltip("Prefix for auto-generated tile IDs, e.g. 'ResRoad' → ResRoad_00, ResRoad_01 …")]
+    [Tooltip("Prefix for auto-generated tile IDs e.g. 'ResRoad' → ResRoad_00")]
     public string tileIDPrefix = "ResRoad";
 
     // ── Layer / Tag ───────────────────────────────────────────────
     [Header("Layer & Tag")]
-
-    [Tooltip("Layer name for the tile colliders ")]
+    [Tooltip("Must exist in Edit > Project Settings > Tags & Layers")]
     public string tileLayer = "RoadTile";
+    public string tileTag   = "RoadTile";
 
-    [Tooltip("Tag for the tile colliders")]
-    public string tileTag = "RoadTile";
-
+    // ── Runtime ───────────────────────────────────────────────────
     [HideInInspector]
     public List<RoadTile> generatedTiles = new List<RoadTile>();
 
@@ -66,10 +70,6 @@ public class RoadTileGenerator : MonoBehaviour
     //  GENERATE
     // ─────────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Destroys existing tiles parented here, then spawns fresh ones.
-    /// Safe to call at edit-time (via the custom Inspector button) or at runtime.
-    /// </summary>
     public void GenerateTiles()
     {
         ClearTiles();
@@ -77,63 +77,60 @@ public class RoadTileGenerator : MonoBehaviour
         Vector3 dir = direction.normalized;
         if (dir == Vector3.zero) dir = Vector3.forward;
 
-        // Resolve layer index once
         int layerIndex = LayerMask.NameToLayer(tileLayer);
         if (layerIndex < 0)
         {
             Debug.LogWarning($"[RoadTileGenerator] Layer '{tileLayer}' not found. " +
-                             "Create it in Edit > Project Settings > Tags & Layers.");
+                             "Go to Edit > Project Settings > Tags & Layers and add it. " +
+                             "Tiles will use Default layer (0) until then — " +
+                             "raycasts using LayerMask.GetMask(\"{tileLayer}\") will miss them.");
             layerIndex = 0;
         }
 
         for (int i = 0; i < tileCount; i++)
         {
-            Vector3 tilePos = startPosition + dir * (tileSpacing * i);
+            Vector3 pos = startPosition + dir * (tileSpacing * i);
 
-            // ── Create GameObject ──────────────────────────────
-            GameObject tileGO = new GameObject($"{tileIDPrefix}_{i:D2}");
-            tileGO.transform.position = tilePos;
+            GameObject tileGO   = new GameObject($"{tileIDPrefix}_{i:D2}");
+            tileGO.transform.position = pos;
             tileGO.transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
             tileGO.transform.SetParent(transform, worldPositionStays: true);
             tileGO.layer = layerIndex;
 
-            // Apply tag safely
             try   { tileGO.tag = tileTag; }
-            catch { Debug.LogWarning($"[RoadTileGenerator] Tag '{tileTag}' not found. Add it in Edit > Project Settings > Tags & Layers."); }
+            catch { Debug.LogWarning($"[RoadTileGenerator] Tag '{tileTag}' not found. " +
+                                     "Add it in Edit > Project Settings > Tags & Layers."); }
 
-            // ── BoxCollider ────────────────────────────────────
-            BoxCollider col   = tileGO.AddComponent<BoxCollider>();
-            col.size          = colliderSize;
-            col.center        = colliderOffset;
-            col.isTrigger     = true;
+            BoxCollider col = tileGO.AddComponent<BoxCollider>();
+            col.size        = colliderSize;
+            col.center      = colliderOffset;
+            col.isTrigger   = true;
 
-            // ── RoadTile data ──────────────────────────────────
-            RoadTile tile               = tileGO.AddComponent<RoadTile>();
-            tile.tileID                 = $"{tileIDPrefix}_{i:D2}";
-            tile.tileType               = defaultTileType;
-            tile.zoneType               = defaultZoneType;
-            tile.baseAccidentRate       = defaultAccidentRate;
-            tile.allowedDevices         = new List<TrafficDeviceType>(defaultAllowedDevices);
+            RoadTile tile = tileGO.AddComponent<RoadTile>();
+            tile.tileID                   = $"{tileIDPrefix}_{i:D2}";
+            tile.tileType                 = defaultTileType;
+            tile.zoneType                 = defaultZoneType;
+            tile.baseAccidentContribution = defaultAccidentContribution;
+            tile.allowedDevices           = new List<TrafficDeviceType>(defaultAllowedDevices);
 
             generatedTiles.Add(tile);
         }
 
-        Debug.Log($"[RoadTileGenerator] Generated {tileCount} tiles along '{tileIDPrefix}' road.");
+        Debug.Log($"[RoadTileGenerator] Generated {tileCount} tiles " +
+                  $"for '{tileIDPrefix}' ({defaultZoneType} zone). " +
+                  $"Total accident contribution at baseline: " +
+                  $"{tileCount * defaultAccidentContribution}");
     }
 
     // ─────────────────────────────────────────────────────────────
     //  CLEAR
     // ─────────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Destroys all child GameObjects (i.e. previously generated tiles).
-    /// </summary>
     public void ClearTiles()
     {
         generatedTiles.Clear();
 
-        // Collect children first to avoid modifying collection during iteration
-        List<GameObject> children = new List<GameObject>();
+        var children = new List<GameObject>();
         foreach (Transform child in transform)
             children.Add(child.gameObject);
 
@@ -151,7 +148,7 @@ public class RoadTileGenerator : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────────────────────
-    //  GIZMOS  — preview before generating
+    //  GIZMOS
     // ─────────────────────────────────────────────────────────────
 
 #if UNITY_EDITOR
@@ -159,29 +156,41 @@ public class RoadTileGenerator : MonoBehaviour
     {
         if (tileCount <= 0) return;
 
-        Vector3 dir = direction.normalized;
+        Vector3    dir = direction.normalized;
         if (dir == Vector3.zero) dir = Vector3.forward;
         Quaternion rot = Quaternion.LookRotation(dir, Vector3.up);
+
+        // Colour preview by zone
+        Color previewColor = defaultZoneType switch
+        {
+            ZoneType.Residential => new Color(0.2f, 0.8f, 0.3f, 0.12f),
+            ZoneType.Commercial  => new Color(0.2f, 0.4f, 0.9f, 0.12f),
+            ZoneType.Industrial  => new Color(0.9f, 0.6f, 0.1f, 0.12f),
+            ZoneType.Highway     => new Color(0.9f, 0.2f, 0.2f, 0.12f),
+            _                    => new Color(0.5f, 0.5f, 0.5f, 0.12f)
+        };
+        Color wireColor = previewColor;
+        wireColor.a = 0.6f;
 
         for (int i = 0; i < tileCount; i++)
         {
             Vector3 pos = startPosition + dir * (tileSpacing * i);
 
-            // Ghost tile
-            Gizmos.color  = new Color(0.3f, 0.9f, 0.4f, 0.15f);
             Gizmos.matrix = Matrix4x4.TRS(pos + rot * colliderOffset, rot, Vector3.one);
+            Gizmos.color  = previewColor;
             Gizmos.DrawCube(Vector3.zero, colliderSize);
 
-            // Wire outline
-            Gizmos.color  = new Color(0.3f, 0.9f, 0.4f, 0.7f);
+            Gizmos.color = wireColor;
             Gizmos.DrawWireCube(Vector3.zero, colliderSize);
 
-            // Index label
             Gizmos.matrix = Matrix4x4.identity;
-            UnityEditor.Handles.Label(pos + Vector3.up * 0.4f, $"{tileIDPrefix}_{i:D2}");
+            UnityEditor.Handles.Label(
+                pos + Vector3.up * 0.4f,
+                $"{tileIDPrefix}_{i:D2}\n+{defaultAccidentContribution} acc"
+            );
         }
 
-        // Direction arrow from start
+        // Direction arrow
         Gizmos.matrix = Matrix4x4.identity;
         Gizmos.color  = Color.cyan;
         Gizmos.DrawRay(startPosition, dir * tileSpacing * tileCount);
@@ -191,7 +200,6 @@ public class RoadTileGenerator : MonoBehaviour
 
 // ─────────────────────────────────────────────────────────────────
 //  CUSTOM INSPECTOR
-//  Adds "Generate Tiles" and "Clear Tiles" buttons in the Inspector.
 // ─────────────────────────────────────────────────────────────────
 
 #if UNITY_EDITOR
@@ -204,8 +212,32 @@ public class RoadTileGeneratorEditor : Editor
 
         RoadTileGenerator gen = (RoadTileGenerator)target;
 
-        EditorGUILayout.Space(8);
+        // ── Info box ─────────────────────────
+        EditorGUILayout.Space(6);
 
+        int totalContrib = gen.tileCount * gen.defaultAccidentContribution;
+        EditorGUILayout.HelpBox(
+            $"This road segment will contribute {totalContrib} accident-rate points at baseline.\n" +
+            $"Fully covered with SpeedBumps (−3 each): " +
+            $"reduced to {Mathf.Max(0, totalContrib - gen.tileCount * 3)}.",
+            MessageType.None
+        );
+
+        // ── Residential + TrafficLight warning ──
+        if (gen.defaultZoneType == ZoneType.Residential &&
+            gen.defaultAllowedDevices.Contains(TrafficDeviceType.TrafficLight))
+        {
+            EditorGUILayout.HelpBox(
+                "TrafficLight is in the allowed list for a Residential zone.\n" +
+                "Per game design, this causes a happiness penalty (poor placement).\n" +
+                "Consider removing it from allowedDevices for this road.",
+                MessageType.Warning
+            );
+        }
+
+        EditorGUILayout.Space(6);
+
+        // ── Buttons ──────────────────────────
         GUI.backgroundColor = new Color(0.4f, 0.85f, 0.5f);
         if (GUILayout.Button("▶  Generate Tiles", GUILayout.Height(36)))
         {
@@ -228,9 +260,10 @@ public class RoadTileGeneratorEditor : Editor
         {
             EditorGUILayout.Space(4);
             EditorGUILayout.HelpBox(
-                $"{gen.generatedTiles.Count} tiles generated. " +
-                "Visible in Scene view as green ghost boxes.",
-                MessageType.Info);
+                $"{gen.generatedTiles.Count} tiles active. " +
+                "Green ghost boxes visible in Scene view.",
+                MessageType.Info
+            );
         }
     }
 }
