@@ -3,14 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
-// ─────────────────────────────────────────────────────────────────
-//  GAME MANAGER
-//
-//  Owns all global resources:
-//    Capital, TaxRevenue, AccidentRate, Happiness, Calendar (days)
-//
-//  Other scripts talk to it via GameManager.Instance (singleton).
-// ─────────────────────────────────────────────────────────────────
 
 public class GameManager : MonoBehaviour
 {
@@ -24,9 +16,9 @@ public class GameManager : MonoBehaviour
     [System.Serializable]
     public struct LevelConfig
     {
-        public int   level;
+        public int level;
         public float startCapitalRM;
-        public int   startAccidentRate;
+        public int startAccidentRate;
     }
 
     public LevelConfig[] levelConfigs = new LevelConfig[]
@@ -42,10 +34,10 @@ public class GameManager : MonoBehaviour
     public float secondsPerDay = 2f;
 
     [Tooltip("Total in-game days before game ends")]
-    public int   totalDays    = 90;
+    public int totalDays = 90;
 
     [Tooltip("Accident rate threshold to trigger Safety Multiplier on tax revenue")]
-    public int   safetyThreshold = 3;
+    public int safetyThreshold = 3;
 
     [Tooltip("Multiplier applied to tax revenue when accident rate < safetyThreshold")]
     public float safetyMultiplier = 1.5f;
@@ -56,29 +48,31 @@ public class GameManager : MonoBehaviour
     // ── Runtime State ─────────────────────────
     [Header("Runtime State (read-only in Inspector)")]
     [SerializeField] private float _capital;
-    [SerializeField] private float _happiness;       // 0–100
-    [SerializeField] private int   _accidentRate;    // city-wide sum of all tile contributions
-    [SerializeField] private int   _daysPassed;
-    [SerializeField] private bool  _gameRunning;
+    [SerializeField] private float _happiness;     // 0–100
+    [SerializeField] private int _accidentRate;  // city-wide sum of all tile contributions
+    [SerializeField] private int _daysPassed;
+    [SerializeField] private bool _gameRunning;
 
-    public float Capital      => _capital;
-    public float Happiness    => _happiness;
-    public int   AccidentRate => _accidentRate;
-    public int   DaysPassed   => _daysPassed;
-    public bool  GameRunning  => _gameRunning;
+    public float Capital => _capital;
+    public float Happiness => _happiness;
+    public int AccidentRate => _accidentRate;
+    public int DaysPassed => _daysPassed;
+    public int TotalDays => totalDays;          // exposed so HUDController can read it
+    public bool GameRunning => _gameRunning;
 
     // ── Tile Registry ─────────────────────────
-    // All RoadTiles in the city register themselves here at Start.
     private readonly List<RoadTile> _allTiles = new List<RoadTile>();
 
-    // ── Unity Events (wire up UI in Inspector) ─
-    [Header("Events — wire to UI in Inspector")]
-    public UnityEvent<float> OnCapitalChanged;      // float = new capital
-    public UnityEvent<float> OnHappinessChanged;    // float = new happiness (0-100)
-    public UnityEvent<int>   OnAccidentRateChanged; // int   = new rate
-    public UnityEvent<int>   OnDayChanged;          // int   = new day number
-    public UnityEvent        OnGameOver;
-    public UnityEvent        OnVictory;
+    // ── Unity Events ──────────────────────────
+    // HUDController subscribes to these in its Awake() — no Inspector
+    // wiring needed for the HUD display fields.
+    [Header("Events — also auto-wired by HUDController")]
+    public UnityEvent<float> OnCapitalChanged;      // new capital (float)
+    public UnityEvent<float> OnHappinessChanged;    // new happiness 0-100
+    public UnityEvent<int> OnAccidentRateChanged; // new accident rate
+    public UnityEvent<int, int> OnDayChanged;        // (daysPassed, totalDays)
+    public UnityEvent OnGameOver;
+    public UnityEvent OnVictory;
 
     // ─────────────────────────────────────────
     //  UNITY LIFECYCLE
@@ -86,7 +80,6 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
-        // Singleton setup
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -106,29 +99,40 @@ public class GameManager : MonoBehaviour
 
     public void InitLevel(int level)
     {
+        // FIX 1: Stop any running ticker before starting a new one.
+        StopAllCoroutines();
+
         LevelConfig cfg = GetLevelConfig(level);
 
-        _capital      = cfg.startCapitalRM;
+        _capital = cfg.startCapitalRM;
         _accidentRate = cfg.startAccidentRate;
-        _happiness    = 100f;   // always start at full happiness
-        _daysPassed   = 0;
-        _gameRunning  = true;
+        _happiness = 100f;
+        _daysPassed = 0;
+        _gameRunning = true;
 
-        BroadcastState();
+        // FIX 2: Defer BroadcastState by one frame so every listener's
+        // Start() / Awake() has definitely run before we push values.
+        StartCoroutine(BroadcastNextFrame());
         StartCoroutine(DayTickRoutine());
 
         Debug.Log($"[GameManager] Level {level} started. " +
                   $"Capital=RM{_capital} AccidentRate={_accidentRate}");
     }
 
+    private IEnumerator BroadcastNextFrame()
+    {
+        yield return null; // wait one frame
+        BroadcastState();
+
+        // FIX 3: Check victory after tiles have registered
+        // (handles edge case where all tiles already contribute 0).
+        CheckVictory();
+    }
+
     // ─────────────────────────────────────────
     //  TILE REGISTRY
     // ─────────────────────────────────────────
 
-    /// <summary>
-    /// Called by each RoadTile in its Start().
-    /// Subscribes to tile events so GameManager reacts to changes.
-    /// </summary>
     public void RegisterTile(RoadTile tile)
     {
         if (_allTiles.Contains(tile)) return;
@@ -144,7 +148,6 @@ public class GameManager : MonoBehaviour
 
     private void HandleTileContributionChanged(RoadTile tile, int oldVal, int newVal)
     {
-        // Recalculate total from all tiles (safe, avoids drift)
         RecalculateAccidentRate();
     }
 
@@ -165,17 +168,13 @@ public class GameManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────
-    //  DEVICE PLACEMENT  (called by PlacementManager)
+    //  DEVICE PLACEMENT
     // ─────────────────────────────────────────
 
-    /// <summary>
-    /// Entry point for placing a device. PlacementManager calls this
-    /// after the player drops a device onto a tile.
-    /// </summary>
     public PlacementResult TryPlaceDevice(
-        RoadTile          tile,
+        RoadTile tile,
         TrafficDeviceType device,
-        GameObject        deviceObject)
+        GameObject deviceObject)
     {
         PlacementResult result = tile.PlaceDevice(
             device, deviceObject, _capital,
@@ -186,15 +185,11 @@ public class GameManager : MonoBehaviour
             result == PlacementResult.DeviceNotAllowed ||
             result == PlacementResult.InsufficientFunds)
         {
-            return result; // caller shows error feedback
+            return result;
         }
 
-        // Deduct cost
         ModifyCapital(-costSpent);
-
-        // Apply happiness change (clamped 0–100)
         ModifyHappiness(happinessDelta);
-
         return result;
     }
 
@@ -210,8 +205,8 @@ public class GameManager : MonoBehaviour
 
     public void ModifyHappiness(float delta)
     {
-        float prev   = _happiness;
-        _happiness   = Mathf.Clamp(_happiness + delta, 0f, 100f);
+        float prev = _happiness;
+        _happiness = Mathf.Clamp(_happiness + delta, 0f, 100f);
 
         if (!Mathf.Approximately(prev, _happiness))
             OnHappinessChanged?.Invoke(_happiness);
@@ -222,11 +217,9 @@ public class GameManager : MonoBehaviour
 
     private float CalculateDailyTaxRevenue()
     {
-        // Tax scales with happiness (0–100 → 0–1 factor)
         float happinessFactor = _happiness / 100f;
-        float tax             = baseTaxPerDay * happinessFactor;
+        float tax = baseTaxPerDay * happinessFactor;
 
-        // Safety multiplier if accident rate is low
         if (_accidentRate < safetyThreshold)
             tax *= safetyMultiplier;
 
@@ -246,17 +239,17 @@ public class GameManager : MonoBehaviour
             if (!_gameRunning) break;
 
             _daysPassed++;
-            OnDayChanged?.Invoke(_daysPassed);
+            // FIX 5: Fire (daysPassed, totalDays) so HUDController
+            // can format "Day 58/90" without extra Inspector work.
+            OnDayChanged?.Invoke(_daysPassed, totalDays);
 
-            // Collect tax revenue
             float tax = CalculateDailyTaxRevenue();
             ModifyCapital(tax);
 
-            Debug.Log($"[GameManager] Day {_daysPassed}: " +
+            Debug.Log($"[GameManager] Day {_daysPassed}/{totalDays}: " +
                       $"+RM{tax:F0} tax | Capital=RM{_capital:F0} " +
                       $"Happiness={_happiness:F0} AccidentRate={_accidentRate}");
 
-            // Check termination
             if (_daysPassed >= totalDays)
                 TriggerGameOver();
         }
@@ -268,9 +261,10 @@ public class GameManager : MonoBehaviour
 
     private void CheckVictory()
     {
-        if (_accidentRate == 0 && _happiness > 0f)
+        if (_accidentRate == 0 && _happiness > 0f && _gameRunning)
         {
             _gameRunning = false;
+            StopAllCoroutines();
             Debug.Log("[GameManager] VICTORY — Accident rate = 0!");
             OnVictory?.Invoke();
         }
@@ -291,6 +285,13 @@ public class GameManager : MonoBehaviour
 
     private LevelConfig GetLevelConfig(int level)
     {
+        // FIX 4: Guard against empty array before indexing [0].
+        if (levelConfigs == null || levelConfigs.Length == 0)
+        {
+            Debug.LogError("[GameManager] levelConfigs is empty! Using defaults.");
+            return new LevelConfig { level = 1, startCapitalRM = 1000f, startAccidentRate = 10 };
+        }
+
         foreach (LevelConfig cfg in levelConfigs)
             if (cfg.level == level) return cfg;
 
@@ -303,27 +304,22 @@ public class GameManager : MonoBehaviour
         OnCapitalChanged?.Invoke(_capital);
         OnHappinessChanged?.Invoke(_happiness);
         OnAccidentRateChanged?.Invoke(_accidentRate);
-        OnDayChanged?.Invoke(_daysPassed);
+        OnDayChanged?.Invoke(_daysPassed, totalDays);
     }
 
     // ─────────────────────────────────────────
-    //  SCORE  (called at level end)
+    //  SCORE
     // ─────────────────────────────────────────
 
-    /// <summary>
-    /// GDD formula: based on Device Effectiveness, final AccidentRate,
-    /// Happiness, and total budget spent.
-    /// Returns a score 1–10000.
-    /// </summary>
     public int CalculateFinalScore(float totalBudgetSpent)
     {
-        float accidentScore  = Mathf.Max(0, 100 - _accidentRate * 4f); // lower rate = higher score
-        float happinessScore = _happiness;                              // 0–100
-        float budgetScore    = Mathf.Clamp(100f - (totalBudgetSpent / 100f), 0f, 100f);
+        float accidentScore = Mathf.Max(0, 100 - _accidentRate * 4f);
+        float happinessScore = _happiness;
+        float budgetScore = Mathf.Clamp(100f - (totalBudgetSpent / 100f), 0f, 100f);
 
         float raw = (accidentScore * 0.5f) +
                     (happinessScore * 0.3f) +
-                    (budgetScore    * 0.2f);
+                    (budgetScore * 0.2f);
 
         return Mathf.Clamp(Mathf.RoundToInt(raw * 100f), 1, 10000);
     }

@@ -169,8 +169,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameCalendar
   secondsPerDay: 2
   totalDays: 90
-  dateText: {fileID: 794002075}
-  dayCounterText: {fileID: 200956993}
+  dateText: {fileID: 0}
+  dayCounterText: {fileID: 0}
 --- !u!1001 &84673279
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -179,6 +179,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1301265287}
     m_Modifications:
+    - target: {fileID: 557036285657767445, guid: 4184066ae9b73544baea01172c719f11, type: 3}
+      propertyPath: m_Name
+      value: CapitalText
+      objectReference: {fileID: 0}
     - target: {fileID: 2410813937808762710, guid: 4184066ae9b73544baea01172c719f11, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -1072,6 +1076,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1301265287}
     m_Modifications:
+    - target: {fileID: 557036285657767445, guid: 4184066ae9b73544baea01172c719f11, type: 3}
+      propertyPath: m_Name
+      value: AccidentText
+      objectReference: {fileID: 0}
     - target: {fileID: 2410813937808762710, guid: 4184066ae9b73544baea01172c719f11, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -1748,6 +1756,17 @@ MonoBehaviour:
   m_EffectColor: {r: 0, g: 0, b: 0, a: 0.5}
   m_EffectDistance: {x: 6, y: 6}
   m_UseGraphicAlpha: 1
+--- !u!114 &1178641580 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8614087474253051675, guid: 4184066ae9b73544baea01172c719f11, type: 3}
+  m_PrefabInstance: {fileID: 84673279}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
 --- !u!1001 &1207028670
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2126,11 +2145,11 @@ MonoBehaviour:
   safetyThreshold: 3
   safetyMultiplier: 1.5
   baseTaxPerDay: 50
-  _capital: 0
+  _capital: 1000
   _happiness: 0
   _accidentRate: 0
   _daysPassed: 0
-  _gameRunning: 0
+  _gameRunning: 1
   OnCapitalChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -2563,6 +2582,17 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1596120357}
   m_CullTransparentMesh: 1
+--- !u!114 &1720496591 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8614087474253051675, guid: 4184066ae9b73544baea01172c719f11, type: 3}
+  m_PrefabInstance: {fileID: 676750434}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
 --- !u!1001 &1794380161
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2793,6 +2823,59 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!1 &2030907655
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2030907657}
+  - component: {fileID: 2030907656}
+  m_Layer: 0
+  m_Name: HUDManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2030907656
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2030907655}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f6e96e8f786e601498ff9ce50bf52847, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HUDController
+  accidentText: {fileID: 1720496591}
+  happinessBar: {fileID: 1121382383}
+  happinessPct: {fileID: 420064612}
+  dateText: {fileID: 794002075}
+  dayText: {fileID: 200956993}
+  capitalText: {fileID: 1178641580}
+  startDay: 27
+  startMonth: 5
+  startYear: 2026
+--- !u!4 &2030907657
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2030907655}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1093.542, y: 1002.7, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2074687704
 GameObject:
   m_ObjectHideFlags: 0
@@ -3018,5 +3101,6 @@ SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 2074687705}
+  - {fileID: 2030907657}
   - {fileID: 1358407953}
   - {fileID: 1255809372691935059}
