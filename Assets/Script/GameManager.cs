@@ -5,9 +5,6 @@ using UnityEngine.Events;
 
 // ─────────────────────────────────────────────────────────────────
 //  GAME MANAGER
-//  Attach to: a dedicated empty GameObject named "GameManager"
-//  in your main/persistent scene. Mark it DontDestroyOnLoad
-//  if you use additive scene loading.
 //
 //  Owns all global resources:
 //    Capital, TaxRevenue, AccidentRate, Happiness, Calendar (days)
@@ -96,7 +93,6 @@ public class GameManager : MonoBehaviour
             return;
         }
         Instance = this;
-        DontDestroyOnLoad(gameObject); // survives additive scene loads
     }
 
     private void Start()
