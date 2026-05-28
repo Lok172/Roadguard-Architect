@@ -3,6 +3,23 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
+// ─────────────────────────────────────────────────────────────────
+//  GAME MANAGER  (fixed)
+//
+//  Owns all global resources:
+//    Capital, TaxRevenue, AccidentRate, Happiness, Calendar (days)
+//
+//  Other scripts talk to it via GameManager.Instance (singleton).
+//
+//  CHANGES:
+//    • startHappiness added to LevelConfig — set it per-level in
+//      the Inspector (0–100 slider).  Replaces the old hardcoded 100f.
+//    • StopAllCoroutines() called before re-starting DayTickRoutine.
+//    • BroadcastState() deferred one frame so listeners are ready.
+//    • CheckVictory() called after initial broadcast.
+//    • GetLevelConfig() guards against empty levelConfigs array.
+//    • OnDayChanged fires (daysPassed, totalDays) for "Day 58/90" formatting.
+// ─────────────────────────────────────────────────────────────────
 
 public class GameManager : MonoBehaviour
 {
@@ -19,13 +36,17 @@ public class GameManager : MonoBehaviour
         public int level;
         public float startCapitalRM;
         public int startAccidentRate;
+
+        [Range(0, 100)]
+        [Tooltip("Starting happiness for this level (0 = miserable, 100 = fully happy).")]
+        public float startHappiness;
     }
 
     public LevelConfig[] levelConfigs = new LevelConfig[]
     {
-        new LevelConfig { level = 1, startCapitalRM = 1000f,  startAccidentRate = 10 },
-        new LevelConfig { level = 2, startCapitalRM = 2500f,  startAccidentRate = 15 },
-        new LevelConfig { level = 3, startCapitalRM = 3500f,  startAccidentRate = 25 }
+        new LevelConfig { level = 1, startCapitalRM = 1000f, startAccidentRate = 10, startHappiness = 100f },
+        new LevelConfig { level = 2, startCapitalRM = 2500f, startAccidentRate = 15, startHappiness = 80f  },
+        new LevelConfig { level = 3, startCapitalRM = 3500f, startAccidentRate = 25, startHappiness = 60f  }
     };
 
     // ── Game Rules ────────────────────────────
@@ -106,7 +127,7 @@ public class GameManager : MonoBehaviour
 
         _capital = cfg.startCapitalRM;
         _accidentRate = cfg.startAccidentRate;
-        _happiness = 100f;
+        _happiness = Mathf.Clamp(cfg.startHappiness, 0f, 100f);
         _daysPassed = 0;
         _gameRunning = true;
 

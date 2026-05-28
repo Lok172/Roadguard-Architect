@@ -27,7 +27,7 @@ EditorBuildSettings:
     path: Assets/Scenes/Settings.unity
     guid: f414819320df9ff4995e31bb6794b4cb
   - enabled: 1
-    path: Assets/Scenes/LvUI.unity
+    path: Assets/Scenes/LvUI & Manager.unity
     guid: d9efee38d8bfdc645a1c4a86ef4de419
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
