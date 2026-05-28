@@ -206,7 +206,8 @@ MonoBehaviour:
   - uiSceneName: LV1
     additionalScenes:
     - City
-    - LvUI
+    - Environment
+    - LvUI & Manager
 --- !u!4 &1730907750
 Transform:
   m_ObjectHideFlags: 0
