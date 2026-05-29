@@ -188,6 +188,10 @@ MonoBehaviour:
   placedDeviceObject: {fileID: 0}
   isPoorPlacement: 0
   deviceSnapPoint: {fileID: 0}
+  playGrowOnStart: 1
+  growDuration: 0.4
+  growOvershoot: 0.12
+  overshootFraction: 0.25
 --- !u!65 &47705285
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -209,96 +213,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 6, y: 0.1, z: 20}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!1 &145954689
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 145954693}
-  - component: {fileID: 145954692}
-  - component: {fileID: 145954690}
-  - component: {fileID: 145954691}
-  m_Layer: 3
-  m_Name: ResRoad_00
-  m_TagString: RoadTile
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &145954690
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 145954689}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e7a0c831bccd513489a233c72daa9fdf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadTile
-  tileType: 4
-  zoneType: 0
-  tileID: ResRoad_00
-  baseAccidentContribution: 1
-  currentAccidentContribution: 0
-  allowedDevices: 010000000300000002000000
-  isOccupied: 0
-  placedDeviceType: 0
-  placedDeviceObject: {fileID: 0}
-  isPoorPlacement: 0
-  deviceSnapPoint: {fileID: 0}
---- !u!114 &145954691
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 145954689}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e7b2134b3404d7e4f8cc8d7468209668, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadTileAutoRegister
---- !u!65 &145954692
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 145954689}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 6, y: 0.1, z: 20}
-  m_Center: {x: 0, y: 0, z: 0}
---- !u!4 &145954693
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 145954689}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 0, y: -0.35, z: -0.0017852783}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1955268214}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &203844586
 GameObject:
   m_ObjectHideFlags: 0
@@ -495,6 +409,10 @@ MonoBehaviour:
   placedDeviceObject: {fileID: 0}
   isPoorPlacement: 0
   deviceSnapPoint: {fileID: 0}
+  playGrowOnStart: 1
+  growDuration: 0.4
+  growOvershoot: 0.12
+  overshootFraction: 0.25
 --- !u!65 &295042566
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -516,7 +434,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 6, y: 0.1, z: 20}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!1 &465776357
+--- !u!1 &542843313
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -524,10 +442,171 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 465776361}
-  - component: {fileID: 465776360}
-  - component: {fileID: 465776358}
-  - component: {fileID: 465776359}
+  - component: {fileID: 542843316}
+  - component: {fileID: 542843315}
+  - component: {fileID: 542843314}
+  m_Layer: 3
+  m_Name: ResRoad_03
+  m_TagString: RoadTile
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &542843314
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 542843313}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7a0c831bccd513489a233c72daa9fdf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoadTile
+  tileType: 4
+  zoneType: 0
+  tileID: ResRoad_03
+  baseAccidentContribution: 1
+  currentAccidentContribution: 0
+  allowedDevices: 010000000300000002000000
+  isOccupied: 0
+  placedDeviceType: 0
+  placedDeviceObject: {fileID: 0}
+  isPoorPlacement: 0
+  deviceSnapPoint: {fileID: 0}
+  playGrowOnStart: 1
+  growDuration: 0.4
+  growOvershoot: 0.12
+  overshootFraction: 0.25
+--- !u!65 &542843315
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 542843313}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 6, y: 0.1, z: 20}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!4 &542843316
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 542843313}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
+  m_LocalPosition: {x: 60, y: -0.35, z: -0.0017852783}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1955268214}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &762944525
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 762944528}
+  - component: {fileID: 762944527}
+  - component: {fileID: 762944526}
+  m_Layer: 3
+  m_Name: ResRoad_04
+  m_TagString: RoadTile
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &762944526
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 762944525}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7a0c831bccd513489a233c72daa9fdf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoadTile
+  tileType: 4
+  zoneType: 0
+  tileID: ResRoad_04
+  baseAccidentContribution: 1
+  currentAccidentContribution: 0
+  allowedDevices: 010000000300000002000000
+  isOccupied: 0
+  placedDeviceType: 0
+  placedDeviceObject: {fileID: 0}
+  isPoorPlacement: 0
+  deviceSnapPoint: {fileID: 0}
+  playGrowOnStart: 1
+  growDuration: 0.4
+  growOvershoot: 0.12
+  overshootFraction: 0.25
+--- !u!65 &762944527
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 762944525}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 6, y: 0.1, z: 20}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!4 &762944528
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 762944525}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
+  m_LocalPosition: {x: 80, y: -0.35, z: -0.0017852783}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1955268214}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1044688456
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1044688459}
+  - component: {fileID: 1044688458}
+  - component: {fileID: 1044688457}
   m_Layer: 3
   m_Name: ResRoad_01
   m_TagString: RoadTile
@@ -535,13 +614,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &465776358
+--- !u!114 &1044688457
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 465776357}
+  m_GameObject: {fileID: 1044688456}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e7a0c831bccd513489a233c72daa9fdf, type: 3}
@@ -558,25 +637,17 @@ MonoBehaviour:
   placedDeviceObject: {fileID: 0}
   isPoorPlacement: 0
   deviceSnapPoint: {fileID: 0}
---- !u!114 &465776359
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 465776357}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e7b2134b3404d7e4f8cc8d7468209668, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadTileAutoRegister
---- !u!65 &465776360
+  playGrowOnStart: 1
+  growDuration: 0.4
+  growOvershoot: 0.12
+  overshootFraction: 0.25
+--- !u!65 &1044688458
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 465776357}
+  m_GameObject: {fileID: 1044688456}
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -591,13 +662,13 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 6, y: 0.1, z: 20}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!4 &465776361
+--- !u!4 &1044688459
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 465776357}
+  m_GameObject: {fileID: 1044688456}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
   m_LocalPosition: {x: 20, y: -0.35, z: -0.0017852783}
@@ -606,7 +677,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1955268214}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &622375338
+--- !u!1 &1299600332
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -614,59 +685,42 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 622375342}
-  - component: {fileID: 622375341}
-  - component: {fileID: 622375339}
-  - component: {fileID: 622375340}
-  m_Layer: 3
-  m_Name: ResRoad_02
-  m_TagString: RoadTile
+  - component: {fileID: 1299600335}
+  - component: {fileID: 1299600334}
+  - component: {fileID: 1299600333}
+  m_Layer: 0
+  m_Name: 'Pulse '
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &622375339
+--- !u!114 &1299600333
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 622375338}
+  m_GameObject: {fileID: 1299600332}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e7a0c831bccd513489a233c72daa9fdf, type: 3}
+  m_Script: {fileID: 11500000, guid: 465d8bb991669e542acfcec1917ea806, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadTile
-  tileType: 4
-  zoneType: 0
-  tileID: ResRoad_02
-  baseAccidentContribution: 1
-  currentAccidentContribution: 0
-  allowedDevices: 010000000300000002000000
-  isOccupied: 0
-  placedDeviceType: 0
-  placedDeviceObject: {fileID: 0}
-  isPoorPlacement: 0
-  deviceSnapPoint: {fileID: 0}
---- !u!114 &622375340
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 622375338}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e7b2134b3404d7e4f8cc8d7468209668, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadTileAutoRegister
---- !u!65 &622375341
+  m_EditorClassIdentifier: Assembly-CSharp::TileOverlay
+  yOffset: 0.2
+  pulseSpeed: 9.71
+  pulseAlphaRange: {x: 0.25, y: 4.3}
+  colDefault: {r: 1, g: 0.6169811, b: 0.17924517, a: 1}
+  colValid: {r: 0.1, g: 0.9, b: 0.4, a: 1}
+  colPoorPlacement: {r: 1, g: 0.6, b: 0, a: 1}
+  colOccupied: {r: 0.85, g: 0.15, b: 0.15, a: 1}
+--- !u!65 &1299600334
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 622375338}
+  m_GameObject: {fileID: 1299600332}
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -675,26 +729,26 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 6, y: 0.1, z: 20}
+  m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!4 &622375342
+--- !u!4 &1299600335
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 622375338}
+  m_GameObject: {fileID: 1299600332}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 40, y: -0.35, z: -0.0017852783}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 26.2213, y: 0, z: 211.3771}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1955268214}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1358407951
 GameObject:
@@ -765,6 +819,10 @@ MonoBehaviour:
   placedDeviceObject: {fileID: 0}
   isPoorPlacement: 0
   deviceSnapPoint: {fileID: 0}
+  playGrowOnStart: 1
+  growDuration: 0.4
+  growOvershoot: 0.12
+  overshootFraction: 0.25
 --- !u!65 &1358407955
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -786,6 +844,87 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 6, y: 0.1, z: 20}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &1450086182
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1450086185}
+  - component: {fileID: 1450086184}
+  - component: {fileID: 1450086183}
+  m_Layer: 3
+  m_Name: ResRoad_02
+  m_TagString: RoadTile
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1450086183
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1450086182}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7a0c831bccd513489a233c72daa9fdf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoadTile
+  tileType: 4
+  zoneType: 0
+  tileID: ResRoad_02
+  baseAccidentContribution: 1
+  currentAccidentContribution: 0
+  allowedDevices: 010000000300000002000000
+  isOccupied: 0
+  placedDeviceType: 0
+  placedDeviceObject: {fileID: 0}
+  isPoorPlacement: 0
+  deviceSnapPoint: {fileID: 0}
+  playGrowOnStart: 1
+  growDuration: 0.4
+  growOvershoot: 0.12
+  overshootFraction: 0.25
+--- !u!65 &1450086184
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1450086182}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 6, y: 0.1, z: 20}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!4 &1450086185
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1450086182}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
+  m_LocalPosition: {x: 40, y: -0.35, z: -0.0017852783}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1955268214}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1471402189
 GameObject:
   m_ObjectHideFlags: 0
@@ -855,6 +994,10 @@ MonoBehaviour:
   placedDeviceObject: {fileID: 0}
   isPoorPlacement: 0
   deviceSnapPoint: {fileID: 0}
+  playGrowOnStart: 1
+  growDuration: 0.4
+  growOvershoot: 0.12
+  overshootFraction: 0.25
 --- !u!65 &1471402193
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -876,96 +1019,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 6, y: 0.1, z: 20}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!1 &1491693893
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1491693897}
-  - component: {fileID: 1491693896}
-  - component: {fileID: 1491693894}
-  - component: {fileID: 1491693895}
-  m_Layer: 3
-  m_Name: ResRoad_04
-  m_TagString: RoadTile
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1491693894
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1491693893}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e7a0c831bccd513489a233c72daa9fdf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadTile
-  tileType: 4
-  zoneType: 0
-  tileID: ResRoad_04
-  baseAccidentContribution: 1
-  currentAccidentContribution: 0
-  allowedDevices: 010000000300000002000000
-  isOccupied: 0
-  placedDeviceType: 0
-  placedDeviceObject: {fileID: 0}
-  isPoorPlacement: 0
-  deviceSnapPoint: {fileID: 0}
---- !u!114 &1491693895
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1491693893}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e7b2134b3404d7e4f8cc8d7468209668, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadTileAutoRegister
---- !u!65 &1491693896
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1491693893}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 6, y: 0.1, z: 20}
-  m_Center: {x: 0, y: 0, z: 0}
---- !u!4 &1491693897
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1491693893}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 80, y: -0.35, z: -0.0017852783}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1955268214}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1585712466
 GameObject:
   m_ObjectHideFlags: 0
@@ -1021,6 +1074,10 @@ MonoBehaviour:
   placedDeviceObject: {fileID: 0}
   isPoorPlacement: 0
   deviceSnapPoint: {fileID: 0}
+  playGrowOnStart: 1
+  growDuration: 0.4
+  growOvershoot: 0.12
+  overshootFraction: 0.25
 --- !u!65 &1585712469
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1088,7 +1145,7 @@ Transform:
   - {fileID: 1358407952}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1709518717
+--- !u!1 &1606210681
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1096,24 +1153,23 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1709518721}
-  - component: {fileID: 1709518720}
-  - component: {fileID: 1709518718}
-  - component: {fileID: 1709518719}
+  - component: {fileID: 1606210684}
+  - component: {fileID: 1606210683}
+  - component: {fileID: 1606210682}
   m_Layer: 3
-  m_Name: ResRoad_03
+  m_Name: ResRoad_00
   m_TagString: RoadTile
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1709518718
+--- !u!114 &1606210682
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1709518717}
+  m_GameObject: {fileID: 1606210681}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e7a0c831bccd513489a233c72daa9fdf, type: 3}
@@ -1121,7 +1177,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RoadTile
   tileType: 4
   zoneType: 0
-  tileID: ResRoad_03
+  tileID: ResRoad_00
   baseAccidentContribution: 1
   currentAccidentContribution: 0
   allowedDevices: 010000000300000002000000
@@ -1130,25 +1186,17 @@ MonoBehaviour:
   placedDeviceObject: {fileID: 0}
   isPoorPlacement: 0
   deviceSnapPoint: {fileID: 0}
---- !u!114 &1709518719
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1709518717}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e7b2134b3404d7e4f8cc8d7468209668, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadTileAutoRegister
---- !u!65 &1709518720
+  playGrowOnStart: 1
+  growDuration: 0.4
+  growOvershoot: 0.12
+  overshootFraction: 0.25
+--- !u!65 &1606210683
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1709518717}
+  m_GameObject: {fileID: 1606210681}
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -1163,16 +1211,16 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 6, y: 0.1, z: 20}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!4 &1709518721
+--- !u!4 &1606210684
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1709518717}
+  m_GameObject: {fileID: 1606210681}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 60, y: -0.35, z: -0.0017852783}
+  m_LocalPosition: {x: 0, y: -0.35, z: -0.0017852783}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1211,11 +1259,11 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 145954693}
-  - {fileID: 465776361}
-  - {fileID: 622375342}
-  - {fileID: 1709518721}
-  - {fileID: 1491693897}
+  - {fileID: 1606210684}
+  - {fileID: 1044688459}
+  - {fileID: 1450086185}
+  - {fileID: 542843316}
+  - {fileID: 762944528}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1955268215
@@ -1253,6 +1301,10 @@ MonoBehaviour:
   placedDeviceObject: {fileID: 0}
   isPoorPlacement: 0
   deviceSnapPoint: {fileID: 0}
+  playGrowOnStart: 1
+  growDuration: 0.4
+  growOvershoot: 0.12
+  overshootFraction: 0.25
 --- !u!65 &1955268217
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1288,7 +1340,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RoadTileGenerator
   startPosition: {x: 20, y: 0.15, z: 200}
   direction: {x: 1, y: 0, z: 0}
-  tileCount: -73
+  tileCount: 5
   tileSpacing: 20
   colliderSize: {x: 6, y: 0.1, z: 20}
   colliderOffset: {x: 0, y: 0, z: 0}
@@ -1300,16 +1352,11 @@ MonoBehaviour:
   tileLayer: RoadTile
   tileTag: RoadTile
   generatedTiles:
-  - {fileID: 145954690}
-  - {fileID: 465776358}
-  - {fileID: 622375339}
-  - {fileID: 1709518718}
-  - {fileID: 1491693894}
-  - {fileID: 295042565}
-  - {fileID: 2085068631}
-  - {fileID: 47705284}
-  - {fileID: 1471402192}
-  - {fileID: 1358407954}
+  - {fileID: 1606210682}
+  - {fileID: 1044688457}
+  - {fileID: 1450086183}
+  - {fileID: 542843314}
+  - {fileID: 762944526}
 --- !u!1 &2085068628
 GameObject:
   m_ObjectHideFlags: 0
@@ -1379,6 +1426,10 @@ MonoBehaviour:
   placedDeviceObject: {fileID: 0}
   isPoorPlacement: 0
   deviceSnapPoint: {fileID: 0}
+  playGrowOnStart: 1
+  growDuration: 0.4
+  growOvershoot: 0.12
+  overshootFraction: 0.25
 --- !u!65 &2085068632
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1407,3 +1458,4 @@ SceneRoots:
   - {fileID: 1955268214}
   - {fileID: 1585712471}
   - {fileID: 203844589}
+  - {fileID: 1299600335}

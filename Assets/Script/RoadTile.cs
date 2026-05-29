@@ -1,9 +1,10 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-// ─────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
 //  ENUMS
-// ─────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
 
 public enum TileType
 {
@@ -39,24 +40,19 @@ public enum PlacementResult
     PoorPlacement       // Device allowed but wrong zone — placed with happiness penalty
 }
 
-// ─────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
 //  DEVICE INFO  (cost + effects)
-// ─────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
 
-/// <summary>
-/// Static data for each traffic device — cost, accident reduction,
-/// happiness delta per zone, and whether it's suitable for a zone.
-/// Edit these values here to tune game balance.
-/// </summary>
 public static class DeviceData
 {
     public struct DeviceStats
     {
-        public float  costRM;               // Purchase cost in Ringgit
-        public int    accidentReduction;    // Flat accident rate points removed
-        public float  happinessDeltaGood;   // Happiness change for good placement
-        public float  happinessDeltaPoor;   // Happiness change for poor placement
-        public bool   unsuitableInResidential; // Traffic jam risk in residential
+        public float costRM;
+        public int accidentReduction;
+        public float happinessDeltaGood;
+        public float happinessDeltaPoor;
+        public bool unsuitableInResidential;
     }
 
     private static readonly Dictionary<TrafficDeviceType, DeviceStats> _data =
@@ -88,26 +84,20 @@ public static class DeviceData
                 costRM                  = 2500f,
                 accidentReduction       = 5,
                 happinessDeltaGood      = 10f,
-                happinessDeltaPoor      = -15f,  // causes jam → big happiness hit
-                unsuitableInResidential = true   // poor placement in residential
+                happinessDeltaPoor      = -15f,
+                unsuitableInResidential = true
             }
         }
     };
 
     public static DeviceStats Get(TrafficDeviceType type)
     {
-        return _data.TryGetValue(type, out DeviceStats stats)
-            ? stats
-            : default;
+        return _data.TryGetValue(type, out DeviceStats stats) ? stats : default;
     }
 
-    public static float GetCost(TrafficDeviceType type)   => Get(type).costRM;
-    public static int   GetReduction(TrafficDeviceType type) => Get(type).accidentReduction;
+    public static float GetCost(TrafficDeviceType type) => Get(type).costRM;
+    public static int GetReduction(TrafficDeviceType type) => Get(type).accidentReduction;
 
-    /// <summary>
-    /// Returns true if the device is a poor fit for the given zone.
-    /// Currently: TrafficLight in Residential = poor placement.
-    /// </summary>
     public static bool IsPoorPlacement(TrafficDeviceType device, ZoneType zone)
     {
         DeviceStats stats = Get(device);
@@ -115,15 +105,10 @@ public static class DeviceData
     }
 }
 
-// ─────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
 //  ROAD TILE
-// ─────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
 
-/// <summary>
-/// Attach to each invisible tile collider GameObject.
-/// Tracks tile metadata, device placement, and contributes to
-/// the global AccidentRate and Happiness via events.
-/// </summary>
 [RequireComponent(typeof(BoxCollider))]
 public class RoadTile : MonoBehaviour
 {
@@ -137,40 +122,55 @@ public class RoadTile : MonoBehaviour
 
     // ── Accident Contribution ─────────────────
     [Header("Accident Rate Contribution")]
-    [Tooltip("How many accident-rate points this tile contributes at baseline. " +
-             "The GameManager sums all tiles to get the city-wide rate.")]
     [Min(0)]
     public int baseAccidentContribution = 1;
 
-    /// <summary>Current contribution after device modifier is applied.</summary>
     [HideInInspector] public int currentAccidentContribution;
 
     // ── Device Placement ──────────────────────
     [Header("Device Placement")]
-    [Tooltip("Devices valid on this tile. Leave empty to allow all.")]
     public List<TrafficDeviceType> allowedDevices = new List<TrafficDeviceType>();
 
-    [HideInInspector] public bool isOccupied             = false;
+    [HideInInspector] public bool isOccupied = false;
     [HideInInspector] public TrafficDeviceType placedDeviceType = TrafficDeviceType.None;
     [HideInInspector] public GameObject placedDeviceObject = null;
-    [HideInInspector] public bool isPoorPlacement         = false;
+    [HideInInspector] public bool isPoorPlacement = false;
 
     // ── Snap Point ────────────────────────────
     [Header("Snap Point")]
-    [Tooltip("Child Transform where the device prefab will be positioned. " +
-             "Defaults to tile centre if null.")]
     public Transform deviceSnapPoint;
 
-    // ── Events ────────────────────────────────
-    /// <summary>Fired after a device is placed. bool = isPoorPlacement.</summary>
-    public System.Action<RoadTile, bool> OnDevicePlaced;
-    public System.Action<RoadTile>       OnDeviceRemoved;
+    // ── Grow Effect ───────────────────────────
+    [Header("Grow Effect")]
+    [Tooltip("Play the grow-in animation when this tile is first enabled.")]
+    public bool playGrowOnStart = true;
 
-    /// <summary>
-    /// Fired when this tile's accident contribution changes.
-    /// GameManager listens to all tiles and recalculates city total.
-    /// </summary>
-    public System.Action<RoadTile, int, int> OnContributionChanged; // tile, old, new
+    [Tooltip("Total duration of the grow animation in seconds.")]
+    [Min(0.05f)]
+    public float growDuration = 0.4f;
+
+    [Tooltip("How far past 1 the scale overshoots before settling (0 = no bounce).")]
+    [Range(0f, 0.5f)]
+    public float growOvershoot = 0.12f;
+
+    [Tooltip("Fraction of growDuration spent on the overshoot bounce (0.2 = last 20%).")]
+    [Range(0.1f, 0.5f)]
+    public float overshootFraction = 0.25f;
+
+    // ── Events ────────────────────────────────
+    public System.Action<RoadTile, bool> OnDevicePlaced;
+    public System.Action<RoadTile> OnDeviceRemoved;
+    public System.Action<RoadTile, int, int> OnContributionChanged;
+
+    // ── Private ───────────────────────────────
+    private Vector3 _originalScale;
+    private bool _growDone = false;
+
+    // ── Overlay (auto-added) ──────────────────
+    // TileOverlay is added automatically in Awake if not already present.
+    // PlacementManager and RoadTile both call into it.
+    private TileOverlay _overlay;
+    public TileOverlay Overlay => _overlay;
 
     // ─────────────────────────────────────────
     //  UNITY LIFECYCLE
@@ -180,72 +180,153 @@ public class RoadTile : MonoBehaviour
     {
         currentAccidentContribution = baseAccidentContribution;
         GetComponent<BoxCollider>().isTrigger = true;
+        _originalScale = transform.localScale;
+
+        // Auto-add TileOverlay so tiles always have an overlay
+        // without needing a manual Inspector step.
+        _overlay = GetComponent<TileOverlay>();
+        if (_overlay == null)
+            _overlay = gameObject.AddComponent<TileOverlay>();
+    }
+
+    private void OnEnable()
+    {
+        if (playGrowOnStart && !_growDone)
+            StartCoroutine(GrowIn());
+    }
+
+    // ─────────────────────────────────────────
+    //  OVERLAY HELPERS
+    // ─────────────────────────────────────────
+
+    /// <summary>
+    /// Returns the OverlayState this tile should display when the player
+    /// is about to place <paramref name="device"/>.
+    /// Call with TrafficDeviceType.None to reset to Default.
+    /// </summary>
+    public OverlayState GetOverlayState(TrafficDeviceType device)
+    {
+        // No device selected → grey default
+        if (device == TrafficDeviceType.None)
+            return OverlayState.Default;
+
+        // Already has a device — can't place anything
+        if (isOccupied)
+            return OverlayState.Occupied;
+
+        // Device not in the allowed list
+        if (allowedDevices.Count > 0 && !allowedDevices.Contains(device))
+            return OverlayState.Hidden;
+
+        // Allowed but wrong zone → orange warning
+        if (DeviceData.IsPoorPlacement(device, zoneType))
+            return OverlayState.PoorPlacement;
+
+        // All good → green
+        return OverlayState.Valid;
+    }
+
+    /// <summary>
+    /// Refresh the overlay to reflect the tile's current occupied state.
+    /// Called after PlaceDevice / RemoveDevice.
+    /// Pass the device being dragged (or None to show neutral post-placement state).
+    /// </summary>
+    public void RefreshOverlay(TrafficDeviceType activeDevice = TrafficDeviceType.None)
+    {
+        if (_overlay == null) return;
+        _overlay.SetState(GetOverlayState(activeDevice));
+    }
+
+    // ─────────────────────────────────────────
+    //  GROW EFFECT
+    // ─────────────────────────────────────────
+
+    public void PlayGrow()
+    {
+        StopCoroutine(nameof(GrowIn));
+        StartCoroutine(GrowIn());
+    }
+
+    private IEnumerator GrowIn()
+    {
+        _growDone = false;
+        transform.localScale = Vector3.zero;
+
+        float growUpDuration = growDuration * (1f - overshootFraction);
+        float elapsed = 0f;
+
+        while (elapsed < growUpDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / growUpDuration);
+            float eased = 1f - Mathf.Pow(1f - t, 3f);
+            float scale = Mathf.Lerp(0f, 1f + growOvershoot, eased);
+            transform.localScale = _originalScale * scale;
+            yield return null;
+        }
+
+        float settleTime = growDuration * overshootFraction;
+        elapsed = 0f;
+
+        while (elapsed < settleTime)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / settleTime);
+            float eased = t < 0.5f
+                ? 2f * t * t
+                : 1f - Mathf.Pow(-2f * t + 2f, 2f) / 2f;
+            float scale = Mathf.Lerp(1f + growOvershoot, 1f, eased);
+            transform.localScale = _originalScale * scale;
+            yield return null;
+        }
+
+        transform.localScale = _originalScale;
+        _growDone = true;
     }
 
     // ─────────────────────────────────────────
     //  PUBLIC API
     // ─────────────────────────────────────────
 
-    /// <summary>
-    /// Checks whether the device can be placed. Does NOT spend money.
-    /// Call this to validate before showing a placement preview.
-    /// </summary>
     public PlacementResult CanPlace(TrafficDeviceType device, float playerCapital)
     {
         if (isOccupied)
             return PlacementResult.AlreadyOccupied;
 
-        // If allowedDevices is non-empty, enforce the whitelist
         if (allowedDevices.Count > 0 && !allowedDevices.Contains(device))
             return PlacementResult.DeviceNotAllowed;
 
         if (playerCapital < DeviceData.GetCost(device))
             return PlacementResult.InsufficientFunds;
 
-        // PoorPlacement is still allowed but triggers happiness penalty
         if (DeviceData.IsPoorPlacement(device, zoneType))
             return PlacementResult.PoorPlacement;
 
         return PlacementResult.Success;
     }
 
-    /// <summary>
-    /// Places the device on this tile. Deducts cost and applies effects
-    /// via the returned happiness delta — caller (GameManager) applies it.
-    /// </summary>
-    /// <param name="device">Device type to place.</param>
-    /// <param name="deviceObject">Already-instantiated device prefab.</param>
-    /// <param name="playerCapital">Player's current RM balance.</param>
-    /// <param name="happinessDelta">OUT: happiness change to apply.</param>
-    /// <param name="costSpent">OUT: RM deducted.</param>
-    /// <returns>PlacementResult — check for Success or PoorPlacement.</returns>
     public PlacementResult PlaceDevice(
         TrafficDeviceType device,
-        GameObject        deviceObject,
-        float             playerCapital,
-        out float         happinessDelta,
-        out float         costSpent)
+        GameObject deviceObject,
+        float playerCapital,
+        out float happinessDelta,
+        out float costSpent)
     {
         happinessDelta = 0f;
-        costSpent      = 0f;
+        costSpent = 0f;
 
         PlacementResult result = CanPlace(device, playerCapital);
 
-        // Only reject on hard failures
         if (result == PlacementResult.AlreadyOccupied ||
             result == PlacementResult.DeviceNotAllowed ||
             result == PlacementResult.InsufficientFunds)
-        {
             return result;
-        }
 
-        // ── Commit placement ──────────────────
-        isPoorPlacement    = (result == PlacementResult.PoorPlacement);
-        isOccupied         = true;
-        placedDeviceType   = device;
+        isPoorPlacement = (result == PlacementResult.PoorPlacement);
+        isOccupied = true;
+        placedDeviceType = device;
         placedDeviceObject = deviceObject;
 
-        // Snap device into position
         Vector3 snapPos = deviceSnapPoint != null
             ? deviceSnapPoint.position
             : transform.position;
@@ -254,17 +335,18 @@ public class RoadTile : MonoBehaviour
         deviceObject.transform.rotation = transform.rotation;
         deviceObject.transform.SetParent(transform);
 
-        // ── Costs & happiness ─────────────────
         DeviceData.DeviceStats stats = DeviceData.Get(device);
-        costSpent      = stats.costRM;
+        costSpent = stats.costRM;
         happinessDelta = isPoorPlacement
             ? stats.happinessDeltaPoor
             : stats.happinessDeltaGood;
 
-        // ── Accident contribution ─────────────
         RecalculateContribution();
-
         OnDevicePlaced?.Invoke(this, isPoorPlacement);
+
+        // ── Overlay: tile is now occupied — show red tint, then
+        //    reset to Default so it shows grey when no device is active.
+        RefreshOverlay(TrafficDeviceType.None);
 
         Debug.Log($"[RoadTile] {tileID}: placed {device} " +
                   $"(poor={isPoorPlacement}) cost=RM{costSpent} " +
@@ -274,10 +356,6 @@ public class RoadTile : MonoBehaviour
         return result;
     }
 
-    /// <summary>
-    /// Removes the device, restores accident contribution.
-    /// Does NOT refund money (design decision — change if needed).
-    /// </summary>
     public void RemoveDevice()
     {
         if (!isOccupied) return;
@@ -285,26 +363,23 @@ public class RoadTile : MonoBehaviour
         if (placedDeviceObject != null)
             Destroy(placedDeviceObject);
 
-        isOccupied         = false;
-        placedDeviceType   = TrafficDeviceType.None;
+        isOccupied = false;
+        placedDeviceType = TrafficDeviceType.None;
         placedDeviceObject = null;
-        isPoorPlacement    = false;
+        isPoorPlacement = false;
 
         RecalculateContribution();
         OnDeviceRemoved?.Invoke(this);
+
+        // ── Overlay: tile is free again — return to grey default
+        RefreshOverlay(TrafficDeviceType.None);
     }
 
-    /// <summary>
-    /// Recalculates this tile's accident contribution.
-    /// Subtracts the device's flat reduction, clamped to 0.
-    /// GameManager should sum all tiles after calling this.
-    /// </summary>
     public void RecalculateContribution()
     {
-        int prev      = currentAccidentContribution;
+        int prev = currentAccidentContribution;
         int reduction = DeviceData.GetReduction(placedDeviceType);
 
-        // Poor placement = half effectiveness
         if (isPoorPlacement)
             reduction = Mathf.FloorToInt(reduction * 0.5f);
 
@@ -327,35 +402,31 @@ public class RoadTile : MonoBehaviour
 
         Color gizmoColor = zoneType switch
         {
-            ZoneType.Residential => new Color(0.2f, 0.8f, 0.3f, 0.25f),  // green
-            ZoneType.Commercial  => new Color(0.2f, 0.4f, 0.9f, 0.25f),  // blue
-            ZoneType.Industrial  => new Color(0.9f, 0.6f, 0.1f, 0.25f),  // orange
-            ZoneType.Highway     => new Color(0.9f, 0.2f, 0.2f, 0.25f),  // red
-            _                    => new Color(0.5f, 0.5f, 0.5f, 0.25f)   // grey
+            ZoneType.Residential => new Color(0.2f, 0.8f, 0.3f, 0.25f),
+            ZoneType.Commercial => new Color(0.2f, 0.4f, 0.9f, 0.25f),
+            ZoneType.Industrial => new Color(0.9f, 0.6f, 0.1f, 0.25f),
+            ZoneType.Highway => new Color(0.9f, 0.2f, 0.2f, 0.25f),
+            _ => new Color(0.5f, 0.5f, 0.5f, 0.25f)
         };
 
-        // Draw filled ghost
         Gizmos.matrix = transform.localToWorldMatrix;
-        Gizmos.color  = gizmoColor;
+        Gizmos.color = gizmoColor;
         Gizmos.DrawCube(col.center, col.size);
 
-        // Draw wire outline (more opaque)
-        gizmoColor.a  = 0.8f;
-        Gizmos.color  = gizmoColor;
+        gizmoColor.a = 0.8f;
+        Gizmos.color = gizmoColor;
         Gizmos.DrawWireCube(col.center, col.size);
 
-        // Poor placement indicator — bright red outline
         if (isPoorPlacement)
         {
             Gizmos.color = Color.red;
             Gizmos.DrawWireCube(col.center, col.size + Vector3.one * 0.05f);
         }
 
-        // Snap point sphere
         if (deviceSnapPoint != null)
         {
             Gizmos.matrix = Matrix4x4.identity;
-            Gizmos.color  = Color.yellow;
+            Gizmos.color = Color.yellow;
             Gizmos.DrawSphere(deviceSnapPoint.position, 0.15f);
         }
     }

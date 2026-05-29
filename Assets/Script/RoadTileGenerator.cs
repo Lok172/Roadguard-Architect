@@ -107,6 +107,12 @@ public class RoadTileGenerator : MonoBehaviour
             col.isTrigger   = true;
 
             RoadTile tile = tileGO.AddComponent<RoadTile>();
+            
+            if (GameManager.Instance != null)
+                GameManager.Instance.RegisterTile(tile);
+            else
+                Debug.LogWarning("GameManager not found, tile not registered.");
+
             tile.tileID                   = $"{tileIDPrefix}_{i:D2}";
             tile.tileType                 = defaultTileType;
             tile.zoneType                 = defaultZoneType;
@@ -114,6 +120,7 @@ public class RoadTileGenerator : MonoBehaviour
             tile.allowedDevices           = new List<TrafficDeviceType>(defaultAllowedDevices);
 
             generatedTiles.Add(tile);
+
         }
 
         Debug.Log($"[RoadTileGenerator] Generated {tileCount} tiles " +
@@ -128,6 +135,15 @@ public class RoadTileGenerator : MonoBehaviour
 
     public void ClearTiles()
     {
+        foreach (Transform child in transform)
+        {
+            RoadTile tile = child.GetComponent<RoadTile>();
+            if (tile != null && GameManager.Instance != null)
+            {
+                GameManager.Instance.UnregisterTile(tile);
+            }
+        }
+
         generatedTiles.Clear();
 
         var children = new List<GameObject>();

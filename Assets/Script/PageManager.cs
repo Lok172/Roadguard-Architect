@@ -23,7 +23,7 @@ public class PageManager : MonoBehaviour
     [Header("UI Scene Groups")]
     [SerializeField] private UISceneGroup[] uiSceneGroups;
 
-    private string currentLoadedUI = "";
+    public string currentLoadedUI { get; private set; } = "";
     private string pageManagerSceneName;
     private UIThemeManager uiThemeManager;
 

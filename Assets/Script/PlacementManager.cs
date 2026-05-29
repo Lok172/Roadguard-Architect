@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.InputSystem;
+
 // ─────────────────────────────────────────────────────────────────
 //
 //  Handles click-and-drag placement from the UI panel onto the
@@ -13,6 +14,15 @@ using UnityEngine.InputSystem;
 //    3. Raycast hits the RoadTile collider layer in CityScene.
 //    4. On mouse-up over a valid tile → PlaceDevice via GameManager.
 //    5. On mouse-up over nothing → cancel, destroy ghost.
+//
+//  OVERLAY INTEGRATION (new):
+//    • BeginDrag    → all tiles switch from Default to their
+//                     per-device state (Valid / PoorPlacement /
+//                     Occupied / Hidden).
+//    • Hover change → previously hovered tile reverts to its
+//                     device state; newly hovered tile stays the
+//                     same (state already reflects validity).
+//    • Confirm/Cancel → all tiles reset to Default (grey).
 // ─────────────────────────────────────────────────────────────────
 
 public class PlacementManager : MonoBehaviour
@@ -26,7 +36,6 @@ public class PlacementManager : MonoBehaviour
     {
         [Tooltip("Any clickable object")]
         public GameObject clickableObject;
-
         public TrafficDeviceType deviceType;
     }
 
@@ -35,7 +44,6 @@ public class PlacementManager : MonoBehaviour
 
     // ── Inspector Config ──────────────────────
     [Header("Device Prefabs (3D world objects)")]
-    [Tooltip("Assign the 3D prefab for each device type in matching order")]
     public GameObject stopSignPrefab;
     public GameObject speedBumpPrefab;
     public GameObject trafficLightPrefab;
@@ -62,7 +70,6 @@ public class PlacementManager : MonoBehaviour
     private RoadTile _hoveredTile = null;
 
     // ── Input System ──────────────────────────
-    // Cached mouse position and button state read via new Input System.
     private Vector2 MousePosition => Mouse.current.position.ReadValue();
     private bool LeftButtonUp => Mouse.current.leftButton.wasReleasedThisFrame;
 
@@ -87,11 +94,10 @@ public class PlacementManager : MonoBehaviour
     private void Update()
     {
         if (!_isDragging) return;
-
-        // Guard: Input System may not have a mouse device (e.g. touch-only build)
         if (Mouse.current == null) return;
 
-        MoveGhostToMouse();
+        UpdateHoverOverlay();   // must come before MoveGhostToMouse so
+        MoveGhostToMouse();     // ghost position is set after overlay
 
         if (LeftButtonUp)
             ConfirmPlacement();
@@ -103,12 +109,9 @@ public class PlacementManager : MonoBehaviour
     {
         foreach (DeviceClickTarget data in clickTargets)
         {
-            if (data.clickableObject == null)
-                continue;
+            if (data.clickableObject == null) continue;
 
-            ClickProxy proxy =
-                data.clickableObject.GetComponent<ClickProxy>();
-
+            ClickProxy proxy = data.clickableObject.GetComponent<ClickProxy>();
             if (proxy == null)
                 proxy = data.clickableObject.AddComponent<ClickProxy>();
 
@@ -134,6 +137,10 @@ public class PlacementManager : MonoBehaviour
 
         _selectedDevice = deviceType;
         _isDragging = true;
+
+        // ── Overlay: paint every registered tile with its validity
+        //    state for the chosen device.
+        ShowPlacementOverlays(deviceType);
 
         SpawnGhost(deviceType);
     }
@@ -179,7 +186,6 @@ public class PlacementManager : MonoBehaviour
         if (_ghostObject == null) return;
 
         RoadTile hit = RaycastToTile(out Vector3 hitPoint);
-        _hoveredTile = hit;
 
         if (hit != null)
         {
@@ -216,6 +222,75 @@ public class PlacementManager : MonoBehaviour
         if (_ghostObject != null)
             Destroy(_ghostObject);
         _ghostObject = null;
+    }
+
+    // ─────────────────────────────────────────
+    //  OVERLAY — HOVER TRACKING
+    // ─────────────────────────────────────────
+
+    /// <summary>
+    /// Called every Update() while dragging.
+    /// Keeps _hoveredTile in sync and refreshes the overlay on tile
+    /// transitions so the hovered tile can pulse brighter if needed.
+    /// (Currently the overlay state is the same whether hovered or not;
+    /// you can extend this to a brighter pulse for the hovered tile.)
+    /// </summary>
+    private void UpdateHoverOverlay()
+    {
+        RoadTile newHover = RaycastToTile(out _);
+
+        if (newHover == _hoveredTile) return;   // no change, skip
+
+        // Tile the cursor just left — overlay already correct, no change needed.
+        // Tile the cursor just entered — also already correct.
+        // We just keep _hoveredTile updated for ConfirmPlacement.
+        _hoveredTile = newHover;
+    }
+
+    // ─────────────────────────────────────────
+    //  OVERLAY — ALL-TILE BROADCAST
+    // ─────────────────────────────────────────
+
+    /// <summary>
+    /// Sets every registered tile's overlay to reflect its validity
+    /// for <paramref name="device"/>. Call on BeginDrag.
+    /// </summary>
+    private void ShowPlacementOverlays(TrafficDeviceType device)
+    {
+        if (GameManager.Instance == null) return;
+
+        // GameManager exposes _allTiles via the tile registry; we access
+        // it through the public RegisterTile / UnregisterTile pattern —
+        // but we need to iterate. We use FindObjectsByType as a simple
+        // cross-scene gather (only called once per drag begin).
+        RoadTile[] allTiles = FindObjectsByType<RoadTile>(FindObjectsSortMode.None);
+
+        foreach (RoadTile tile in allTiles)
+        {
+            if (tile.Overlay == null) continue;
+            tile.Overlay.SetState(tile.GetOverlayState(device));
+        }
+    }
+
+    /// <summary>
+    /// Resets every registered tile's overlay back to Default (grey).
+    /// Call on ConfirmPlacement / CancelPlacement.
+    /// </summary>
+    private void ResetAllOverlays()
+    {
+        RoadTile[] allTiles = FindObjectsByType<RoadTile>(FindObjectsSortMode.None);
+
+        foreach (RoadTile tile in allTiles)
+        {
+            if (tile.Overlay == null) continue;
+
+            // Occupied tiles keep their Occupied (red) state so the
+            // player can see which tiles are already filled at a glance.
+            if (tile.isOccupied)
+                tile.Overlay.SetState(OverlayState.Occupied);
+            else
+                tile.Overlay.SetState(OverlayState.Default);
+        }
     }
 
     // ─────────────────────────────────────────
@@ -272,6 +347,9 @@ public class PlacementManager : MonoBehaviour
         DestroyGhost();
         _selectedDevice = TrafficDeviceType.None;
         _hoveredTile = null;
+
+        // ── Overlay: reset all tiles (occupied tiles stay red, rest go grey)
+        ResetAllOverlays();
     }
 
     public void CancelPlacement()
@@ -280,6 +358,9 @@ public class PlacementManager : MonoBehaviour
         _selectedDevice = TrafficDeviceType.None;
         _hoveredTile = null;
         DestroyGhost();
+
+        // ── Overlay: reset all tiles
+        ResetAllOverlays();
     }
 
     // ─────────────────────────────────────────
@@ -290,8 +371,6 @@ public class PlacementManager : MonoBehaviour
     {
         hitPoint = Vector3.zero;
 
-        // IsPointerOverGameObject() is still valid with the new Input System
-        // as long as the EventSystem has a PhysicsRaycaster or UI InputModule.
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
             return null;
 
