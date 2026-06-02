@@ -207,19 +207,43 @@ MonoBehaviour:
     maxLocationX: 270.5
     movementSpeed: 5
     enableZoom: 0
+    zoomMultiplier: 50
+    minZoom: 30
+    maxZoom: 90
+    zoomSmoothTime: 0.25
+    targetZoom: 0
+    zoomVelocity: 0
     zoomInValue: 0
     zoomOutValue: 0
     zoomCycleDuration: 0
+    enableMouseDrag: 0
+    dragSensitivity: 0.3
+    dragZoomThreshold: 55
+    dragAxisZ: 0
+    minLocationZ: 80
+    maxLocationZ: 140
   - sceneName: LV1
     startPosition: {x: 118.8, y: 134.5, z: 157.9}
     startRotation: {x: 73.6, y: 0, z: 0}
     minLocationX: 73.6
     maxLocationX: 73.6
     movementSpeed: 5
-    enableZoom: 0
+    enableZoom: 1
+    zoomMultiplier: 50
+    minZoom: 30
+    maxZoom: 60
+    zoomSmoothTime: 0.25
+    targetZoom: 0
+    zoomVelocity: 0
     zoomInValue: 0
     zoomOutValue: 0
     zoomCycleDuration: 0
+    enableMouseDrag: 1
+    dragSensitivity: 0.3
+    dragZoomThreshold: 50
+    dragAxisZ: 1
+    minLocationZ: 80
+    maxLocationZ: 200
   cameraDisplay: {fileID: 0}
 --- !u!4 &801832301
 Transform:

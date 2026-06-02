@@ -1,59 +1,73 @@
 using UnityEngine;
 
 // ─────────────────────────────────────────────────────────────────
-//  TileOverlay  (v2)
+//  TileOverlay  (v2 — transparency + brightness pulse fixed)
 //
-//  Changes from v1:
-//    • All 4 state colours exposed as [SerializeField] — editable
-//      in the Inspector with a colour picker per tile or globally
-//      via a prefab.
-//    • Every state (Default, Valid, PoorPlacement, Occupied) now
-//      pulses using the SAME shared pulse parameters:
-//        pulseSpeed        — how fast (radians / sec)
-//        pulseAlphaRange   — min / max alpha per cycle
-//      Hidden stays fully off (quad deactivated).
-//    • Pulse timer resets to 0 on every state transition so the
-//      animation always starts from the same phase.
+//  ROOT CAUSE OF PREVIOUS BUG:
+//    "Unlit/Color" ignores the alpha channel entirely.
+//    No matter what alpha you set, the quad renders 100% opaque.
+//    This version uses "Unlit/Transparent" which DOES honour alpha.
+//    Additionally, the pulse now animates both ALPHA and RGB
+//    BRIGHTNESS simultaneously, so the throb is clearly visible.
+//
+//  States:
+//    Default       — grey, static, semi-transparent
+//    Valid         — green, alpha + brightness pulse
+//    PoorPlacement — orange, alpha + brightness pulse
+//    Occupied      — faded red, static (no pulse)
+//    Hidden        — quad fully deactivated
+//
+//  URP / HDRP note:
+//    Change Shader.Find("Unlit/Transparent") to
+//    Shader.Find("Universal Render Pipeline/Unlit") and make sure
+//    Surface Type is set to Transparent in the material, OR pass
+//    your own transparent material into the shaderOverride field.
 // ─────────────────────────────────────────────────────────────────
 
 public enum OverlayState
 {
-    Default,        // grey  — game start / no device selected
-    Valid,          // green — device can be placed here
-    PoorPlacement,  // orange — allowed but happiness penalty
-    Occupied,       // red   — tile already has a device
-    Hidden          // fully transparent — device not allowed
+    Default,
+    Valid,
+    PoorPlacement,
+    Occupied,
+    Hidden
 }
 
 [RequireComponent(typeof(BoxCollider))]
 public class TileOverlay : MonoBehaviour
 {
-    // ── Position ──────────────────────────────────────────────────
+    // ── Colours (Inspector colour pickers) ────────────────────────
+    [Header("State Colours")]
+    public Color colourDefault = new Color(0.55f, 0.55f, 0.55f, 1f);
+    public Color colourValid = new Color(0.10f, 0.90f, 0.40f, 1f);
+    public Color colourPoor = new Color(1.00f, 0.60f, 0.00f, 1f);
+    public Color colourOccupied = new Color(0.85f, 0.15f, 0.15f, 1f);
+
+    // ── Pulse settings ────────────────────────────────────────────
+    [Header("Pulse  (Valid & PoorPlacement only)")]
+    [Tooltip("Cycles per second — higher = faster breathing")]
+    public float pulseSpeed = 2f;
+
+    [Tooltip("Alpha oscillates between X (dim) and Y (bright) — range 0 to 1")]
+    public Vector2 pulseAlphaRange = new Vector2(0.15f, 0.80f);
+
+    [Tooltip("RGB multiplier oscillates between X (dim) and Y (bright). " +
+             "Values > 1 make the colour brighter than its base colour.")]
+    public Vector2 pulseBrightRange = new Vector2(0.5f, 1.5f);
+
+    // ── Static alphas ─────────────────────────────────────────────
+    [Header("Static State Alphas")]
+    [Range(0f, 1f)] public float defaultAlpha = 0.30f;
+    [Range(0f, 1f)] public float occupiedAlpha = 0.25f;
+
+    // ── Quad ──────────────────────────────────────────────────────
     [Header("Quad Position")]
-    [Tooltip("How far above the tile pivot the quad floats")]
+    [Tooltip("Metres above the tile pivot. Increase if quad clips into road.")]
     public float yOffset = 0.06f;
 
-    // ── Shared Pulse Parameters ───────────────────────────────────
-    [Header("Pulse (shared by all states)")]
-    [Tooltip("Pulse speed in radians per second — higher = faster breathing")]
-    public float pulseSpeed = 3f;
-
-    [Tooltip("Alpha oscillates between x (dim) and y (bright) each cycle")]
-    public Vector2 pulseAlphaRange = new Vector2(0.20f, 0.55f);
-
-    // ── State Colours (Inspector colour pickers) ──────────────────
-    [Header("State Colours")]
-    [Tooltip("Default state — shown at game start when no device is selected")]
-    [SerializeField] private Color colDefault = new Color(1.00f, 0.60f, 0.00f, 1f);
-
-    [Tooltip("Valid state — device can be placed on this tile")]
-    [SerializeField] private Color colValid = new Color(0.10f, 0.90f, 0.40f, 1f);
-
-    [Tooltip("Poor placement — device allowed but will cause a happiness penalty")]
-    [SerializeField] private Color colPoorPlacement = new Color(1.00f, 0.60f, 0.00f, 1f);
-
-    [Tooltip("Occupied — tile already contains a device, cannot place another")]
-    [SerializeField] private Color colOccupied = new Color(0.85f, 0.15f, 0.15f, 1f);
+    [Tooltip("Optional: assign your own transparent shader/material here. " +
+             "Leave empty to use the auto-generated Unlit/Transparent material.")]
+    public Material shaderOverride;
 
     // ── Runtime ───────────────────────────────────────────────────
     private OverlayState _state = OverlayState.Default;
@@ -61,6 +75,9 @@ public class TileOverlay : MonoBehaviour
     private MeshRenderer _renderer;
     private Material _mat;
     private float _pulseTimer = 0f;
+    private Color _baseColour;   // base RGB for the currently pulsing state
+
+    public OverlayState CurrentState => _state;
 
     // ─────────────────────────────────────────────────────────────
     //  UNITY LIFECYCLE
@@ -74,30 +91,41 @@ public class TileOverlay : MonoBehaviour
 
     private void Update()
     {
-        // Hidden state — quad is off, nothing to do
-        if (_state == OverlayState.Hidden || _mat == null) return;
+        if (_mat == null) return;
 
-        // Advance shared timer and compute alpha
+        bool shouldPulse = (_state == OverlayState.Valid ||
+                            _state == OverlayState.PoorPlacement);
+        if (!shouldPulse) return;
+
         _pulseTimer += Time.deltaTime * pulseSpeed;
-        float t = (Mathf.Sin(_pulseTimer) + 1f) * 0.5f;   // 0 → 1
-        float alpha = Mathf.Lerp(pulseAlphaRange.x, pulseAlphaRange.y, t);
 
-        Color c = _mat.color;
+        // Smooth sine wave: t goes 0 → 1 → 0 → …
+        float t = (Mathf.Sin(_pulseTimer * Mathf.PI * 2f) + 1f) * 0.5f;
+
+        float alpha = Mathf.Lerp(pulseAlphaRange.x, pulseAlphaRange.y, t);
+        float bright = Mathf.Lerp(pulseBrightRange.x, pulseBrightRange.y, t);
+
+        // Scale RGB by brightness, set alpha independently
+        Color c = _baseColour * bright;
         c.a = alpha;
         _mat.color = c;
     }
 
     private void OnDestroy()
     {
-        if (_mat != null) Destroy(_mat);
-        if (_quadGO != null) Destroy(_quadGO);
+        // Only destroy the material we created ourselves
+        if (shaderOverride == null && _mat != null)
+            Destroy(_mat);
+
+        if (_quadGO != null)
+            Destroy(_quadGO);
     }
 
     // ─────────────────────────────────────────────────────────────
     //  PUBLIC API
     // ─────────────────────────────────────────────────────────────
 
-    /// <summary>Switch the overlay to a new visual state.</summary>
+    /// <summary>Switch this tile's overlay to a new visual state.</summary>
     public void SetState(OverlayState newState)
     {
         if (_state == newState) return;
@@ -105,87 +133,117 @@ public class TileOverlay : MonoBehaviour
         ApplyState(newState);
     }
 
-    public OverlayState CurrentState => _state;
-
     // ─────────────────────────────────────────────────────────────
-    //  INTERNAL — BUILD
+    //  QUAD CONSTRUCTION
     // ─────────────────────────────────────────────────────────────
 
     private void BuildQuad()
     {
         BoxCollider col = GetComponent<BoxCollider>();
-        Vector3 colSize = col != null ? col.size : Vector3.one;
-        Vector3 colCtr = col != null ? col.center : Vector3.zero;
+        Vector3 cSize = col != null ? col.size : Vector3.one;
+        Vector3 cCentre = col != null ? col.center : Vector3.zero;
 
+        // Create primitive and parent it
         _quadGO = GameObject.CreatePrimitive(PrimitiveType.Quad);
         _quadGO.name = "TileOverlayQuad";
         _quadGO.transform.SetParent(transform, false);
 
-        // Quad default faces +Z — rotate to face +Y (flat on ground)
+        // Rotate flat: Quad default faces +Z, we need it facing +Y (floor)
         _quadGO.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-        _quadGO.transform.localPosition = new Vector3(colCtr.x, yOffset, colCtr.z);
+        _quadGO.transform.localPosition = new Vector3(cCentre.x, yOffset, cCentre.z);
+        _quadGO.transform.localScale = new Vector3(cSize.x, cSize.z, 1f);
 
-        // Match collider XZ footprint
-        _quadGO.transform.localScale = new Vector3(colSize.x, colSize.z, 1f);
-
-        // Remove auto-added MeshCollider
+        // Remove the auto-added MeshCollider so it never blocks raycasts
         MeshCollider mc = _quadGO.GetComponent<MeshCollider>();
         if (mc != null) Destroy(mc);
 
-        // Runtime Unlit/Color material with alpha blending
         _renderer = _quadGO.GetComponent<MeshRenderer>();
-        _mat = new Material(Shader.Find("Unlit/Color"));
-        _mat.renderQueue = 3000;
+        _renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        _renderer.receiveShadows = false;
 
+        // ── Material setup ────────────────────────────────────────
+        if (shaderOverride != null)
+        {
+            // User provided their own material — instance it so we
+            // can change colour without affecting other objects.
+            _mat = new Material(shaderOverride);
+        }
+        else
+        {
+            // ── KEY FIX: "Unlit/Transparent" reads alpha; "Unlit/Color" does NOT ──
+            Shader shader = Shader.Find("Unlit/Transparent");
+
+            if (shader == null)
+            {
+                Debug.LogError(
+                    "[TileOverlay] 'Unlit/Transparent' shader not found.\n" +
+                    "• Built-in RP: make sure 'Always Included Shaders' in\n" +
+                    "  Graphics Settings contains Unlit/Transparent.\n" +
+                    "• URP: assign a transparent URP/Unlit material to the\n" +
+                    "  'Shader Override' field on this component instead.");
+
+                // Graceful fallback — at least something renders
+                shader = Shader.Find("Unlit/Color");
+            }
+
+            _mat = new Material(shader);
+        }
+
+        // Force transparent blending regardless of shader defaults
         _mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
         _mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
         _mat.SetInt("_ZWrite", 0);
-        _mat.DisableKeyword("_ALPHATEST_ON");
-        _mat.EnableKeyword("_ALPHABLEND_ON");
-        _mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+        _mat.renderQueue = 3000;   // Transparent queue
 
         _renderer.material = _mat;
-        _renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-        _renderer.receiveShadows = false;
     }
 
     // ─────────────────────────────────────────────────────────────
-    //  INTERNAL — STATE APPLICATION
+    //  STATE APPLICATION
     // ─────────────────────────────────────────────────────────────
 
     private void ApplyState(OverlayState state)
     {
         if (_mat == null || _quadGO == null) return;
 
-        // Reset pulse phase so every new state starts from the same
-        // point in the cycle — avoids a sudden alpha jump mid-pulse.
         _pulseTimer = 0f;
 
-        if (state == OverlayState.Hidden)
+        switch (state)
         {
-            _quadGO.SetActive(false);
-            return;
+            case OverlayState.Default:
+                _quadGO.SetActive(true);
+                _baseColour = colourDefault;
+                WriteColour(colourDefault, defaultAlpha);
+                break;
+
+            case OverlayState.Valid:
+                _quadGO.SetActive(true);
+                _baseColour = colourValid;
+                WriteColour(colourValid, pulseAlphaRange.x);  // pulse takes over in Update
+                break;
+
+            case OverlayState.PoorPlacement:
+                _quadGO.SetActive(true);
+                _baseColour = colourPoor;
+                WriteColour(colourPoor, pulseAlphaRange.x);
+                break;
+
+            case OverlayState.Occupied:
+                _quadGO.SetActive(true);
+                _baseColour = colourOccupied;
+                WriteColour(colourOccupied, occupiedAlpha);
+                break;
+
+            case OverlayState.Hidden:
+                _quadGO.SetActive(false);
+                break;
         }
-
-        _quadGO.SetActive(true);
-
-        // Set the RGB from the matching colour field; alpha starts at
-        // pulseAlphaRange.x and Update() will animate it from there.
-        Color baseColor = StateToColor(state);
-        baseColor.a = pulseAlphaRange.x;
-        _mat.color = baseColor;
     }
 
-    /// <summary>Maps a state to its Inspector-editable colour.</summary>
-    private Color StateToColor(OverlayState state)
+    private void WriteColour(Color baseCol, float alpha)
     {
-        return state switch
-        {
-            OverlayState.Default => colDefault,
-            OverlayState.Valid => colValid,
-            OverlayState.PoorPlacement => colPoorPlacement,
-            OverlayState.Occupied => colOccupied,
-            _ => colDefault
-        };
+        Color c = baseCol;
+        c.a = alpha;
+        _mat.color = c;
     }
 }
