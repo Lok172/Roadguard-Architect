@@ -267,9 +267,6 @@ public class GameManager : MonoBehaviour
             float tax = CalculateDailyTaxRevenue();
             ModifyCapital(tax);
 
-            Debug.Log($"[GameManager] Day {_daysPassed}/{totalDays}: " +
-                      $"+RM{tax:F0} tax | Capital=RM{_capital:F0} " +
-                      $"Happiness={_happiness:F0} AccidentRate={_accidentRate}");
 
             if (_daysPassed >= totalDays)
                 TriggerGameOver();

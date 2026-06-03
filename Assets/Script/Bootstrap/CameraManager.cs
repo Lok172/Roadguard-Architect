@@ -253,8 +253,6 @@ public class CameraManager : MonoBehaviour
     {
         cameraTransform.position = cfg.startPosition;
         cameraTransform.rotation = Quaternion.Euler(cfg.startRotation);
-
-        Debug.Log("[CameraManager] Camera reset to default view.");
     }
 
     private void SetCameraZoom(Camera cam, float targetValue, SceneConfig cfg)
@@ -290,9 +288,23 @@ public class CameraManager : MonoBehaviour
     ///   If dragZoomThreshold > 0, drag is only active when the current
     ///   FOV/orthoSize is below the threshold (i.e. player is zoomed in).
     ///   Set dragZoomThreshold = 0 to always allow drag.
+    ///
+    /// PLACEMENT GUARD (BUG FIX [4]):
+    ///   If PlacementManager is dragging a device, skip camera drag entirely.
+    ///   Without this guard, pressing a BottomHUD icon triggered BOTH a
+    ///   placement drag AND a camera drag simultaneously.
     /// </summary>
     private void HandleMouseDrag(SceneConfig cfg)
     {
+        // ── Placement guard: don't pan camera while placing a device ──
+        if (PlacementManager.Instance != null && PlacementManager.Instance.IsDragging)
+        {
+            // Cancel any in-progress camera drag so there's no snap when
+            // the player releases the placement and tries to drag the camera.
+            _isDragging = false;
+            return;
+        }
+
         // ── Check if zoom level allows drag ───────────────────────
         bool zoomedInEnough = true;
         if (cfg.enableZoom && cfg.dragZoomThreshold > 0f)

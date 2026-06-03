@@ -4,25 +4,49 @@ using UnityEngine.SceneManagement;
 using UnityEngine.InputSystem;
 
 // ─────────────────────────────────────────────────────────────────
+//  PlacementProxy
+//
+//  WHY THIS EXISTS INSTEAD OF ClickProxy:
+//    ClickProxy uses IPointerClickHandler → OnPointerClick, which
+//    Unity UI only fires when the pointer is PRESSED and RELEASED on
+//    the same element without moving.  The instant you start dragging
+//    away from the icon, Unity cancels the click → BeginDrag is never
+//    called → complete silence.
+//
+//    This proxy uses IPointerDownHandler → OnPointerDown, which fires
+//    the moment the button is pressed, regardless of subsequent
+//    pointer movement.  That is exactly what drag-and-drop needs.
+//
+//  Navigation.cs keeps its own ClickProxy (OnPointerClick) for
+//  scene-transition buttons — click-to-navigate is intentional.
+// ─────────────────────────────────────────────────────────────────
+
+public class PlacementProxy : MonoBehaviour, IPointerDownHandler
+{
+    public System.Action onDown;
+    public void OnPointerDown(PointerEventData _) => onDown?.Invoke();
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  PlacementManager
 //
 //  Handles click-and-drag placement from the UI panel onto the
 //  3D city scene — across scenes using additive loading.
 //
-//  HOW DRAG WORKS:
-//    1. Player clicks a device icon in the UI (UIScene).
+//  DRAG FLOW:
+//    1. Player presses (down) a device icon in BottomHUD (UIScene).
 //    2. A ghost 3D prefab follows the mouse in world space.
 //    3. Raycast hits the RoadTile collider layer in CityScene.
 //    4. On mouse-up over a valid tile → PlaceDevice via GameManager.
-//    5. On mouse-up over nothing → cancel, destroy ghost.
+//    5. On mouse-up over nothing, or right-click/Escape → cancel.
 //
-//  OVERLAY INTEGRATION (new):
-//    • BeginDrag    → all tiles switch from Default to their
-//                     per-device state (Valid / PoorPlacement /
-//                     Occupied / Hidden).
-//    • Hover change → previously hovered tile reverts to its
-//                     device state; newly hovered tile stays the
-//                     same (state already reflects validity).
-//    • Confirm/Cancel → all tiles reset to Default (grey).
+//  BUGS FIXED vs. original:
+//    [1] ClickProxy → PlacementProxy (OnPointerDown not OnPointerClick).
+//    [2] "CityScene" hardcoded in ConfirmPlacement → use citySceneName.
+//    [3] IsPointerOverGameObject() blocks tile raycast during drag →
+//        skipped while _isDragging is true; use RaycastAll instead.
+//    [4] CameraManager also drags on left-click → expose IsDragging
+//        so CameraManager can skip camera drag during placement.
 // ─────────────────────────────────────────────────────────────────
 
 public class PlacementManager : MonoBehaviour
@@ -34,13 +58,18 @@ public class PlacementManager : MonoBehaviour
     [System.Serializable]
     public class DeviceClickTarget
     {
-        [Tooltip("Any clickable object")]
+        [Tooltip("The HUD button root — StopSign / SpeedBump / TrafficLight GO")]
         public GameObject clickableObject;
         public TrafficDeviceType deviceType;
     }
 
     [Header("Universal Click Targets")]
     public DeviceClickTarget[] clickTargets;
+
+    [Header("City Scene")]
+    [Tooltip("The additively-loaded 3D city scene (must match the scene name EXACTLY)")]
+    [SceneName]
+    public string citySceneName = "City";
 
     // ── Inspector Config ──────────────────────
     [Header("Device Prefabs (3D world objects)")]
@@ -49,29 +78,39 @@ public class PlacementManager : MonoBehaviour
     public GameObject trafficLightPrefab;
 
     [Header("Ghost Material")]
-    [Tooltip("Semi-transparent material applied to the ghost preview")]
+    [Tooltip("Semi-transparent material applied to the ghost preview. " +
+             "Leave null to tint the original materials instead.")]
     public Material ghostMaterial;
 
     [Header("Raycast")]
-    [Tooltip("Layer mask for RoadTile colliders (set to your 'RoadTile' layer)")]
+    [Tooltip("Layer mask for RoadTile colliders — must be the 'RoadTile' layer")]
     public LayerMask roadTileLayer;
 
-    [Tooltip("Camera used to cast rays into the city scene")]
+    [Tooltip("Camera rendering the city. MUST be assigned in the Inspector. " +
+             "Drag the camera from the Environment/City scene here. " +
+             "Camera.main fallback is unreliable in multi-scene setups.")]
     public Camera cityCamera;
 
     [Header("Ghost Height Offset")]
-    [Tooltip("How high above the tile surface the ghost floats")]
+    [Tooltip("How high above the tile pivot the ghost floats (metres)")]
     public float ghostYOffset = 0.1f;
 
-    // ── Runtime State ─────────────────────────
+    // ── Runtime ───────────────────────────────
     private TrafficDeviceType _selectedDevice = TrafficDeviceType.None;
     private GameObject _ghostObject = null;
     private bool _isDragging = false;
     private RoadTile _hoveredTile = null;
 
-    // ── Input System ──────────────────────────
+    /// <summary>
+    /// True while the player is dragging a device.
+    /// CameraManager reads this to suppress camera-drag simultaneously.
+    /// </summary>
+    public bool IsDragging => _isDragging;
+
+    // ── Input (new Input System) ──────────────
     private Vector2 MousePosition => Mouse.current.position.ReadValue();
     private bool LeftButtonUp => Mouse.current.leftButton.wasReleasedThisFrame;
+    private bool RightButtonDown => Mouse.current.rightButton.wasPressedThisFrame;
 
     // ─────────────────────────────────────────
     //  UNITY LIFECYCLE
@@ -86,7 +125,16 @@ public class PlacementManager : MonoBehaviour
     private void Start()
     {
         if (cityCamera == null)
+        {
             cityCamera = Camera.main;
+            if (cityCamera == null)
+                Debug.LogError("[PlacementManager] cityCamera is null and Camera.main was " +
+                               "not found.\nDrag the city camera into the Inspector field!");
+            else
+                Debug.LogWarning("[PlacementManager] cityCamera was not assigned — fell back " +
+                                 "to Camera.main. In multi-scene setups this is unreliable. " +
+                                 "Assign it explicitly in the Inspector.");
+        }
 
         SetupClickTargets();
     }
@@ -96,55 +144,91 @@ public class PlacementManager : MonoBehaviour
         if (!_isDragging) return;
         if (Mouse.current == null) return;
 
-        UpdateHoverOverlay();   // must come before MoveGhostToMouse so
-        MoveGhostToMouse();     // ghost position is set after overlay
+        // Cancel on right-click or Escape
+        if (RightButtonDown ||
+            (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame))
+        {
+            CancelPlacement();
+            return;
+        }
+
+        UpdateHoverOverlay();
+        MoveGhostToMouse();
 
         if (LeftButtonUp)
             ConfirmPlacement();
     }
 
-    // ── Universal Clickable Objects ───────────────────────────────
+    // ─────────────────────────────────────────
+    //  CLICK TARGET SETUP
+    // ─────────────────────────────────────────
+
+    // BUG FIX [1]: Use PlacementProxy (IPointerDownHandler) so BeginDrag
+    // fires the instant the mouse button is pressed, not on release.
+    // ClickProxy (IPointerClickHandler) cancels as soon as the pointer
+    // moves — a drag never starts.
 
     private void SetupClickTargets()
     {
         foreach (DeviceClickTarget data in clickTargets)
         {
-            if (data.clickableObject == null) continue;
+            if (data.clickableObject == null)
+            {
+                Debug.LogWarning("[PlacementManager] A clickTarget has no clickableObject assigned.");
+                continue;
+            }
 
-            ClickProxy proxy = data.clickableObject.GetComponent<ClickProxy>();
+            PlacementProxy proxy = data.clickableObject.GetComponent<PlacementProxy>();
             if (proxy == null)
-                proxy = data.clickableObject.AddComponent<ClickProxy>();
+                proxy = data.clickableObject.AddComponent<PlacementProxy>();
 
             TrafficDeviceType type = data.deviceType;
-            proxy.Setup(() => BeginDrag(type));
+            proxy.onDown = () => BeginDrag(type);
         }
+
+        Debug.Log($"[PlacementManager] Registered {clickTargets.Length} placement targets.");
     }
 
     // ─────────────────────────────────────────
-    //  CALLED BY UI BUTTONS
+    //  BEGIN DRAG  (called by PlacementProxy)
     // ─────────────────────────────────────────
 
     public void BeginDrag(TrafficDeviceType deviceType)
     {
-        if (!GameManager.Instance.GameRunning) return;
+        // Guard: GameManager must exist and game must be running
+        if (GameManager.Instance == null)
+        {
+            Debug.LogError("[PlacementManager] GameManager.Instance is null — " +
+                           "is GameManager in the scene?");
+            return;
+        }
 
+        if (!GameManager.Instance.GameRunning)
+        {
+            Debug.Log("[PlacementManager] Game is not running — placement blocked.");
+            return;
+        }
+
+        // Guard: can the player afford this device?
         float cost = DeviceData.GetCost(deviceType);
         if (GameManager.Instance.Capital < cost)
         {
-            Debug.Log($"[PlacementManager] Cannot afford {deviceType} (RM{cost})");
+            Debug.Log($"[PlacementManager] Cannot afford {deviceType} " +
+                      $"(need RM{cost}, have RM{GameManager.Instance.Capital:F0})");
             return;
         }
 
         _selectedDevice = deviceType;
         _isDragging = true;
 
-        // ── Overlay: paint every registered tile with its validity
-        //    state for the chosen device.
         ShowPlacementOverlays(deviceType);
-
         SpawnGhost(deviceType);
+
+        Debug.Log($"[PlacementManager] Drag started: {deviceType}  cost=RM{cost}");
     }
 
+    // Legacy direct-wiring helpers (kept for backward compat with
+    // any Inspector-wired OnClick() events you may have set up)
     public void BeginDragStopSign() => BeginDrag(TrafficDeviceType.StopSign);
     public void BeginDragSpeedBump() => BeginDrag(TrafficDeviceType.SpeedBump);
     public void BeginDragTrafficLight() => BeginDrag(TrafficDeviceType.TrafficLight);
@@ -160,7 +244,8 @@ public class PlacementManager : MonoBehaviour
         GameObject prefab = GetPrefab(deviceType);
         if (prefab == null)
         {
-            Debug.LogWarning($"[PlacementManager] No prefab assigned for {deviceType}");
+            Debug.LogWarning($"[PlacementManager] No prefab assigned for {deviceType}. " +
+                             "Check the 'Device Prefabs' section in the Inspector.");
             return;
         }
 
@@ -173,17 +258,22 @@ public class PlacementManager : MonoBehaviour
                 r.material = ghostMaterial;
         }
 
+        // Disable all colliders so the ghost never interferes with raycasts
         foreach (Collider c in _ghostObject.GetComponentsInChildren<Collider>())
             c.enabled = false;
 
-        Scene cityScene = SceneManager.GetSceneByName("City");
+        // Move ghost into the city scene so it is lit/culled correctly
+        Scene cityScene = SceneManager.GetSceneByName(citySceneName);
         if (cityScene.IsValid())
             SceneManager.MoveGameObjectToScene(_ghostObject, cityScene);
+        else
+            Debug.LogWarning($"[PlacementManager] City scene '{citySceneName}' is not loaded. " +
+                             "Ghost will live in the active scene instead.");
     }
 
     private void MoveGhostToMouse()
     {
-        if (_ghostObject == null) return;
+        if (_ghostObject == null || cityCamera == null) return;
 
         RoadTile hit = RaycastToTile(out Vector3 hitPoint);
 
@@ -198,6 +288,7 @@ public class PlacementManager : MonoBehaviour
         }
         else
         {
+            // Ghost floats on the ground plane when not over a tile
             Ray ray = cityCamera.ScreenPointToRay(MousePosition);
             Plane groundPlane = new Plane(Vector3.up, Vector3.zero);
             if (groundPlane.Raycast(ray, out float dist))
@@ -228,22 +319,9 @@ public class PlacementManager : MonoBehaviour
     //  OVERLAY — HOVER TRACKING
     // ─────────────────────────────────────────
 
-    /// <summary>
-    /// Called every Update() while dragging.
-    /// Keeps _hoveredTile in sync and refreshes the overlay on tile
-    /// transitions so the hovered tile can pulse brighter if needed.
-    /// (Currently the overlay state is the same whether hovered or not;
-    /// you can extend this to a brighter pulse for the hovered tile.)
-    /// </summary>
     private void UpdateHoverOverlay()
     {
         RoadTile newHover = RaycastToTile(out _);
-
-        if (newHover == _hoveredTile) return;   // no change, skip
-
-        // Tile the cursor just left — overlay already correct, no change needed.
-        // Tile the cursor just entered — also already correct.
-        // We just keep _hoveredTile updated for ConfirmPlacement.
         _hoveredTile = newHover;
     }
 
@@ -251,20 +329,11 @@ public class PlacementManager : MonoBehaviour
     //  OVERLAY — ALL-TILE BROADCAST
     // ─────────────────────────────────────────
 
-    /// <summary>
-    /// Sets every registered tile's overlay to reflect its validity
-    /// for <paramref name="device"/>. Call on BeginDrag.
-    /// </summary>
     private void ShowPlacementOverlays(TrafficDeviceType device)
     {
         if (GameManager.Instance == null) return;
 
-        // GameManager exposes _allTiles via the tile registry; we access
-        // it through the public RegisterTile / UnregisterTile pattern —
-        // but we need to iterate. We use FindObjectsByType as a simple
-        // cross-scene gather (only called once per drag begin).
         RoadTile[] allTiles = FindObjectsByType<RoadTile>(FindObjectsSortMode.None);
-
         foreach (RoadTile tile in allTiles)
         {
             if (tile.Overlay == null) continue;
@@ -272,24 +341,15 @@ public class PlacementManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Resets every registered tile's overlay back to Default (grey).
-    /// Call on ConfirmPlacement / CancelPlacement.
-    /// </summary>
     private void ResetAllOverlays()
     {
         RoadTile[] allTiles = FindObjectsByType<RoadTile>(FindObjectsSortMode.None);
-
         foreach (RoadTile tile in allTiles)
         {
             if (tile.Overlay == null) continue;
-
-            // Occupied tiles keep their Occupied (red) state so the
-            // player can see which tiles are already filled at a glance.
-            if (tile.isOccupied)
-                tile.Overlay.SetState(OverlayState.Occupied);
-            else
-                tile.Overlay.SetState(OverlayState.Default);
+            tile.Overlay.SetState(tile.isOccupied
+                ? OverlayState.Occupied
+                : OverlayState.Default);
         }
     }
 
@@ -303,16 +363,25 @@ public class PlacementManager : MonoBehaviour
 
         if (_hoveredTile == null)
         {
+            Debug.Log("[PlacementManager] Released over no tile — cancelling.");
             CancelPlacement();
             return;
         }
 
         GameObject prefab = GetPrefab(_selectedDevice);
-        if (prefab == null) { CancelPlacement(); return; }
+        if (prefab == null)
+        {
+            CancelPlacement();
+            return;
+        }
 
         GameObject deviceObj = Instantiate(prefab);
 
-        Scene cityScene = SceneManager.GetSceneByName("CityScene");
+        // BUG FIX [2]: Original code had "CityScene" hardcoded here.
+        // The actual scene is named by citySceneName ("City").
+        // "CityScene" never matched → device lived in the wrong scene,
+        // potentially causing render / physics quirks or destroy leaks.
+        Scene cityScene = SceneManager.GetSceneByName(citySceneName);
         if (cityScene.IsValid())
             SceneManager.MoveGameObjectToScene(deviceObj, cityScene);
 
@@ -326,16 +395,21 @@ public class PlacementManager : MonoBehaviour
                 break;
 
             case PlacementResult.PoorPlacement:
-                Debug.Log("[PlacementManager] Poor placement! Happiness penalty applied.");
+                Debug.Log("[PlacementManager] Poor placement — happiness penalty applied.");
                 break;
 
             case PlacementResult.AlreadyOccupied:
-                Debug.Log("[PlacementManager] Tile already has a device.");
+                Debug.Log("[PlacementManager] Tile already occupied.");
                 Destroy(deviceObj);
                 break;
 
             case PlacementResult.InsufficientFunds:
-                Debug.Log("[PlacementManager] Not enough capital.");
+                Debug.Log("[PlacementManager] Insufficient capital.");
+                Destroy(deviceObj);
+                break;
+
+            case PlacementResult.DeviceNotAllowed:
+                Debug.Log("[PlacementManager] Device not allowed on this tile type.");
                 Destroy(deviceObj);
                 break;
 
@@ -347,8 +421,6 @@ public class PlacementManager : MonoBehaviour
         DestroyGhost();
         _selectedDevice = TrafficDeviceType.None;
         _hoveredTile = null;
-
-        // ── Overlay: reset all tiles (occupied tiles stay red, rest go grey)
         ResetAllOverlays();
     }
 
@@ -358,20 +430,34 @@ public class PlacementManager : MonoBehaviour
         _selectedDevice = TrafficDeviceType.None;
         _hoveredTile = null;
         DestroyGhost();
-
-        // ── Overlay: reset all tiles
         ResetAllOverlays();
+        Debug.Log("[PlacementManager] Placement cancelled.");
     }
 
     // ─────────────────────────────────────────
     //  RAYCAST INTO CITY SCENE
     // ─────────────────────────────────────────
 
+    // BUG FIX [3]: Original code called IsPointerOverGameObject() every
+    // frame during drag.  Two problems:
+    //   a) With InputSystemUIInputModule, IsPointerOverGameObject() without
+    //      a pointer ID returns inconsistent results — it may always be
+    //      true, permanently blocking tile detection.
+    //   b) Even when it works, it returns true for ANY UI Graphic with
+    //      Raycast Target enabled.  During drag, the cursor moves over
+    //      the game world, but transparent canvas elements may still block.
+    //
+    // FIX: skip the UI-over check while actively dragging.  The
+    // roadTileLayer mask already ensures we only hit road colliders.
+
     private RoadTile RaycastToTile(out Vector3 hitPoint)
     {
         hitPoint = Vector3.zero;
+        if (cityCamera == null) return null;
 
-        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+        // Only block on UI when NOT dragging (e.g., if you ever call this
+        // outside of the drag loop, respect the UI hierarchy).
+        if (!_isDragging && IsPointerOverUI())
             return null;
 
         Ray ray = cityCamera.ScreenPointToRay(MousePosition);
@@ -385,18 +471,32 @@ public class PlacementManager : MonoBehaviour
         return null;
     }
 
+    /// <summary>
+    /// Reliable UI-over check for the new Input System.
+    /// Uses GraphicRaycaster-based RaycastAll so the pointer ID doesn't matter.
+    /// </summary>
+    private bool IsPointerOverUI()
+    {
+        if (EventSystem.current == null) return false;
+
+        var pointerData = new PointerEventData(EventSystem.current)
+        {
+            position = MousePosition
+        };
+        var results = new System.Collections.Generic.List<RaycastResult>();
+        EventSystem.current.RaycastAll(pointerData, results);
+        return results.Count > 0;
+    }
+
     // ─────────────────────────────────────────
     //  HELPERS
     // ─────────────────────────────────────────
 
-    private GameObject GetPrefab(TrafficDeviceType type)
+    private GameObject GetPrefab(TrafficDeviceType type) => type switch
     {
-        return type switch
-        {
-            TrafficDeviceType.StopSign => stopSignPrefab,
-            TrafficDeviceType.SpeedBump => speedBumpPrefab,
-            TrafficDeviceType.TrafficLight => trafficLightPrefab,
-            _ => null
-        };
-    }
+        TrafficDeviceType.StopSign => stopSignPrefab,
+        TrafficDeviceType.SpeedBump => speedBumpPrefab,
+        TrafficDeviceType.TrafficLight => trafficLightPrefab,
+        _ => null
+    };
 }

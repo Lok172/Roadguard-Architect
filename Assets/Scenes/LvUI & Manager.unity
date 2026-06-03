@@ -128,7 +128,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 66340465}
-  - component: {fileID: 66340466}
   m_Layer: 5
   m_Name: CalenderManager
   m_TagString: Untagged
@@ -155,22 +154,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &66340466
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 66340464}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f70765f1e1074074ea7f9b3a0c19f2de, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GameCalendar
-  secondsPerDay: 2
-  totalDays: 90
-  dateText: {fileID: 0}
-  dayCounterText: {fileID: 0}
 --- !u!1001 &84673279
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -789,7 +772,8 @@ MonoBehaviour:
     deviceType: 3
   - clickableObject: {fileID: 694289043}
     deviceType: 2
-  stopSignPrefab: {fileID: 1794380163}
+  citySceneName: City
+  stopSignPrefab: {fileID: 2728864140495543427, guid: ef95e020517139d40b597642fa5b67c5, type: 3}
   speedBumpPrefab: {fileID: 4215604704346448080, guid: bc2468208af9b6041bbe70a6998e8edc, type: 3}
   trafficLightPrefab: {fileID: 1341625856912566824, guid: d1f818701eb567e42ad84a827c056006, type: 3}
   ghostMaterial: {fileID: 0}
