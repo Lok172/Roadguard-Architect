@@ -12,7 +12,7 @@ public enum TileType
     Curve,
     TJunction,
     Intersection,
-    Residential     // Single-lane, narrow
+    Residential
 }
 
 public enum ZoneType
@@ -26,18 +26,49 @@ public enum ZoneType
 public enum TrafficDeviceType
 {
     None,
-    StopSign,       // RM 250  — mild accident reduction, good for residential
-    TrafficLight,   // RM 2500 — strong reduction, but causes jam if residential
-    SpeedBump       // RM 350  — moderate reduction, best for residential
+    StopSign,
+    TrafficLight,
+    SpeedBump
 }
 
 public enum PlacementResult
 {
-    Success,            // Device placed correctly
-    AlreadyOccupied,    // Tile already has a device
-    DeviceNotAllowed,   // Device not in allowedDevices list
-    InsufficientFunds,  // Player cannot afford the device
-    PoorPlacement       // Device allowed but wrong zone — placed with happiness penalty
+    Success,
+    AlreadyOccupied,
+    DeviceNotAllowed,
+    InsufficientFunds,
+    PoorPlacement
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  TILE CORNERS
+//  Local-space corners in the tile's own axes.
+//  +Z = road forward, +X = road right (driver's POV on +Z lane).
+//
+//  Layout (looking down):
+//
+//        +Z (road forward)
+//          ▲
+//   NW ────┼──── NE
+//    │     │      │
+//   ─┼─────●─────┼─→ +X
+//    │     │      │
+//   SW ────┼──── SE
+//          ▼
+//
+//  Center is reserved for SpeedBumps (sits flat in the middle of
+//  the road, perpendicular to traffic). The 4 corners are for
+//  StopSigns and TrafficLights.
+// ─────────────────────────────────────────────────────────────────
+
+public enum TileCorner
+{
+    None,
+    NorthWest,  // -X, +Z   (correct in left-driving for +Z approach)
+    NorthEast,  // +X, +Z   (correct in right-driving for +Z approach)
+    SouthEast,  // +X, -Z   (correct in left-driving for -Z approach)
+    SouthWest,  // -X, -Z   (correct in right-driving for -Z approach)
+    Center      // Reserved for SpeedBumps
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -106,6 +137,22 @@ public static class DeviceData
 }
 
 // ─────────────────────────────────────────────────────────────────
+//  PLACED SLOT  — one device occupying one corner (or the center)
+// ─────────────────────────────────────────────────────────────────
+
+[System.Serializable]
+public class PlacedSlot
+{
+    public TileCorner corner;
+    public TrafficDeviceType deviceType;
+    public GameObject deviceObject;
+    public bool wasWrongCorner;
+    public bool wasPoorZone;
+    public bool wasOverLimit;
+    public float happinessApplied;   // signed value actually applied (for accounting / undo)
+}
+
+// ─────────────────────────────────────────────────────────────────
 //  ROAD TILE
 // ─────────────────────────────────────────────────────────────────
 
@@ -127,33 +174,77 @@ public class RoadTile : MonoBehaviour
 
     [HideInInspector] public int currentAccidentContribution;
 
-    // ── Device Placement ──────────────────────
+    // ── Multi-Device Config ───────────────────
+    [Header("Multi-Device Config")]
+    [Tooltip("Tick if this tile is an intersection. Intersections are exempt from the >3 devices penalty.")]
+    public bool isIntersection = false;
+
+    [Tooltip("Number of devices that can be placed before the over-limit happiness penalty kicks in. " +
+             "Ignored when isIntersection is true.")]
+    [Range(1, 4)]
+    public int normalDeviceLimit = 3;
+
+    [Tooltip("Absolute maximum devices that can ever fit on this tile (corners + center cap).")]
+    [Range(1, 4)]
+    public int maxDevices = 4;
+
+    [Tooltip("Random happiness penalty (negative) applied per device beyond normalDeviceLimit. " +
+             "X = min magnitude, Y = max magnitude. Default 10–15.")]
+    public Vector2 overLimitPenaltyRange = new Vector2(10f, 15f);
+
+    // ── Corner Layout ─────────────────────────
+    [Header("Corner Layout")]
+    [Tooltip("How far inward from each edge to inset the corner snap points (metres). " +
+             "Larger values push corner devices closer to the tile center.")]
+    [Min(0f)]
+    public float cornerInset = 0.5f;
+
+    [Tooltip("Vertical offset from the tile pivot for placed devices.")]
+    public float deviceYOffset = 0f;
+
+    [Tooltip("If true (Malaysia / UK / Japan / SG), correct corners are NW and SE. " +
+             "If false (US / most of EU), correct corners are NE and SW.")]
+    public bool drivesOnLeft = true;
+
+    // ── Allowed Devices ───────────────────────
     [Header("Device Placement")]
     public List<TrafficDeviceType> allowedDevices = new List<TrafficDeviceType>();
 
-    [HideInInspector] public bool isOccupied = false;
-    [HideInInspector] public TrafficDeviceType placedDeviceType = TrafficDeviceType.None;
-    [HideInInspector] public GameObject placedDeviceObject = null;
-    [HideInInspector] public bool isPoorPlacement = false;
+    // ── Placement State ───────────────────────
+    [SerializeField] private List<PlacedSlot> _slots = new List<PlacedSlot>();
+    public IReadOnlyList<PlacedSlot> Slots => _slots;
+    public int PlacedCount => _slots.Count;
+    public bool isOccupied => _slots.Count >= maxDevices;
 
-    // ── Snap Point ────────────────────────────
-    [Header("Snap Point")]
+    // Convenience for callers that previously checked single-device fields.
+    public TrafficDeviceType placedDeviceType =>
+        _slots.Count > 0 ? _slots[0].deviceType : TrafficDeviceType.None;
+    public GameObject placedDeviceObject =>
+        _slots.Count > 0 ? _slots[0].deviceObject : null;
+    public bool isPoorPlacement
+    {
+        get
+        {
+            foreach (var s in _slots)
+                if (s.wasWrongCorner || s.wasPoorZone || s.wasOverLimit) return true;
+            return false;
+        }
+    }
+
+    // ── Snap Point (legacy, unused by new flow) ──
+    [Header("Snap Point (legacy)")]
     public Transform deviceSnapPoint;
 
     // ── Grow Effect ───────────────────────────
     [Header("Grow Effect")]
-    [Tooltip("Play the grow-in animation when this tile is first enabled.")]
     public bool playGrowOnStart = true;
 
-    [Tooltip("Total duration of the grow animation in seconds.")]
     [Min(0.05f)]
     public float growDuration = 0.4f;
 
-    [Tooltip("How far past 1 the scale overshoots before settling (0 = no bounce).")]
     [Range(0f, 0.5f)]
     public float growOvershoot = 0.12f;
 
-    [Tooltip("Fraction of growDuration spent on the overshoot bounce (0.2 = last 20%).")]
     [Range(0.1f, 0.5f)]
     public float overshootFraction = 0.25f;
 
@@ -165,10 +256,6 @@ public class RoadTile : MonoBehaviour
     // ── Private ───────────────────────────────
     private Vector3 _originalScale;
     private bool _growDone = false;
-
-    // ── Overlay (auto-added) ──────────────────
-    // TileOverlay is added automatically in Awake if not already present.
-    // PlacementManager and RoadTile both call into it.
     private TileOverlay _overlay;
     public TileOverlay Overlay => _overlay;
 
@@ -182,8 +269,6 @@ public class RoadTile : MonoBehaviour
         GetComponent<BoxCollider>().isTrigger = true;
         _originalScale = transform.localScale;
 
-        // Auto-add TileOverlay so tiles always have an overlay
-        // without needing a manual Inspector step.
         _overlay = GetComponent<TileOverlay>();
         if (_overlay == null)
             _overlay = gameObject.AddComponent<TileOverlay>();
@@ -196,41 +281,139 @@ public class RoadTile : MonoBehaviour
     }
 
     // ─────────────────────────────────────────
-    //  OVERLAY HELPERS
+    //  CORNER GEOMETRY
     // ─────────────────────────────────────────
 
-    /// <summary>
-    /// Returns the OverlayState this tile should display when the player
-    /// is about to place <paramref name="device"/>.
-    /// Call with TrafficDeviceType.None to reset to Default.
-    /// </summary>
-    public OverlayState GetOverlayState(TrafficDeviceType device)
+    /// <summary>Position of a corner / center in tile-local space.</summary>
+    public Vector3 GetCornerLocalPosition(TileCorner corner)
     {
-        // No device selected → grey default
-        if (device == TrafficDeviceType.None)
-            return OverlayState.Default;
+        BoxCollider col = GetComponent<BoxCollider>();
+        Vector3 size = col != null ? col.size : Vector3.one;
+        Vector3 center = col != null ? col.center : Vector3.zero;
 
-        // Already has a device — can't place anything
-        if (isOccupied)
-            return OverlayState.Occupied;
+        float hx = Mathf.Max(0f, size.x * 0.5f - cornerInset);
+        float hz = Mathf.Max(0f, size.z * 0.5f - cornerInset);
+        float y = center.y + deviceYOffset;
 
-        // Device not in the allowed list
-        if (allowedDevices.Count > 0 && !allowedDevices.Contains(device))
-            return OverlayState.Hidden;
-
-        // Allowed but wrong zone → orange warning
-        if (DeviceData.IsPoorPlacement(device, zoneType))
-            return OverlayState.PoorPlacement;
-
-        // All good → green
-        return OverlayState.Valid;
+        return corner switch
+        {
+            TileCorner.NorthWest => center + new Vector3(-hx, deviceYOffset, +hz),
+            TileCorner.NorthEast => center + new Vector3(+hx, deviceYOffset, +hz),
+            TileCorner.SouthEast => center + new Vector3(+hx, deviceYOffset, -hz),
+            TileCorner.SouthWest => center + new Vector3(-hx, deviceYOffset, -hz),
+            TileCorner.Center => new Vector3(center.x, deviceYOffset, center.z),
+            _ => new Vector3(center.x, deviceYOffset, center.z),
+        };
     }
 
     /// <summary>
-    /// Refresh the overlay to reflect the tile's current occupied state.
-    /// Called after PlaceDevice / RemoveDevice.
-    /// Pass the device being dragged (or None to show neutral post-placement state).
+    /// Local rotation for a device at a corner.
+    /// Corners at the +Z end face -Z (toward oncoming +Z-bound drivers).
+    /// Corners at the -Z end face +Z. Center keeps default orientation
+    /// (speed bump sits flat across the road).
     /// </summary>
+    public Quaternion GetCornerLocalRotation(TileCorner corner)
+    {
+        return corner switch
+        {
+            TileCorner.NorthWest => Quaternion.Euler(0f, 180f, 0f),
+            TileCorner.NorthEast => Quaternion.Euler(0f, 180f, 0f),
+            TileCorner.SouthEast => Quaternion.identity,
+            TileCorner.SouthWest => Quaternion.identity,
+            TileCorner.Center => Quaternion.identity,
+            _ => Quaternion.identity,
+        };
+    }
+
+    /// <summary>
+    /// Returns the corner nearest to a given world point.
+    /// SpeedBumps always return Center.
+    /// </summary>
+    public TileCorner GetNearestCorner(Vector3 worldPoint, TrafficDeviceType device)
+    {
+        if (device == TrafficDeviceType.SpeedBump)
+            return TileCorner.Center;
+
+        Vector3 local = transform.InverseTransformPoint(worldPoint);
+        BoxCollider col = GetComponent<BoxCollider>();
+        Vector3 c = col != null ? col.center : Vector3.zero;
+
+        bool east = (local.x - c.x) >= 0f;
+        bool north = (local.z - c.z) >= 0f;
+
+        if (north && !east) return TileCorner.NorthWest;
+        if (north && east) return TileCorner.NorthEast;
+        if (!north && east) return TileCorner.SouthEast;
+        return TileCorner.SouthWest;
+    }
+
+    /// <summary>
+    /// Whether the given corner is the "correct" side of the road for this device.
+    /// Bidirectional roads have two correct corners (on opposite ends of the same diagonal).
+    /// </summary>
+    public bool IsCorrectCorner(TileCorner corner, TrafficDeviceType device)
+    {
+        // Speed bumps always go in the center — never "wrong" geometrically.
+        if (device == TrafficDeviceType.SpeedBump)
+            return corner == TileCorner.Center;
+
+        if (drivesOnLeft)
+            return corner == TileCorner.NorthWest || corner == TileCorner.SouthEast;
+        else
+            return corner == TileCorner.NorthEast || corner == TileCorner.SouthWest;
+    }
+
+    public bool IsCornerOccupied(TileCorner corner)
+    {
+        foreach (var s in _slots)
+            if (s.corner == corner) return true;
+        return false;
+    }
+
+    /// <summary>True if placing a new device right now would exceed the
+    /// non-intersection soft cap and incur the random 10–15 penalty.</summary>
+    public bool WouldBeOverLimit()
+    {
+        return !isIntersection && _slots.Count >= normalDeviceLimit;
+    }
+
+    // ─────────────────────────────────────────
+    //  OVERLAY HELPERS
+    // ─────────────────────────────────────────
+
+    public OverlayState GetOverlayState(TrafficDeviceType device)
+    {
+        if (device == TrafficDeviceType.None)
+            return OverlayState.Default;
+
+        if (allowedDevices.Count > 0 && !allowedDevices.Contains(device))
+            return OverlayState.Hidden;
+
+        // Hard cap reached → red
+        if (_slots.Count >= maxDevices)
+            return OverlayState.Occupied;
+
+        // Speed bumps: blocked once the center slot is full
+        if (device == TrafficDeviceType.SpeedBump && IsCornerOccupied(TileCorner.Center))
+            return OverlayState.Occupied;
+
+        // Stop / Light: blocked when all 4 corners are taken
+        if (device != TrafficDeviceType.SpeedBump)
+        {
+            int cornerCount = 0;
+            foreach (var s in _slots)
+                if (s.corner != TileCorner.Center) cornerCount++;
+            if (cornerCount >= 4)
+                return OverlayState.Occupied;
+        }
+
+        // Tile-wide warnings (orange)
+        if (DeviceData.IsPoorPlacement(device, zoneType)) return OverlayState.PoorPlacement;
+        if (WouldBeOverLimit()) return OverlayState.PoorPlacement;
+
+        return OverlayState.Valid;
+    }
+
     public void RefreshOverlay(TrafficDeviceType activeDevice = TrafficDeviceType.None)
     {
         if (_overlay == null) return;
@@ -238,7 +421,7 @@ public class RoadTile : MonoBehaviour
     }
 
     // ─────────────────────────────────────────
-    //  GROW EFFECT
+    //  GROW EFFECT  (unchanged)
     // ─────────────────────────────────────────
 
     public void PlayGrow()
@@ -285,13 +468,31 @@ public class RoadTile : MonoBehaviour
     }
 
     // ─────────────────────────────────────────
-    //  PUBLIC API
+    //  PLACEMENT API
     // ─────────────────────────────────────────
 
-    public PlacementResult CanPlace(TrafficDeviceType device, float playerCapital)
+    public PlacementResult CanPlace(TrafficDeviceType device, TileCorner corner, float playerCapital)
     {
-        if (isOccupied)
+        // Total cap
+        if (_slots.Count >= maxDevices)
             return PlacementResult.AlreadyOccupied;
+
+        // Speed bump constraint: must be Center, only one allowed
+        if (device == TrafficDeviceType.SpeedBump)
+        {
+            if (corner != TileCorner.Center)
+                return PlacementResult.DeviceNotAllowed;
+            if (IsCornerOccupied(TileCorner.Center))
+                return PlacementResult.AlreadyOccupied;
+        }
+        else
+        {
+            // Corner-only devices
+            if (corner == TileCorner.Center || corner == TileCorner.None)
+                return PlacementResult.DeviceNotAllowed;
+            if (IsCornerOccupied(corner))
+                return PlacementResult.AlreadyOccupied;
+        }
 
         if (allowedDevices.Count > 0 && !allowedDevices.Contains(device))
             return PlacementResult.DeviceNotAllowed;
@@ -299,14 +500,21 @@ public class RoadTile : MonoBehaviour
         if (playerCapital < DeviceData.GetCost(device))
             return PlacementResult.InsufficientFunds;
 
-        if (DeviceData.IsPoorPlacement(device, zoneType))
-            return PlacementResult.PoorPlacement;
+        // Anything beyond this is a soft warning — placement still succeeds.
+        if (DeviceData.IsPoorPlacement(device, zoneType)) return PlacementResult.PoorPlacement;
+        if (!IsCorrectCorner(corner, device)) return PlacementResult.PoorPlacement;
+        if (WouldBeOverLimit()) return PlacementResult.PoorPlacement;
 
         return PlacementResult.Success;
     }
 
+    /// <summary>
+    /// Place a device at a specific corner (or Center for SpeedBumps).
+    /// Penalties stack: wrong corner + poor zone + over-limit can all apply.
+    /// </summary>
     public PlacementResult PlaceDevice(
         TrafficDeviceType device,
+        TileCorner corner,
         GameObject deviceObject,
         float playerCapital,
         out float happinessDelta,
@@ -315,76 +523,126 @@ public class RoadTile : MonoBehaviour
         happinessDelta = 0f;
         costSpent = 0f;
 
-        PlacementResult result = CanPlace(device, playerCapital);
+        PlacementResult result = CanPlace(device, corner, playerCapital);
 
+        // Hard failures: caller is expected to destroy deviceObject
         if (result == PlacementResult.AlreadyOccupied ||
             result == PlacementResult.DeviceNotAllowed ||
             result == PlacementResult.InsufficientFunds)
             return result;
 
-        isPoorPlacement = (result == PlacementResult.PoorPlacement);
-        isOccupied = true;
-        placedDeviceType = device;
-        placedDeviceObject = deviceObject;
+        // Categorise placement quality
+        bool wrongCorner = !IsCorrectCorner(corner, device);
+        bool poorZone = DeviceData.IsPoorPlacement(device, zoneType);
+        bool overLimit = WouldBeOverLimit();
 
-        Vector3 snapPos = deviceSnapPoint != null
-            ? deviceSnapPoint.position
-            : transform.position;
-
-        deviceObject.transform.position = snapPos;
-        deviceObject.transform.rotation = transform.rotation;
-        deviceObject.transform.SetParent(transform);
-
+        // Base happiness from device stats
         DeviceData.DeviceStats stats = DeviceData.Get(device);
-        costSpent = stats.costRM;
-        happinessDelta = isPoorPlacement
+        float happiness = (wrongCorner || poorZone)
             ? stats.happinessDeltaPoor
             : stats.happinessDeltaGood;
 
-        RecalculateContribution();
-        OnDevicePlaced?.Invoke(this, isPoorPlacement);
+        // Stack the random over-limit penalty on top
+        if (overLimit)
+        {
+            float extra = Random.Range(overLimitPenaltyRange.x, overLimitPenaltyRange.y);
+            happiness -= extra;
+            Debug.Log($"[RoadTile] {tileID}: over-limit device #{_slots.Count + 1} " +
+                      $"on non-intersection tile → extra happiness penalty −{extra:F1}");
+        }
 
-        // ── Overlay: tile is now occupied — show red tint, then
-        //    reset to Default so it shows grey when no device is active.
+        // Commit slot
+        PlacedSlot slot = new PlacedSlot
+        {
+            corner = corner,
+            deviceType = device,
+            deviceObject = deviceObject,
+            wasWrongCorner = wrongCorner,
+            wasPoorZone = poorZone,
+            wasOverLimit = overLimit,
+            happinessApplied = happiness
+        };
+        _slots.Add(slot);
+
+        // Position the device at the corner with the right local rotation
+        Vector3 localPos = GetCornerLocalPosition(corner);
+        Quaternion localRot = GetCornerLocalRotation(corner);
+
+        deviceObject.transform.SetParent(transform, worldPositionStays: false);
+        deviceObject.transform.localPosition = localPos;
+        deviceObject.transform.localRotation = localRot;
+        // Make sure no leftover scale from the ghost prefab survives
+        deviceObject.transform.localScale = Vector3.one;
+
+        happinessDelta = happiness;
+        costSpent = stats.costRM;
+
+        RecalculateContribution();
+
+        PlacementResult finalResult = (wrongCorner || poorZone || overLimit)
+            ? PlacementResult.PoorPlacement
+            : PlacementResult.Success;
+
+        OnDevicePlaced?.Invoke(this, finalResult == PlacementResult.PoorPlacement);
         RefreshOverlay(TrafficDeviceType.None);
 
-        Debug.Log($"[RoadTile] {tileID}: placed {device} " +
-                  $"(poor={isPoorPlacement}) cost=RM{costSpent} " +
-                  $"happiness={happinessDelta:+0;-0} " +
-                  $"accidentContrib={currentAccidentContribution}");
+        Debug.Log($"[RoadTile] {tileID}: placed {device} @ {corner} " +
+                  $"(wrongCorner={wrongCorner}, poorZone={poorZone}, overLimit={overLimit}) " +
+                  $"cost=RM{costSpent} happiness={happinessDelta:+0.0;-0.0} " +
+                  $"totalOnTile={_slots.Count}/{maxDevices}");
 
-        return result;
+        return finalResult;
     }
 
-    public void RemoveDevice()
+    /// <summary>Remove a single device from a specific corner.</summary>
+    public void RemoveDeviceAt(TileCorner corner)
     {
-        if (!isOccupied) return;
+        PlacedSlot toRemove = null;
+        foreach (var s in _slots)
+            if (s.corner == corner) { toRemove = s; break; }
 
-        if (placedDeviceObject != null)
-            Destroy(placedDeviceObject);
+        if (toRemove == null) return;
 
-        isOccupied = false;
-        placedDeviceType = TrafficDeviceType.None;
-        placedDeviceObject = null;
-        isPoorPlacement = false;
+        if (toRemove.deviceObject != null)
+            Destroy(toRemove.deviceObject);
 
+        _slots.Remove(toRemove);
         RecalculateContribution();
         OnDeviceRemoved?.Invoke(this);
-
-        // ── Overlay: tile is free again — return to grey default
         RefreshOverlay(TrafficDeviceType.None);
     }
 
+    /// <summary>Remove every device on the tile.</summary>
+    public void RemoveAllDevices()
+    {
+        foreach (var s in _slots)
+            if (s.deviceObject != null) Destroy(s.deviceObject);
+
+        _slots.Clear();
+        RecalculateContribution();
+        OnDeviceRemoved?.Invoke(this);
+        RefreshOverlay(TrafficDeviceType.None);
+    }
+
+    /// <summary>Legacy single-device remove — clears the entire tile.</summary>
+    public void RemoveDevice() => RemoveAllDevices();
+
+    /// <summary>Sum every device's accident reduction. Wrong corner / poor zone halves the reduction.</summary>
     public void RecalculateContribution()
     {
         int prev = currentAccidentContribution;
-        int reduction = DeviceData.GetReduction(placedDeviceType);
 
-        if (isPoorPlacement)
-            reduction = Mathf.FloorToInt(reduction * 0.5f);
+        int totalReduction = 0;
+        foreach (var s in _slots)
+        {
+            int red = DeviceData.GetReduction(s.deviceType);
+            if (s.wasWrongCorner || s.wasPoorZone)
+                red = Mathf.FloorToInt(red * 0.5f);
+            totalReduction += red;
+        }
 
         currentAccidentContribution =
-            Mathf.Max(0, baseAccidentContribution - reduction);
+            Mathf.Max(0, baseAccidentContribution - totalReduction);
 
         if (prev != currentAccidentContribution)
             OnContributionChanged?.Invoke(this, prev, currentAccidentContribution);
@@ -417,31 +675,37 @@ public class RoadTile : MonoBehaviour
         Gizmos.color = gizmoColor;
         Gizmos.DrawWireCube(col.center, col.size);
 
-        if (isPoorPlacement)
+        // Corner gizmos: green = correct corners for current driving side, red = wrong
+        TileCorner[] all = { TileCorner.NorthWest, TileCorner.NorthEast,
+                             TileCorner.SouthEast, TileCorner.SouthWest };
+        foreach (var c in all)
         {
-            Gizmos.color = Color.red;
-            Gizmos.DrawWireCube(col.center, col.size + Vector3.one * 0.05f);
+            bool correct = IsCorrectCorner(c, TrafficDeviceType.StopSign);
+            Gizmos.color = correct ? new Color(0f, 1f, 0f, 0.9f)
+                                   : new Color(1f, 0f, 0f, 0.9f);
+            Vector3 local = GetCornerLocalPosition(c);
+            Gizmos.DrawSphere(local, 0.15f);
         }
 
-        if (deviceSnapPoint != null)
-        {
-            Gizmos.matrix = Matrix4x4.identity;
-            Gizmos.color = Color.yellow;
-            Gizmos.DrawSphere(deviceSnapPoint.position, 0.15f);
-        }
+        // Center gizmo (speed bump slot)
+        Gizmos.color = new Color(0.2f, 0.7f, 1f, 0.9f);
+        Gizmos.DrawSphere(GetCornerLocalPosition(TileCorner.Center), 0.12f);
+
+        Gizmos.matrix = Matrix4x4.identity;
     }
 
     private void OnDrawGizmosSelected()
     {
-        string deviceInfo = isOccupied
-            ? $"{placedDeviceType}{(isPoorPlacement ? " ⚠ POOR" : " ✓")}"
-            : "No device";
+        string deviceInfo = _slots.Count > 0
+            ? $"{_slots.Count}/{maxDevices} devices"
+            : "empty";
 
         UnityEditor.Handles.Label(
             transform.position + Vector3.up * 0.6f,
             $"{tileID}\n{zoneType} | {tileType}\n" +
+            $"Intersection: {isIntersection}\n" +
             $"Contribution: {currentAccidentContribution}\n" +
-            $"Device: {deviceInfo}"
+            $"Devices: {deviceInfo}"
         );
     }
 #endif

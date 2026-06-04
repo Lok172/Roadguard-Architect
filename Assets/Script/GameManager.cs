@@ -4,21 +4,14 @@ using UnityEngine;
 using UnityEngine.Events;
 
 // ─────────────────────────────────────────────────────────────────
-//  GAME MANAGER  (fixed)
+//  GAME MANAGER
 //
-//  Owns all global resources:
-//    Capital, TaxRevenue, AccidentRate, Happiness, Calendar (days)
+//  Owns global resources: Capital, Happiness, AccidentRate, Calendar.
 //
-//  Other scripts talk to it via GameManager.Instance (singleton).
-//
-//  CHANGES:
-//    • startHappiness added to LevelConfig — set it per-level in
-//      the Inspector (0–100 slider).  Replaces the old hardcoded 100f.
-//    • StopAllCoroutines() called before re-starting DayTickRoutine.
-//    • BroadcastState() deferred one frame so listeners are ready.
-//    • CheckVictory() called after initial broadcast.
-//    • GetLevelConfig() guards against empty levelConfigs array.
-//    • OnDayChanged fires (daysPassed, totalDays) for "Day 58/90" formatting.
+//  CHANGE vs. v1:
+//    • TryPlaceDevice now takes a TileCorner parameter and forwards
+//      it to RoadTile.PlaceDevice. Required for the new multi-device
+//      corner system.
 // ─────────────────────────────────────────────────────────────────
 
 public class GameManager : MonoBehaviour
@@ -51,26 +44,17 @@ public class GameManager : MonoBehaviour
 
     // ── Game Rules ────────────────────────────
     [Header("Game Rules")]
-    [Tooltip("Real seconds per in-game day (GDD: 1 day = 2 seconds)")]
     public float secondsPerDay = 2f;
-
-    [Tooltip("Total in-game days before game ends")]
     public int totalDays = 90;
-
-    [Tooltip("Accident rate threshold to trigger Safety Multiplier on tax revenue")]
     public int safetyThreshold = 3;
-
-    [Tooltip("Multiplier applied to tax revenue when accident rate < safetyThreshold")]
     public float safetyMultiplier = 1.5f;
-
-    [Tooltip("Base tax revenue collected per day (scales with happiness)")]
     public float baseTaxPerDay = 50f;
 
     // ── Runtime State ─────────────────────────
     [Header("Runtime State (read-only in Inspector)")]
     [SerializeField] private float _capital;
-    [SerializeField] private float _happiness;     // 0–100
-    [SerializeField] private int _accidentRate;  // city-wide sum of all tile contributions
+    [SerializeField] private float _happiness;
+    [SerializeField] private int _accidentRate;
     [SerializeField] private int _daysPassed;
     [SerializeField] private bool _gameRunning;
 
@@ -78,20 +62,18 @@ public class GameManager : MonoBehaviour
     public float Happiness => _happiness;
     public int AccidentRate => _accidentRate;
     public int DaysPassed => _daysPassed;
-    public int TotalDays => totalDays;          // exposed so HUDController can read it
+    public int TotalDays => totalDays;
     public bool GameRunning => _gameRunning;
 
     // ── Tile Registry ─────────────────────────
     private readonly List<RoadTile> _allTiles = new List<RoadTile>();
 
     // ── Unity Events ──────────────────────────
-    // HUDController subscribes to these in its Awake() — no Inspector
-    // wiring needed for the HUD display fields.
     [Header("Events — also auto-wired by HUDController")]
-    public UnityEvent<float> OnCapitalChanged;      // new capital (float)
-    public UnityEvent<float> OnHappinessChanged;    // new happiness 0-100
-    public UnityEvent<int> OnAccidentRateChanged; // new accident rate
-    public UnityEvent<int, int> OnDayChanged;        // (daysPassed, totalDays)
+    public UnityEvent<float> OnCapitalChanged;
+    public UnityEvent<float> OnHappinessChanged;
+    public UnityEvent<int> OnAccidentRateChanged;
+    public UnityEvent<int, int> OnDayChanged;
     public UnityEvent OnGameOver;
     public UnityEvent OnVictory;
 
@@ -101,11 +83,7 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
     }
 
@@ -120,7 +98,6 @@ public class GameManager : MonoBehaviour
 
     public void InitLevel(int level)
     {
-        // FIX 1: Stop any running ticker before starting a new one.
         StopAllCoroutines();
 
         LevelConfig cfg = GetLevelConfig(level);
@@ -131,8 +108,6 @@ public class GameManager : MonoBehaviour
         _daysPassed = 0;
         _gameRunning = true;
 
-        // FIX 2: Defer BroadcastState by one frame so every listener's
-        // Start() / Awake() has definitely run before we push values.
         StartCoroutine(BroadcastNextFrame());
         StartCoroutine(DayTickRoutine());
 
@@ -142,11 +117,8 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator BroadcastNextFrame()
     {
-        yield return null; // wait one frame
+        yield return null;
         BroadcastState();
-
-        // FIX 3: Check victory after tiles have registered
-        // (handles edge case where all tiles already contribute 0).
         CheckVictory();
     }
 
@@ -192,13 +164,18 @@ public class GameManager : MonoBehaviour
     //  DEVICE PLACEMENT
     // ─────────────────────────────────────────
 
+    /// <summary>
+    /// Place a device at a specific corner of a tile. Returns the placement
+    /// result; the corner determines rotation and "correct side" check.
+    /// </summary>
     public PlacementResult TryPlaceDevice(
         RoadTile tile,
         TrafficDeviceType device,
+        TileCorner corner,
         GameObject deviceObject)
     {
         PlacementResult result = tile.PlaceDevice(
-            device, deviceObject, _capital,
+            device, corner, deviceObject, _capital,
             out float happinessDelta,
             out float costSpent);
 
@@ -256,17 +233,13 @@ public class GameManager : MonoBehaviour
         while (_gameRunning)
         {
             yield return new WaitForSeconds(secondsPerDay);
-
             if (!_gameRunning) break;
 
             _daysPassed++;
-            // FIX 5: Fire (daysPassed, totalDays) so HUDController
-            // can format "Day 58/90" without extra Inspector work.
             OnDayChanged?.Invoke(_daysPassed, totalDays);
 
             float tax = CalculateDailyTaxRevenue();
             ModifyCapital(tax);
-
 
             if (_daysPassed >= totalDays)
                 TriggerGameOver();
@@ -303,7 +276,6 @@ public class GameManager : MonoBehaviour
 
     private LevelConfig GetLevelConfig(int level)
     {
-        // FIX 4: Guard against empty array before indexing [0].
         if (levelConfigs == null || levelConfigs.Length == 0)
         {
             Debug.LogError("[GameManager] levelConfigs is empty! Using defaults.");
