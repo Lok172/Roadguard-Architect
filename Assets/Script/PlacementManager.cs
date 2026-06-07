@@ -4,7 +4,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.InputSystem;
 
 // ─────────────────────────────────────────────────────────────────
-//  PlacementProxy — see original file for rationale.
+//  PlacementProxy — unchanged.
 // ─────────────────────────────────────────────────────────────────
 
 public class PlacementProxy : MonoBehaviour, IPointerDownHandler
@@ -14,30 +14,22 @@ public class PlacementProxy : MonoBehaviour, IPointerDownHandler
 }
 
 // ─────────────────────────────────────────────────────────────────
-//  PlacementManager (v2 — corner placement, multi-device, generated ghost)
+//  PlacementManager (v3)
 //
-//  CHANGES vs. v1:
-//    • Ghost snaps to the NEAREST CORNER of the hovered tile and
-//      rotates to face oncoming traffic (or stays centered for
-//      SpeedBumps). Driven by RoadTile.GetNearestCorner /
-//      GetCornerLocalPosition / GetCornerLocalRotation.
-//    • Ghost tint shows placement quality in real time:
-//        green  = clean placement
-//        orange = wrong corner / wrong zone / over the soft cap
-//        red    = corner taken, tile full, or other hard reject
-//    • Ghost material is GENERATED IN CODE (Unlit/Transparent with
-//      fallback to URP Unlit and Standard). No Inspector drag needed.
-//      Manual override via the Inspector field still works.
-//    • Corner is passed through to GameManager.TryPlaceDevice and
-//      RoadTile.PlaceDevice.
+//  NEW vs v2:
+//    • Middle mouse click cycles ghost facing direction (N→E→S→W).
+//      Once clicked, user's facing overrides the corner default
+//      for the remainder of the drag.
+//    • Facing direction passed through to RoadTile.PlaceDevice.
+//    • Ghost tint: green = correct, orange = placeable but incorrect
+//      (NA / wrong corner / wrong facing), red = blocked.
+//    • Speed bump locks to Center and ignores rotation overrides.
 // ─────────────────────────────────────────────────────────────────
 
 public class PlacementManager : MonoBehaviour
 {
-    // ── Singleton ─────────────────────────────
     public static PlacementManager Instance { get; private set; }
 
-    // ── UI Buttons ─────────────────────────────
     [System.Serializable]
     public class DeviceClickTarget
     {
@@ -49,18 +41,14 @@ public class PlacementManager : MonoBehaviour
     public DeviceClickTarget[] clickTargets;
 
     [Header("City Scene")]
-    [SceneName]
-    public string citySceneName = "City";
+    [SceneName] public string citySceneName = "City";
 
-    // ── Inspector Config ──────────────────────
     [Header("Device Prefabs (3D world objects)")]
     public GameObject stopSignPrefab;
     public GameObject speedBumpPrefab;
     public GameObject trafficLightPrefab;
 
-    [Header("Ghost Material")]
-    [Tooltip("OPTIONAL. Leave null to use the auto-generated transparent material.\n" +
-             "Only assign this if you need a custom URP/HDRP transparent material.")]
+    [Header("Ghost Material  (leave null — generated in code)")]
     public Material ghostMaterial;
 
     [Header("Ghost Tint Colours")]
@@ -76,25 +64,26 @@ public class PlacementManager : MonoBehaviour
     [Header("Ghost Height Offset")]
     public float ghostYOffset = 0.1f;
 
-    // ── Runtime ───────────────────────────────
+    // Runtime
     private TrafficDeviceType _selectedDevice = TrafficDeviceType.None;
     private GameObject _ghostObject = null;
     private bool _isDragging = false;
     private RoadTile _hoveredTile = null;
     private TileCorner _hoveredCorner = TileCorner.None;
-
-    // Auto-generated ghost material — cached so we don't leak.
     private Material _generatedGhostMat;
+
+    // Middle-mouse rotation: user's facing override for the current drag (None = use corner default)
+    private FacingDirection _userFacing = FacingDirection.None;
 
     public bool IsDragging => _isDragging;
 
-    // ── Input (new Input System) ──────────────
     private Vector2 MousePosition => Mouse.current.position.ReadValue();
     private bool LeftButtonUp => Mouse.current.leftButton.wasReleasedThisFrame;
     private bool RightButtonDown => Mouse.current.rightButton.wasPressedThisFrame;
+    private bool MiddleButtonDown => Mouse.current.middleButton.wasPressedThisFrame;
 
     // ─────────────────────────────────────────
-    //  UNITY LIFECYCLE
+    //  LIFECYCLE
     // ─────────────────────────────────────────
 
     private void Awake()
@@ -109,26 +98,19 @@ public class PlacementManager : MonoBehaviour
         {
             cityCamera = Camera.main;
             if (cityCamera == null)
-                Debug.LogError("[PlacementManager] cityCamera is null and Camera.main was " +
-                               "not found.\nDrag the city camera into the Inspector field!");
-            else
-                Debug.LogWarning("[PlacementManager] cityCamera was not assigned — fell back " +
-                                 "to Camera.main. In multi-scene setups this is unreliable.");
+                Debug.LogError("[PlacementManager] cityCamera is null and Camera.main not found.");
         }
-
         SetupClickTargets();
     }
 
     private void OnDestroy()
     {
-        if (_generatedGhostMat != null)
-            Destroy(_generatedGhostMat);
+        if (_generatedGhostMat != null) Destroy(_generatedGhostMat);
     }
 
     private void Update()
     {
-        if (!_isDragging) return;
-        if (Mouse.current == null) return;
+        if (!_isDragging || Mouse.current == null) return;
 
         if (RightButtonDown ||
             (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame))
@@ -137,15 +119,36 @@ public class PlacementManager : MonoBehaviour
             return;
         }
 
+        // Middle mouse: cycle facing — only meaningful for stop sign / traffic light
+        if (MiddleButtonDown && _selectedDevice != TrafficDeviceType.SpeedBump)
+        {
+            if (_userFacing == FacingDirection.None)
+                _userFacing = _hoveredTile != null
+                    ? _hoveredTile.GetDefaultFacing(
+                        _hoveredCorner != TileCorner.None ? _hoveredCorner : TileCorner.NorthWest,
+                        _selectedDevice)
+                    : FacingDirection.PosZ;
+
+            _userFacing = NextFacing(_userFacing);
+        }
+
         UpdateHoverOverlay();
         MoveGhostToMouse();
 
-        if (LeftButtonUp)
-            ConfirmPlacement();
+        if (LeftButtonUp) ConfirmPlacement();
     }
 
+    private static FacingDirection NextFacing(FacingDirection f) => f switch
+    {
+        FacingDirection.PosZ => FacingDirection.PosX,
+        FacingDirection.PosX => FacingDirection.NegZ,
+        FacingDirection.NegZ => FacingDirection.NegX,
+        FacingDirection.NegX => FacingDirection.PosZ,
+        _ => FacingDirection.PosZ
+    };
+
     // ─────────────────────────────────────────
-    //  CLICK TARGET SETUP
+    //  CLICK TARGETS
     // ─────────────────────────────────────────
 
     private void SetupClickTargets()
@@ -153,52 +156,37 @@ public class PlacementManager : MonoBehaviour
         foreach (DeviceClickTarget data in clickTargets)
         {
             if (data.clickableObject == null) continue;
-
-            PlacementProxy proxy = data.clickableObject.GetComponent<PlacementProxy>();
-            if (proxy == null)
-                proxy = data.clickableObject.AddComponent<PlacementProxy>();
-
+            var proxy = data.clickableObject.GetComponent<PlacementProxy>()
+                     ?? data.clickableObject.AddComponent<PlacementProxy>();
             TrafficDeviceType type = data.deviceType;
             proxy.onDown = () => BeginDrag(type);
         }
-
         Debug.Log($"[PlacementManager] Registered {clickTargets.Length} placement targets.");
     }
 
-    // ─────────────────────────────────────────
-    //  BEGIN DRAG
-    // ─────────────────────────────────────────
-
     public void BeginDrag(TrafficDeviceType deviceType)
     {
-        if (GameManager.Instance == null)
-        {
-            Debug.LogError("[PlacementManager] GameManager.Instance is null.");
-            return;
-        }
-
-        if (!GameManager.Instance.GameRunning)
-        {
-            Debug.Log("[PlacementManager] Game not running — placement blocked.");
-            return;
-        }
+        if (GameManager.Instance == null) { Debug.LogError("[PlacementManager] GameManager null."); return; }
+        if (!GameManager.Instance.GameRunning) return;
 
         float cost = DeviceData.GetCost(deviceType);
         if (GameManager.Instance.Capital < cost)
         {
-            Debug.Log($"[PlacementManager] Cannot afford {deviceType} " +
-                      $"(need RM{cost}, have RM{GameManager.Instance.Capital:F0})");
+            Debug.Log($"[PlacementManager] Cannot afford {deviceType} (RM{cost}).");
             return;
         }
 
         _selectedDevice = deviceType;
         _isDragging = true;
         _hoveredCorner = TileCorner.None;
+        _userFacing = FacingDirection.None; // reset on each new drag
 
         ShowPlacementOverlays(deviceType);
         SpawnGhost(deviceType);
 
-        Debug.Log($"[PlacementManager] Drag started: {deviceType}  cost=RM{cost}");
+        GameManager.Instance.PauseDayTick();
+
+        Debug.Log($"[PlacementManager] Drag start: {deviceType}  cost=RM{cost}");
     }
 
     public void BeginDragStopSign() => BeginDrag(TrafficDeviceType.StopSign);
@@ -206,57 +194,42 @@ public class PlacementManager : MonoBehaviour
     public void BeginDragTrafficLight() => BeginDrag(TrafficDeviceType.TrafficLight);
 
     // ─────────────────────────────────────────
-    //  GHOST MATERIAL  (generated in code)
+    //  GHOST MATERIAL
     // ─────────────────────────────────────────
 
-    /// <summary>
-    /// Returns the Inspector-assigned ghostMaterial if set, otherwise
-    /// lazily creates and caches a transparent material in code.
-    /// Works in Built-in RP, URP, and HDRP (falls back across shaders).
-    /// </summary>
     private Material GetOrCreateGhostMaterial()
     {
         if (ghostMaterial != null) return ghostMaterial;
         if (_generatedGhostMat != null) return _generatedGhostMat;
 
-        // Try transparent shaders in order of preference
-        Shader shader = Shader.Find("Unlit/Transparent");
-        if (shader == null) shader = Shader.Find("Universal Render Pipeline/Unlit");
-        if (shader == null) shader = Shader.Find("HDRP/Unlit");
-        if (shader == null) shader = Shader.Find("Standard");
+        Shader shader = Shader.Find("Unlit/Transparent")
+                     ?? Shader.Find("Universal Render Pipeline/Unlit")
+                     ?? Shader.Find("HDRP/Unlit")
+                     ?? Shader.Find("Standard");
 
         if (shader == null)
         {
-            Debug.LogError("[PlacementManager] Could not find any usable shader for the ghost " +
-                           "material. Assign a transparent material to 'Ghost Material' manually.");
+            Debug.LogError("[PlacementManager] No usable shader found for ghost material.");
             return null;
         }
 
         _generatedGhostMat = new Material(shader) { name = "GhostMaterial_Generated" };
         _generatedGhostMat.color = tintNeutral;
 
-        // Force transparent blending on Built-in RP / Standard shader
         if (_generatedGhostMat.HasProperty("_SrcBlend"))
-            _generatedGhostMat.SetInt("_SrcBlend",
-                (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            _generatedGhostMat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
         if (_generatedGhostMat.HasProperty("_DstBlend"))
-            _generatedGhostMat.SetInt("_DstBlend",
-                (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            _generatedGhostMat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
         if (_generatedGhostMat.HasProperty("_ZWrite"))
             _generatedGhostMat.SetInt("_ZWrite", 0);
-
-        // Standard shader rendering mode = Transparent
         if (_generatedGhostMat.HasProperty("_Mode"))
             _generatedGhostMat.SetFloat("_Mode", 3f);
+        if (_generatedGhostMat.HasProperty("_Surface"))
+            _generatedGhostMat.SetFloat("_Surface", 1f);
 
         _generatedGhostMat.DisableKeyword("_ALPHATEST_ON");
         _generatedGhostMat.EnableKeyword("_ALPHABLEND_ON");
         _generatedGhostMat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-
-        // URP Lit / Unlit surface type = transparent
-        if (_generatedGhostMat.HasProperty("_Surface"))
-            _generatedGhostMat.SetFloat("_Surface", 1f);
-
         _generatedGhostMat.renderQueue = 3000;
 
         Debug.Log($"[PlacementManager] Generated ghost material using shader '{shader.name}'.");
@@ -268,25 +241,16 @@ public class PlacementManager : MonoBehaviour
         DestroyGhost();
 
         GameObject prefab = GetPrefab(deviceType);
-        if (prefab == null)
-        {
-            Debug.LogWarning($"[PlacementManager] No prefab assigned for {deviceType}.");
-            return;
-        }
+        if (prefab == null) return;
 
         _ghostObject = Instantiate(prefab);
         _ghostObject.name = $"Ghost_{deviceType}";
 
-        Material ghostMat = GetOrCreateGhostMaterial();
-        if (ghostMat != null)
-        {
-            // r.material auto-instances the shared mat per renderer so each
-            // renderer can be tinted independently if we ever need to.
+        Material gm = GetOrCreateGhostMaterial();
+        if (gm != null)
             foreach (Renderer r in _ghostObject.GetComponentsInChildren<Renderer>())
-                r.material = ghostMat;
-        }
+                r.material = gm;
 
-        // Disable colliders so the ghost never blocks the tile raycast
         foreach (Collider c in _ghostObject.GetComponentsInChildren<Collider>())
             c.enabled = false;
 
@@ -296,7 +260,7 @@ public class PlacementManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────
-    //  GHOST POSITIONING + TINT
+    //  GHOST POSITION + TINT
     // ─────────────────────────────────────────
 
     private void MoveGhostToMouse()
@@ -307,49 +271,103 @@ public class PlacementManager : MonoBehaviour
 
         if (hit != null)
         {
-            // Determine target corner (or center for speed bumps)
             TileCorner corner = hit.GetNearestCorner(hitPoint, _selectedDevice);
             _hoveredCorner = corner;
 
-            // Parent → set local pos/rot → resulting world pos respects tile rotation
+            // Decide facing: user override (if any) takes priority, except speed bump
+            FacingDirection facing = (_selectedDevice == TrafficDeviceType.SpeedBump)
+                ? hit.GetDefaultFacing(TileCorner.Center, _selectedDevice)
+                : (_userFacing != FacingDirection.None
+                    ? _userFacing
+                    : hit.GetDefaultFacing(corner, _selectedDevice));
+
             _ghostObject.transform.SetParent(hit.transform, worldPositionStays: false);
             _ghostObject.transform.localPosition =
                 hit.GetCornerLocalPosition(corner) + Vector3.up * ghostYOffset;
-            _ghostObject.transform.localRotation = hit.GetCornerLocalRotation(corner);
-            _ghostObject.transform.localScale = Vector3.one;
+            _ghostObject.transform.localRotation = hit.FacingToLocalRotation(facing);
 
-            // Decide ghost tint based on placement quality
+            // Apply speed bump width preview
+            if (_selectedDevice == TrafficDeviceType.SpeedBump)
+            {
+                Vector3 s = (hit.forwardAxis == ForwardAxis.LocalPosZ ||
+                             hit.forwardAxis == ForwardAxis.LocalNegZ)
+                    ? new Vector3(1f, 1f, hit.speedBumpWidthScale)
+                    : new Vector3(hit.speedBumpWidthScale, 1f, 1f);
+                _ghostObject.transform.localScale = s;
+            }
+            else
+            {
+                _ghostObject.transform.localScale = Vector3.one;
+            }
+
+            // Tint logic
             bool cornerTaken = hit.IsCornerOccupied(corner);
             bool full = hit.PlacedCount >= hit.maxDevices;
-            bool wrongCorner = !hit.IsCorrectCorner(corner, _selectedDevice);
-            bool poorZone = DeviceData.IsPoorPlacement(_selectedDevice, hit.zoneType);
-            bool overLimit = hit.WouldBeOverLimit();
-            bool deviceAllowed = hit.allowedDevices.Count == 0 ||
-                                 hit.allowedDevices.Contains(_selectedDevice);
+            bool deviceAllowed = hit.allowedDevices.Count == 0 || hit.allowedDevices.Contains(_selectedDevice);
+
+            // Simulate the would-be slot's correctness
+            bool wouldBeCorrect = SimulateCorrectness(hit, _selectedDevice, corner, facing);
 
             if (!deviceAllowed || cornerTaken || full)
                 SetGhostTint(tintBlocked);
-            else if (wrongCorner || poorZone || overLimit)
+            else if (!wouldBeCorrect)
                 SetGhostTint(tintWarning);
             else
                 SetGhostTint(tintValid);
         }
         else
         {
-            // Off-tile: detach and float on the ground plane
             _ghostObject.transform.SetParent(null);
             _hoveredCorner = TileCorner.None;
 
             Ray ray = cityCamera.ScreenPointToRay(MousePosition);
-            Plane groundPlane = new Plane(Vector3.up, Vector3.zero);
-            if (groundPlane.Raycast(ray, out float dist))
+            Plane ground = new Plane(Vector3.up, Vector3.zero);
+            if (ground.Raycast(ray, out float dist))
             {
-                _ghostObject.transform.position =
-                    ray.GetPoint(dist) + Vector3.up * ghostYOffset;
+                _ghostObject.transform.position = ray.GetPoint(dist) + Vector3.up * ghostYOffset;
                 _ghostObject.transform.rotation = Quaternion.identity;
             }
             SetGhostTint(tintNeutral);
         }
+    }
+
+    /// <summary>
+    /// Predicts whether placing this device here would count as correct,
+    /// without actually placing anything. Mirrors RoadTile.IsSlotCorrect.
+    /// </summary>
+    private bool SimulateCorrectness(RoadTile tile, TrafficDeviceType device, TileCorner corner, FacingDirection facing)
+    {
+        int limit = tile.GetCorrectCountLimit(device);
+        if (limit <= 0) return false;
+
+        // Count existing same-type slots — if already at limit, this one wouldn't count.
+        int existingSameType = 0;
+        foreach (var s in tile.Slots)
+            if (s.deviceType == device) existingSameType++;
+        if (existingSameType >= limit) return false;
+
+        switch (device)
+        {
+            case TrafficDeviceType.SpeedBump:
+                return corner == TileCorner.Center;
+
+            case TrafficDeviceType.StopSign:
+                if (tile.segmentType != TileSegmentType.End) return false;
+                return tile.IsAtFarEnd(corner) && facing == tile.BackwardFacing;
+
+            case TrafficDeviceType.TrafficLight:
+                if (tile.segmentType == TileSegmentType.End)
+                    return tile.IsAtFarEnd(corner) && facing == tile.BackwardFacing;
+                if (tile.segmentType == TileSegmentType.Intersection)
+                {
+                    foreach (var s in tile.Slots)
+                        if (s.deviceType == TrafficDeviceType.TrafficLight && s.facing == facing)
+                            return false; // duplicate facing
+                    return true;
+                }
+                return false;
+        }
+        return false;
     }
 
     private void SetGhostTint(Color color)
@@ -361,8 +379,7 @@ public class PlacementManager : MonoBehaviour
 
     private void DestroyGhost()
     {
-        if (_ghostObject != null)
-            Destroy(_ghostObject);
+        if (_ghostObject != null) Destroy(_ghostObject);
         _ghostObject = null;
     }
 
@@ -370,33 +387,21 @@ public class PlacementManager : MonoBehaviour
     //  OVERLAY
     // ─────────────────────────────────────────
 
-    private void UpdateHoverOverlay()
-    {
-        _hoveredTile = RaycastToTile(out _);
-    }
+    private void UpdateHoverOverlay() => _hoveredTile = RaycastToTile(out _);
 
     private void ShowPlacementOverlays(TrafficDeviceType device)
     {
-        if (GameManager.Instance == null) return;
-
-        RoadTile[] allTiles = FindObjectsByType<RoadTile>(FindObjectsSortMode.None);
-        foreach (RoadTile tile in allTiles)
-        {
-            if (tile.Overlay == null) continue;
-            tile.Overlay.SetState(tile.GetOverlayState(device));
-        }
+        RoadTile[] all = FindObjectsByType<RoadTile>(FindObjectsSortMode.None);
+        foreach (RoadTile t in all)
+            if (t.Overlay != null) t.Overlay.SetState(t.GetOverlayState(device));
     }
 
     private void ResetAllOverlays()
     {
-        RoadTile[] allTiles = FindObjectsByType<RoadTile>(FindObjectsSortMode.None);
-        foreach (RoadTile tile in allTiles)
-        {
-            if (tile.Overlay == null) continue;
-            tile.Overlay.SetState(tile.isOccupied
-                ? OverlayState.Occupied
-                : OverlayState.Default);
-        }
+        RoadTile[] all = FindObjectsByType<RoadTile>(FindObjectsSortMode.None);
+        foreach (RoadTile t in all)
+            if (t.Overlay != null)
+                t.Overlay.SetState(t.isOccupied ? OverlayState.Occupied : OverlayState.Default);
     }
 
     // ─────────────────────────────────────────
@@ -407,121 +412,101 @@ public class PlacementManager : MonoBehaviour
     {
         _isDragging = false;
 
-        if (_hoveredTile == null)
-        {
-            Debug.Log("[PlacementManager] Released over no tile — cancelling.");
-            CancelPlacement();
-            return;
-        }
+        if (GameManager.Instance != null)
+            GameManager.Instance.ResumeDayTick();
+
+        if (_hoveredTile == null) { Debug.Log("[PlacementManager] No tile under cursor."); CancelPlacement(); return; }
 
         GameObject prefab = GetPrefab(_selectedDevice);
         if (prefab == null) { CancelPlacement(); return; }
 
-        // For SpeedBumps, force the corner to Center regardless of cursor.
         TileCorner targetCorner = _selectedDevice == TrafficDeviceType.SpeedBump
             ? TileCorner.Center
             : _hoveredCorner;
 
-        if (targetCorner == TileCorner.None)
-        {
-            Debug.Log("[PlacementManager] No valid corner — cancelling.");
-            CancelPlacement();
-            return;
-        }
+        FacingDirection facing = (_selectedDevice == TrafficDeviceType.SpeedBump)
+            ? _hoveredTile.GetDefaultFacing(TileCorner.Center, _selectedDevice)
+            : (_userFacing != FacingDirection.None
+                ? _userFacing
+                : _hoveredTile.GetDefaultFacing(targetCorner, _selectedDevice));
+
+        if (targetCorner == TileCorner.None) { CancelPlacement(); return; }
 
         GameObject deviceObj = Instantiate(prefab);
-
         Scene cityScene = SceneManager.GetSceneByName(citySceneName);
-        if (cityScene.IsValid())
-            SceneManager.MoveGameObjectToScene(deviceObj, cityScene);
+        if (cityScene.IsValid()) SceneManager.MoveGameObjectToScene(deviceObj, cityScene);
 
         PlacementResult result = GameManager.Instance.TryPlaceDevice(
-            _hoveredTile, _selectedDevice, targetCorner, deviceObj);
+            _hoveredTile, _selectedDevice, targetCorner, facing, deviceObj);
 
         switch (result)
         {
             case PlacementResult.Success:
-                Debug.Log($"[PlacementManager] Placed {_selectedDevice} @ {targetCorner} on {_hoveredTile.tileID}");
+                Debug.Log($"[PlacementManager] Placed CORRECT {_selectedDevice} @ {targetCorner} facing {facing} on {_hoveredTile.tileID}");
                 break;
-
             case PlacementResult.PoorPlacement:
-                Debug.Log($"[PlacementManager] Poor placement of {_selectedDevice} @ {targetCorner} — happiness penalty applied.");
+                Debug.Log($"[PlacementManager] Placed INCORRECT {_selectedDevice} @ {targetCorner} facing {facing} on {_hoveredTile.tileID}");
                 break;
-
             case PlacementResult.AlreadyOccupied:
-                Debug.Log("[PlacementManager] Slot or tile already full.");
-                Destroy(deviceObj);
-                break;
-
+                Debug.Log("[PlacementManager] Slot or tile full."); Destroy(deviceObj); break;
             case PlacementResult.InsufficientFunds:
-                Debug.Log("[PlacementManager] Insufficient capital.");
-                Destroy(deviceObj);
-                break;
-
+                Debug.Log("[PlacementManager] Insufficient capital."); Destroy(deviceObj); break;
             case PlacementResult.DeviceNotAllowed:
-                Debug.Log("[PlacementManager] Device not allowed on this tile / corner.");
-                Destroy(deviceObj);
-                break;
-
+                Debug.Log("[PlacementManager] Device not allowed here."); Destroy(deviceObj); break;
             default:
-                Destroy(deviceObj);
-                break;
+                Destroy(deviceObj); break;
         }
 
         DestroyGhost();
         _selectedDevice = TrafficDeviceType.None;
         _hoveredTile = null;
         _hoveredCorner = TileCorner.None;
+        _userFacing = FacingDirection.None;
         ResetAllOverlays();
     }
 
     public void CancelPlacement()
     {
         _isDragging = false;
+
+        if (GameManager.Instance != null)
+            GameManager.Instance.ResumeDayTick();
         _selectedDevice = TrafficDeviceType.None;
         _hoveredTile = null;
         _hoveredCorner = TileCorner.None;
+        _userFacing = FacingDirection.None;
         DestroyGhost();
         ResetAllOverlays();
         Debug.Log("[PlacementManager] Placement cancelled.");
     }
 
     // ─────────────────────────────────────────
-    //  RAYCAST INTO CITY SCENE
+    //  RAYCAST
     // ─────────────────────────────────────────
 
     private RoadTile RaycastToTile(out Vector3 hitPoint)
     {
         hitPoint = Vector3.zero;
         if (cityCamera == null) return null;
-
-        if (!_isDragging && IsPointerOverUI())
-            return null;
+        if (!_isDragging && IsPointerOverUI()) return null;
 
         Ray ray = cityCamera.ScreenPointToRay(MousePosition);
-
         if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, roadTileLayer))
         {
             hitPoint = hit.point;
             return hit.collider.GetComponent<RoadTile>();
         }
-
         return null;
     }
 
     private bool IsPointerOverUI()
     {
         if (EventSystem.current == null) return false;
-
-        var pointerData = new PointerEventData(EventSystem.current) { position = MousePosition };
+        var pd = new PointerEventData(EventSystem.current) { position = MousePosition };
         var results = new System.Collections.Generic.List<RaycastResult>();
-        EventSystem.current.RaycastAll(pointerData, results);
+        EventSystem.current.RaycastAll(pd, results);
         return results.Count > 0;
     }
-
-    // ─────────────────────────────────────────
-    //  HELPERS
-    // ─────────────────────────────────────────
 
     private GameObject GetPrefab(TrafficDeviceType type) => type switch
     {

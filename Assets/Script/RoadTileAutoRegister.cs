@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 // ─────────────────────────────────────────────────────────────────
 //  RoadTileAutoRegister
@@ -21,11 +22,15 @@ public class RoadTileAutoRegister : MonoBehaviour
 
     private void Start()
     {
-        if (GameManager.Instance != null)
-            GameManager.Instance.RegisterTile(_tile);
-        else
-            Debug.LogWarning($"[RoadTileAutoRegister] {_tile.tileID}: " +
-                             "GameManager not found. Is it in the scene?");
+        StartCoroutine(RegisterWhenReady());
+    }
+
+    private IEnumerator RegisterWhenReady()
+    {
+        while (GameManager.Instance == null)
+            yield return null;
+
+        GameManager.Instance.RegisterTile(_tile);
     }
 
     private void OnDestroy()

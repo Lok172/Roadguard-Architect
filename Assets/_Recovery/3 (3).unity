@@ -1145,7 +1145,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6b9ca7f89915c6b44982c5d6731a2fb2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSection
-  dailyAccidentGain: 0.5
+  dailyAccidentGain: 2
   perCorrectDeviceReduction: 2
   happinessPerAccidentRate: 3
   maxTotalDevices: 10
@@ -1165,6 +1165,7 @@ GameObject:
   - component: {fileID: 1606210683}
   - component: {fileID: 1606210682}
   - component: {fileID: 1606210685}
+  - component: {fileID: 1606210686}
   m_Layer: 3
   m_Name: ResRoad_00
   m_TagString: RoadTile
@@ -1297,6 +1298,26 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!114 &1606210686
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1606210681}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b9ca7f89915c6b44982c5d6731a2fb2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoadSection
+  dailyAccidentGain: 2
+  perCorrectDeviceReduction: 2
+  happinessPerAccidentRate: 3
+  maxTotalDevices: 10
+  overThresholdPenaltyRange: {x: 10, y: 15}
+  _sectionAccidentRate: 0
+  _childTiles: []
+  _hasAppliedThresholdPenalty: 0
 --- !u!1 &1955268212
 GameObject:
   m_ObjectHideFlags: 0
@@ -1308,7 +1329,6 @@ GameObject:
   - component: {fileID: 1955268214}
   - component: {fileID: 1955268218}
   - component: {fileID: 1955268217}
-  - component: {fileID: 1955268219}
   m_Layer: 0
   m_Name: LeftRFT
   m_TagString: Untagged
@@ -1388,26 +1408,6 @@ MonoBehaviour:
   - {fileID: 1450086183}
   - {fileID: 542843314}
   - {fileID: 762944526}
---- !u!114 &1955268219
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1955268212}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6b9ca7f89915c6b44982c5d6731a2fb2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadSection
-  dailyAccidentGain: 0.5
-  perCorrectDeviceReduction: 2
-  happinessPerAccidentRate: 3
-  maxTotalDevices: 10
-  overThresholdPenaltyRange: {x: 10, y: 15}
-  _sectionAccidentRate: 0
-  _childTiles: []
-  _hasAppliedThresholdPenalty: 0
 --- !u!1 &2085068628
 GameObject:
   m_ObjectHideFlags: 0

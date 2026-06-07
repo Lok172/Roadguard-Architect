@@ -38,7 +38,6 @@ public class CameraManager : MonoBehaviour
         public float targetZoom;
         public float zoomVelocity;
 
-
         [Tooltip("FOV/ortho size when zoomed in (smaller = closer)")]
         public float zoomInValue = 30f;
         [Tooltip("FOV/ortho size when zoomed out (larger = wider)")]
@@ -46,7 +45,7 @@ public class CameraManager : MonoBehaviour
         [Tooltip("Seconds to complete one full zoom cycle")]
         public float zoomCycleDuration = 4f;
 
-        // ── NEW: Mouse Drag Settings ──────────────────────────────
+        // ── Mouse Drag Settings ──────────────────────────────────
         [Header("Mouse Drag Pan (left mouse button)")]
         [Tooltip("Enable left-mouse-drag to pan the camera")]
         public bool enableMouseDrag = true;
@@ -66,6 +65,12 @@ public class CameraManager : MonoBehaviour
         public float minLocationZ = 80f;
         [Tooltip("Z-axis clamp — max world Z the camera can drag to")]
         public float maxLocationZ = 140f;
+
+        // ── Position smooth settings ─────────────────────────────
+        [Header("Position Smoothing")]
+        [Tooltip("How quickly the camera position catches up to the target " +
+                 "during zoom-toward-cursor. Lower = smoother but laggier.")]
+        public float positionSmoothTime = 0.2f;
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -87,8 +92,13 @@ public class CameraManager : MonoBehaviour
 
     // ── Drag state ────────────────────────────────────────────────
     private bool _isDragging = false;
-    private Vector3 _dragOriginMouse = Vector3.zero;  // mouse position when drag started
-    private Vector3 _dragOriginCamPos = Vector3.zero;  // camera position when drag started
+    private Vector3 _lastMousePos = Vector3.zero;
+
+    // ── Smooth zoom-toward-cursor state ───────────────────────────
+    private Vector3 _preZoomPosition;     // camera XZ before any zooming began
+    private bool _hasStoredPreZoom = false;
+    private Vector3 _targetXZPosition;    // where we WANT the camera XZ to be
+    private Vector3 _positionVelocity;    // used by SmoothDamp for position
 
     // ─────────────────────────────────────────────────────────────
     //  Unity lifecycle
@@ -108,7 +118,7 @@ public class CameraManager : MonoBehaviour
         SceneConfig cfg = ActiveConfig;
         if (cfg == null) return;
 
-        // ── Zoom first (zoom level decides if drag is allowed) ────
+        // ── Zoom first (zoom level decides if drag / pan is allowed) ──
         if (cfg.enableZoom)
             HandleZoom(cfg);
 
@@ -116,13 +126,35 @@ public class CameraManager : MonoBehaviour
         if (cfg.enableMouseDrag)
             HandleMouseDrag(cfg);
 
-        // ── Auto-pan (skipped while player is actively dragging) ──
-        if (!_isDragging)
+        // ── Auto-pan — ONLY when fully zoomed out AND not dragging ──
+        //    FIX #2 & #3: auto-pan was overwriting X position while
+        //    zoomed in, making X-drag useless and snapping position
+        //    to the pan boundary on drag start.
+        //    ADDITIONAL FIX: also check _hasStoredPreZoom so auto-pan
+        //    stops IMMEDIATELY on zoom-in, not after the actual FOV
+        //    catches up (which caused the camera to drift to the left
+        //    boundary during the SmoothDamp lag).
+        if (!_isDragging && !IsZoomedIn(cfg) && !_hasStoredPreZoom)
             HandlePan(cfg);
     }
 
     // ─────────────────────────────────────────────────────────────
-    //  PageManager detection (unchanged from your original)
+    //  Helper: is the camera currently zoomed in?
+    // ─────────────────────────────────────────────────────────────
+    private bool IsZoomedIn(SceneConfig cfg)
+    {
+        if (!cfg.enableZoom) return false;
+
+        float currentZoom = cameraDisplay.orthographic
+            ? cameraDisplay.orthographicSize
+            : cameraDisplay.fieldOfView;
+
+        // Consider "zoomed in" if we're more than 1 unit below maxZoom
+        return currentZoom < cfg.maxZoom - 1f;
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    //  PageManager detection (unchanged)
     // ─────────────────────────────────────────────────────────────
     private string lastDetectedUI = null;
 
@@ -195,22 +227,27 @@ public class CameraManager : MonoBehaviour
 
         panDirection = 1;
         zoomTimer = 0f;
-        _isDragging = false;  // cancel any active drag on scene switch
+        _isDragging = false;
+        _hasStoredPreZoom = false;
+        _positionVelocity = Vector3.zero;
 
         cameraTransform.position = cfg.startPosition;
         cameraTransform.rotation = Quaternion.Euler(cfg.startRotation);
 
+        _targetXZPosition = cfg.startPosition;
+
         if (cfg.enableZoom)
         {
             cfg.targetZoom = cfg.zoomOutValue;
-            SetCameraZoom(cameraDisplay, cfg.zoomOutValue, cfg);
+            cfg.zoomVelocity = 0f;
+            SetCameraZoomImmediate(cameraDisplay, cfg.zoomOutValue);
         }
 
         Debug.Log($"[CameraManager] Switched to scene: '{cfg.sceneName}'");
     }
 
     // ─────────────────────────────────────────────────────────────
-    //  Auto Pan  (original behaviour — pauses during drag)
+    //  Auto Pan  (only runs when fully zoomed out and not dragging)
     // ─────────────────────────────────────────────────────────────
     private void HandlePan(SceneConfig cfg)
     {
@@ -225,7 +262,16 @@ public class CameraManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────────────────────
-    //  Zoom  (unchanged from your original)
+    //  Zoom  (FIXED: smooth position interpolation toward cursor)
+    //
+    //  FIX #1: Instead of instantly jumping the camera position
+    //  toward the cursor each scroll tick, we update a _targetXZ
+    //  and SmoothDamp the actual position toward it every frame.
+    //  This makes position and FOV animate in sync — no bounce.
+    //
+    //  FIX #3: ResetView only fires when the target zoom AND the
+    //  actual zoom are both at maxZoom (truly fully zoomed out),
+    //  preventing premature position snaps.
     // ─────────────────────────────────────────────────────────────
     private void HandleZoom(SceneConfig cfg)
     {
@@ -233,29 +279,80 @@ public class CameraManager : MonoBehaviour
 
         if (Mathf.Abs(scroll) > 0.01f)
         {
+            float prevZoom = cfg.targetZoom;
+
             cfg.targetZoom -= scroll * cfg.zoomMultiplier;
             cfg.targetZoom = Mathf.Clamp(cfg.targetZoom, cfg.minZoom, cfg.maxZoom);
+
+            float zoomDelta = cfg.targetZoom - prevZoom; // negative = zooming in
+
+            // ── Store the pre-zoom camera position on first zoom-in ──
+            if (!_hasStoredPreZoom && zoomDelta < 0f)
+            {
+                _preZoomPosition = cameraTransform.position;
+                _targetXZPosition = cameraTransform.position;
+                _positionVelocity = Vector3.zero;
+                _hasStoredPreZoom = true;
+            }
+
+            // ── Zoom IN: shift the TARGET position toward cursor ──
+            if (zoomDelta < 0f)
+            {
+                Ray ray = cameraDisplay.ScreenPointToRay(Input.mousePosition);
+                Plane groundPlane = new Plane(Vector3.up, Vector3.zero);
+
+                if (groundPlane.Raycast(ray, out float enter))
+                {
+                    Vector3 worldCursor = ray.GetPoint(enter);
+
+                    float fraction = Mathf.Abs(zoomDelta) / (cfg.maxZoom - cfg.minZoom);
+                    Vector3 direction = worldCursor - _targetXZPosition;
+                    direction.y = 0f;
+                    _targetXZPosition += direction * fraction * 1.5f;
+                }
+            }
+
+            // ── Zoom OUT: blend the TARGET back toward pre-zoom position ──
+            if (zoomDelta > 0f && _hasStoredPreZoom)
+            {
+                float t = Mathf.InverseLerp(cfg.minZoom, cfg.maxZoom, cfg.targetZoom);
+                _targetXZPosition.x = Mathf.Lerp(_targetXZPosition.x, _preZoomPosition.x, t * 0.3f);
+                _targetXZPosition.z = Mathf.Lerp(_targetXZPosition.z, _preZoomPosition.z, t * 0.3f);
+            }
         }
 
-        SetCameraZoom(cameraDisplay, cfg.targetZoom, cfg);
+        // ── Smoothly animate FOV/ortho toward target ──────────────
+        SetCameraZoomSmooth(cameraDisplay, cfg.targetZoom, cfg);
 
+        // ── Smoothly animate POSITION toward target (FIX #1) ──────
+        //    Only when zoomed in — don't fight auto-pan when fully out
+        if (_hasStoredPreZoom)
+        {
+            Vector3 pos = cameraTransform.position;
+            Vector3 target = new Vector3(_targetXZPosition.x, pos.y, _targetXZPosition.z);
+            Vector3 smoothed = Vector3.SmoothDamp(pos, target, ref _positionVelocity, cfg.positionSmoothTime);
+            cameraTransform.position = smoothed;
+        }
+
+        // ── Fully zoomed out? Reset only when BOTH target AND actual
+        //    are at maxZoom — prevents premature snaps (FIX #3) ────
         float currentZoom = cameraDisplay.orthographic
             ? cameraDisplay.orthographicSize
             : cameraDisplay.fieldOfView;
 
-        // Fully zoomed out
-        if (Mathf.Abs(currentZoom - cfg.maxZoom) < 0.5f)
+        bool targetIsMax = Mathf.Abs(cfg.targetZoom - cfg.maxZoom) < 0.1f;
+        bool actualIsMax = Mathf.Abs(currentZoom - cfg.maxZoom) < 0.5f;
+
+        if (targetIsMax && actualIsMax && _hasStoredPreZoom)
         {
-            ResetView(cfg);
+            cameraTransform.position = cfg.startPosition;
+            cameraTransform.rotation = Quaternion.Euler(cfg.startRotation);
+            _hasStoredPreZoom = false;
+            _positionVelocity = Vector3.zero;
         }
     }
-    private void ResetView(SceneConfig cfg)
-    {
-        cameraTransform.position = cfg.startPosition;
-        cameraTransform.rotation = Quaternion.Euler(cfg.startRotation);
-    }
 
-    private void SetCameraZoom(Camera cam, float targetValue, SceneConfig cfg)
+    private void SetCameraZoomSmooth(Camera cam, float targetValue, SceneConfig cfg)
     {
         if (cam.orthographic)
         {
@@ -271,36 +368,30 @@ public class CameraManager : MonoBehaviour
         }
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  NEW — Mouse Drag Pan
-    // ─────────────────────────────────────────────────────────────
+    private void SetCameraZoomImmediate(Camera cam, float value)
+    {
+        if (cam.orthographic)
+            cam.orthographicSize = value;
+        else
+            cam.fieldOfView = value;
+    }
 
-    /// <summary>
-    /// Left-mouse-button drag to pan the camera.
-    ///
-    /// HOW IT WORKS:
-    ///   On MouseDown  → record where the mouse was and where the camera was.
-    ///   Each frame     → calculate how far the mouse has moved (delta).
-    ///   Apply that delta (scaled by dragSensitivity) to the camera position.
-    ///   On MouseUp    → end drag, resume auto-pan.
-    ///
-    /// ZOOM GUARD:
-    ///   If dragZoomThreshold > 0, drag is only active when the current
-    ///   FOV/orthoSize is below the threshold (i.e. player is zoomed in).
-    ///   Set dragZoomThreshold = 0 to always allow drag.
-    ///
-    /// PLACEMENT GUARD (BUG FIX [4]):
-    ///   If PlacementManager is dragging a device, skip camera drag entirely.
-    ///   Without this guard, pressing a BottomHUD icon triggered BOTH a
-    ///   placement drag AND a camera drag simultaneously.
-    /// </summary>
+    // ─────────────────────────────────────────────────────────────
+    //  Mouse Drag Pan
+    //
+    //  FIX #2: X-axis drag now works because auto-pan is disabled
+    //  while zoomed in (see Update). The drag position is also
+    //  synced to _targetXZPosition so zoom and drag don't fight.
+    //
+    //  FIX #3: Drag starts from wherever the camera currently is
+    //  (the zoom-toward-cursor position), not from the auto-pan
+    //  boundary.
+    // ─────────────────────────────────────────────────────────────
     private void HandleMouseDrag(SceneConfig cfg)
     {
         // ── Placement guard: don't pan camera while placing a device ──
         if (PlacementManager.Instance != null && PlacementManager.Instance.IsDragging)
         {
-            // Cancel any in-progress camera drag so there's no snap when
-            // the player releases the placement and tries to drag the camera.
             _isDragging = false;
             return;
         }
@@ -313,7 +404,6 @@ public class CameraManager : MonoBehaviour
                 ? cameraDisplay.orthographicSize
                 : cameraDisplay.fieldOfView;
 
-            // Allow drag only when zoomed in (smaller value = more zoomed)
             zoomedInEnough = currentZoom < cfg.dragZoomThreshold;
         }
 
@@ -321,8 +411,7 @@ public class CameraManager : MonoBehaviour
         if (Input.GetMouseButtonDown(0) && zoomedInEnough)
         {
             _isDragging = true;
-            _dragOriginMouse = Input.mousePosition;       // pixel position on screen
-            _dragOriginCamPos = cameraTransform.position;  // world position of camera
+            _lastMousePos = Input.mousePosition;
         }
 
         // ── Mouse button UP — end drag ────────────────────────────
@@ -331,7 +420,6 @@ public class CameraManager : MonoBehaviour
             _isDragging = false;
         }
 
-        // ── Not dragging — nothing to do ──────────────────────────
         if (!_isDragging) return;
 
         // ── If zoom changed mid-drag and player is no longer zoomed in,
@@ -342,24 +430,50 @@ public class CameraManager : MonoBehaviour
             return;
         }
 
-        // ── Calculate mouse movement delta in pixels ──────────────
-        Vector3 mouseDelta = Input.mousePosition - _dragOriginMouse;
+        // ── Frame-by-frame mouse delta ────────────────────────────
+        Vector3 currentMouse = Input.mousePosition;
+        Vector3 frameDelta = currentMouse - _lastMousePos;
+        _lastMousePos = currentMouse;
 
-        // mouseDelta.x → move camera on world X axis (left/right)
-        // mouseDelta.y → move camera on world Z axis (forward/back)
-        //   (negative because dragging mouse up = camera moves forward = Z decreases)
-        float deltaX = -mouseDelta.x * cfg.dragSensitivity * Time.deltaTime * 60f;
-        float deltaZ = -mouseDelta.y * cfg.dragSensitivity * Time.deltaTime * 60f;
+        float currentZoomVal = cameraDisplay.orthographic
+            ? cameraDisplay.orthographicSize
+            : cameraDisplay.fieldOfView;
+        float zoomFactor = currentZoomVal / cfg.maxZoom;
 
-        Vector3 newPos = _dragOriginCamPos + new Vector3(deltaX, 0f, cfg.dragAxisZ ? deltaZ : 0f);
+        float sensitivity = cfg.dragSensitivity * zoomFactor;
 
-        // ── Clamp within map bounds ───────────────────────────────
-        newPos.x = Mathf.Clamp(newPos.x, cfg.minLocationX, cfg.maxLocationX);
+        // ── FIX #1: Use camera-relative axes so drag works
+        //    regardless of camera Y rotation (e.g. -90°).
+        //    Screen-horizontal → camera right, screen-vertical → camera forward,
+        //    both projected onto the horizontal (XZ) plane.
+        Vector3 camRight = cameraTransform.right;
+        Vector3 camForward = cameraTransform.forward;
+        camRight.y = 0f; camRight.Normalize();
+        camForward.y = 0f; camForward.Normalize();
+
+        Vector3 worldDelta = -(frameDelta.x * camRight + frameDelta.y * camForward) * sensitivity;
+
+        float deltaX = worldDelta.x;
+        float deltaZ = worldDelta.z;
+
+        // ── Update the TARGET position (not the camera directly) ──
+        //    This keeps drag and zoom-toward-cursor in sync.
+        _targetXZPosition.x += deltaX;
         if (cfg.dragAxisZ)
-            newPos.z = Mathf.Clamp(newPos.z, cfg.minLocationZ, cfg.maxLocationZ);
+            _targetXZPosition.z += deltaZ;
 
-        // Y stays fixed — camera height never changes during drag
-        newPos.y = _dragOriginCamPos.y;
+        // ── Clamp target within map bounds ────────────────────────
+        _targetXZPosition.x = Mathf.Clamp(_targetXZPosition.x, cfg.minLocationX, cfg.maxLocationX);
+        if (cfg.dragAxisZ)
+            _targetXZPosition.z = Mathf.Clamp(_targetXZPosition.z, cfg.minLocationZ, cfg.maxLocationZ);
+
+        // ── Apply directly during drag for responsive feel ────────
+        //    (the SmoothDamp in HandleZoom will also run but the
+        //    target matches so it won't fight)
+        Vector3 newPos = cameraTransform.position;
+        newPos.x = Mathf.Clamp(newPos.x + deltaX, cfg.minLocationX, cfg.maxLocationX);
+        if (cfg.dragAxisZ)
+            newPos.z = Mathf.Clamp(newPos.z + deltaZ, cfg.minLocationZ, cfg.maxLocationZ);
 
         cameraTransform.position = newPos;
     }

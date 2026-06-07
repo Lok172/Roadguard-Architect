@@ -196,46 +196,45 @@ MonoBehaviour:
   m_GameObject: {fileID: 801832299}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bd3dbee69c12bec42adc57ca8a5ae5f0, type: 3}
+  m_Script: {fileID: 11500000, guid: a09564face4af7643a7a38861dad5229, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraRotate
   scenes:
   - sceneName: MainMenu
-    startPosition: {x: 270, y: 70, z: 105}
+    startPosition: {x: 270, y: 70, z: 110}
     startRotation: {x: 53, y: -90, z: 0}
-    minLocationX: 60
+    minLocationX: 110
     maxLocationX: 270.5
-    movementSpeed: 10
+    movementSpeed: 5
     enableZoom: 0
-    zoomMultiplier: 0
-    minZoom: 0
-    maxZoom: 0
-    zoomSmoothTime: 0
+    zoomMultiplier: 50
+    minZoom: 30
+    maxZoom: 90
+    zoomSmoothTime: 0.25
     targetZoom: 0
     zoomVelocity: 0
     zoomInValue: 0
     zoomOutValue: 0
     zoomCycleDuration: 0
     enableMouseDrag: 0
-    dragSensitivity: 0
-    dragZoomThreshold: 0
+    dragSensitivity: 0.3
+    dragZoomThreshold: 55
     dragAxisZ: 0
-    minLocationZ: 0
-    maxLocationZ: 0
-    positionSmoothTime: 0
+    minLocationZ: 80
+    maxLocationZ: 140
   - sceneName: LV1
-    startPosition: {x: 118, y: 134, z: 158}
+    startPosition: {x: 118.8, y: 134.5, z: 157.9}
     startRotation: {x: 73.6, y: 0, z: 0}
-    minLocationX: 50
-    maxLocationX: 210
-    movementSpeed: 0
+    minLocationX: 73.6
+    maxLocationX: 73.6
+    movementSpeed: 5
     enableZoom: 1
     zoomMultiplier: 50
-    minZoom: 4
-    maxZoom: 58
+    minZoom: 3.85
+    maxZoom: 60
     zoomSmoothTime: 0.25
-    targetZoom: 30
-    zoomVelocity: 0.0005
+    targetZoom: 0
+    zoomVelocity: 0
     zoomInValue: 0
     zoomOutValue: 0
     zoomCycleDuration: 0
@@ -243,9 +242,8 @@ MonoBehaviour:
     dragSensitivity: 0.3
     dragZoomThreshold: 50
     dragAxisZ: 1
-    minLocationZ: 100
-    maxLocationZ: 180
-    positionSmoothTime: 0.2
+    minLocationZ: 80
+    maxLocationZ: 200
   cameraDisplay: {fileID: 0}
 --- !u!4 &801832301
 Transform:
