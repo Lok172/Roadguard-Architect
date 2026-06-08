@@ -2622,17 +2622,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1596120357}
   m_CullTransparentMesh: 1
---- !u!114 &1720496591 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 8614087474253051675, guid: 4184066ae9b73544baea01172c719f11, type: 3}
-  m_PrefabInstance: {fileID: 676750434}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
 --- !u!1001 &1794380161
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2952,7 +2941,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f6e96e8f786e601498ff9ce50bf52847, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HUDController
-  accidentText: {fileID: 1720496591}
+  accidentText: {fileID: 0}
   happinessBar: {fileID: 1121382383}
   happinessPct: {fileID: 420064612}
   dateText: {fileID: 794002075}

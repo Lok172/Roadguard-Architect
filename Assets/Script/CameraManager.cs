@@ -27,16 +27,6 @@ public class CameraManager : MonoBehaviour
         public Vector3 startPosition = new Vector3(270f, 70f, 110f);
         public Vector3 startRotation = new Vector3(53f, -90f, 0f);
 
-        [Tooltip("X-axis bounds — used by auto-pan and zoom-pan")]
-        public float minLocationX = 110f;
-        [Tooltip("X-axis bounds — used by auto-pan and zoom-pan")]
-        public float maxLocationX = 270f;
-
-        [Tooltip("Z-axis bounds — used by zoom-pan only")]
-        public float minLocationZ = 80f;
-        [Tooltip("Z-axis bounds — used by zoom-pan only")]
-        public float maxLocationZ = 140f;
-
         // ── Camera Mode ────────────────────────────────────────
         [Header("Camera Mode (Auto Pan or Zoom — pick one)")]
         public CameraMode cameraMode = CameraMode.AutoPan;
@@ -61,8 +51,8 @@ public class CameraManager : MonoBehaviour
         [Tooltip("Duration (seconds) of the auto-transition from Initial Zoom to Max Zoom")]
         public float transitionDuration = 2f;
 
-        [Tooltip("Seconds to wait before the zoom transition begins")]
-        public float transitionDelay = 2f;
+        [Tooltip("Seconds to hold the view AFTER the zoom transition finishes, before the game starts")]
+        public float postTransitionHold = 2f;
 
         public float zoomSmoothTime = 0.25f;
 
@@ -93,12 +83,6 @@ public class CameraManager : MonoBehaviour
     [Header("Camera Reference (auto-found if empty)")]
     [SerializeField] private Camera cameraDisplay;
 
-    [Header("Working Area Boundary")]
-    [Tooltip("Assign a flat Quad/Plane on the ground. The camera will be " +
-             "clamped so the screen NEVER shows anything beyond this rectangle. " +
-             "Leave empty to use per-scene min/max bounds only.")]
-    [SerializeField] private Transform workingArea;
-
     // ─────────────────────────────────────────────────────────────
     //  Private state
     // ─────────────────────────────────────────────────────────────
@@ -119,9 +103,11 @@ public class CameraManager : MonoBehaviour
     // ── Zoom transition coroutine handle ────────────────────────
     private Coroutine _zoomTransitionCoroutine;
 
-    // ── Cached working-area bounds (refreshed every frame) ──────
-    private bool _hasWorkingAreaBounds;
-    private float _waMinX, _waMaxX, _waMinZ, _waMaxZ, _waGroundY;
+    // ── Working-area bounds (tag: "WorkingArea") ────────────────
+    private bool _hasWorkingArea;
+    private float _waMinX, _waMaxX;
+    private float _waMinZ, _waMaxZ;
+    private float _waGroundY;
 
     // ─────────────────────────────────────────────────────────────
     //  Unity lifecycle
@@ -152,106 +138,6 @@ public class CameraManager : MonoBehaviour
                 HandlePan(cfg);
                 break;
         }
-
-        // ── Final hard clamp: guarantee nothing beyond workingArea is visible ──
-        ClampCameraToWorkingArea();
-    }
-
-    // ─────────────────────────────────────────────────────────────
-    //  Working-area frustum clamp
-    //  Raycasts the four screen corners onto the ground plane and
-    //  pushes the camera back if any visible point spills outside.
-    // ─────────────────────────────────────────────────────────────
-    private void RefreshWorkingAreaBounds()
-    {
-        _hasWorkingAreaBounds = false;
-        if (workingArea == null) return;
-
-        Renderer rend = workingArea.GetComponent<Renderer>();
-        if (rend != null)
-        {
-            Bounds b = rend.bounds;
-            _waMinX = b.min.x;
-            _waMaxX = b.max.x;
-            _waMinZ = b.min.z;
-            _waMaxZ = b.max.z;
-            _waGroundY = b.center.y;
-            _hasWorkingAreaBounds = true;
-            return;
-        }
-
-        // Fallback for objects with no Renderer — use localScale of a Quad
-        // (Unity default Quad is 1×1; Plane is 10×10).
-        Collider col = workingArea.GetComponent<Collider>();
-        if (col != null)
-        {
-            Bounds b = col.bounds;
-            _waMinX = b.min.x;
-            _waMaxX = b.max.x;
-            _waMinZ = b.min.z;
-            _waMaxZ = b.max.z;
-            _waGroundY = b.center.y;
-            _hasWorkingAreaBounds = true;
-        }
-    }
-
-    private void ClampCameraToWorkingArea()
-    {
-        RefreshWorkingAreaBounds();
-        if (!_hasWorkingAreaBounds || cameraDisplay == null) return;
-
-        Plane ground = new Plane(Vector3.up, new Vector3(0f, _waGroundY, 0f));
-
-        // Raycast all four screen corners to the ground plane.
-        float visMinX = float.MaxValue, visMaxX = float.MinValue;
-        float visMinZ = float.MaxValue, visMaxZ = float.MinValue;
-        int hits = 0;
-
-        Vector3[] corners = new Vector3[]
-        {
-            new Vector3(0f,            0f,             0f),
-            new Vector3(Screen.width,  0f,             0f),
-            new Vector3(Screen.width,  Screen.height,  0f),
-            new Vector3(0f,            Screen.height,  0f)
-        };
-
-        foreach (Vector3 corner in corners)
-        {
-            Ray ray = cameraDisplay.ScreenPointToRay(corner);
-            if (ground.Raycast(ray, out float enter))
-            {
-                Vector3 pt = ray.GetPoint(enter);
-                if (pt.x < visMinX) visMinX = pt.x;
-                if (pt.x > visMaxX) visMaxX = pt.x;
-                if (pt.z < visMinZ) visMinZ = pt.z;
-                if (pt.z > visMaxZ) visMaxZ = pt.z;
-                hits++;
-            }
-        }
-
-        // If not all corners hit (camera nearly parallel to ground), bail out.
-        if (hits < 4) return;
-
-        // Calculate how much the visible rect overshoots.
-        float shiftX = 0f;
-        if (visMinX < _waMinX) shiftX = _waMinX - visMinX;
-        else if (visMaxX > _waMaxX) shiftX = _waMaxX - visMaxX;
-
-        float shiftZ = 0f;
-        if (visMinZ < _waMinZ) shiftZ = _waMinZ - visMinZ;
-        else if (visMaxZ > _waMaxZ) shiftZ = _waMaxZ - visMaxZ;
-
-        if (Mathf.Abs(shiftX) < 0.001f && Mathf.Abs(shiftZ) < 0.001f) return;
-
-        // Push the camera back inside.
-        Vector3 pos = cameraTransform.position;
-        pos.x += shiftX;
-        pos.z += shiftZ;
-        cameraTransform.position = pos;
-
-        // Keep the smooth-damp target in sync so it doesn't fight back.
-        _targetXZPosition.x += shiftX;
-        _targetXZPosition.z += shiftZ;
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -375,10 +261,6 @@ public class CameraManager : MonoBehaviour
         _positionVelocity = Vector3.zero;
         _isDragging = false;
 
-        // Optional delay before the reveal begins
-        if (cfg.transitionDelay > 0f)
-            yield return new WaitForSeconds(cfg.transitionDelay);
-
         float elapsed = 0f;
 
         while (elapsed < duration)
@@ -406,8 +288,9 @@ public class CameraManager : MonoBehaviour
         cfg.targetZoom = endZoom;
         cfg.zoomVelocity = 0f;
 
-        // Hold for a moment before the game starts
-        yield return new WaitForSeconds(2f);
+        // Hold the view for a moment so the player can take in the map
+        if (cfg.postTransitionHold > 0f)
+            yield return new WaitForSeconds(cfg.postTransitionHold);
 
         // Resume the game day tick now that the transition is done
         if (GameManager.Instance != null)
@@ -440,6 +323,46 @@ public class CameraManager : MonoBehaviour
         cameraTransform = cameraDisplay.transform;
     }
 
+    // ─────────────────────────────────────────────────────────────
+    //  Working-area detection (tag: "WorkingArea")
+    //  Finds the quad/plane in the scene and caches its world-
+    //  space AABB.  Called every time a scene config is applied
+    //  so it always matches the current level.
+    // ─────────────────────────────────────────────────────────────
+    private void CacheWorkingArea()
+    {
+        _hasWorkingArea = false;
+
+        GameObject wa = GameObject.FindGameObjectWithTag("WorkingArea");
+        if (wa == null)
+        {
+            Debug.LogWarning("[CameraManager] No GameObject tagged 'WorkingArea' found — " +
+                             "camera bounds will be unclamped.");
+            return;
+        }
+
+        Renderer rend = wa.GetComponent<Renderer>();
+        if (rend == null)
+        {
+            Debug.LogWarning("[CameraManager] WorkingArea object has no Renderer — " +
+                             "camera bounds will be unclamped.");
+            return;
+        }
+
+        Bounds b = rend.bounds;
+        _waMinX = b.min.x;
+        _waMaxX = b.max.x;
+        _waMinZ = b.min.z;
+        _waMaxZ = b.max.z;
+        _waGroundY = b.center.y;
+        _hasWorkingArea = true;
+
+        Debug.Log($"[CameraManager] WorkingArea cached — " +
+                  $"X [{_waMinX:F1}, {_waMaxX:F1}]  " +
+                  $"Z [{_waMinZ:F1}, {_waMaxZ:F1}]  " +
+                  $"groundY {_waGroundY:F1}");
+    }
+
     private void ApplyScene(int index)
     {
         SceneConfig cfg = ActiveConfig;
@@ -464,6 +387,9 @@ public class CameraManager : MonoBehaviour
         cameraTransform.rotation = Quaternion.Euler(cfg.startRotation);
 
         _targetXZPosition = cfg.startPosition;
+
+        // Re-detect working area (may differ per level)
+        CacheWorkingArea();
 
         if (cfg.cameraMode == CameraMode.Zoom)
         {
@@ -529,9 +455,12 @@ public class CameraManager : MonoBehaviour
         Vector3 pos = cameraTransform.position;
         pos.x += movement;
 
-        if (pos.x >= cfg.maxLocationX || pos.x <= cfg.minLocationX)
+        var (minX, maxX, _, _) = GetCameraBounds(cfg);
+
+        if (pos.x >= maxX || pos.x <= minX)
             panDirection *= -1;
 
+        pos.x = Mathf.Clamp(pos.x, minX, maxX);
         cameraTransform.position = pos;
     }
 
@@ -540,6 +469,9 @@ public class CameraManager : MonoBehaviour
     // ─────────────────────────────────────────────────────────────
     private void HandleZoom(SceneConfig cfg)
     {
+        // ── Block input during the opening zoom transition ────────
+        if (_zoomTransitionCoroutine != null) return;
+
         float scroll = Input.GetAxis("Mouse ScrollWheel");
 
         if (Mathf.Abs(scroll) > 0.01f)
@@ -564,7 +496,8 @@ public class CameraManager : MonoBehaviour
             if (zoomDelta < 0f)
             {
                 Ray ray = cameraDisplay.ScreenPointToRay(Input.mousePosition);
-                Plane groundPlane = new Plane(Vector3.up, Vector3.zero);
+                Plane groundPlane = new Plane(Vector3.up,
+                    new Vector3(0f, _hasWorkingArea ? _waGroundY : 0f, 0f));
 
                 if (groundPlane.Raycast(ray, out float enter))
                 {
@@ -574,6 +507,11 @@ public class CameraManager : MonoBehaviour
                     Vector3 direction = worldCursor - _targetXZPosition;
                     direction.y = 0f;
                     _targetXZPosition += direction * fraction * 1.5f;
+
+                    // Clamp to frustum-inset bounds
+                    var (mnX, mxX, mnZ, mxZ) = GetCameraBounds(cfg);
+                    _targetXZPosition.x = Mathf.Clamp(_targetXZPosition.x, mnX, mxX);
+                    _targetXZPosition.z = Mathf.Clamp(_targetXZPosition.z, mnZ, mxZ);
                 }
             }
 
@@ -650,10 +588,100 @@ public class CameraManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────────────────────
+    //  Frustum-inset camera bounds
+    //
+    //  Projects the four screen corners onto the working-area
+    //  ground plane, measures how far they extend from the camera
+    //  position, then shrinks the working-area rectangle inward
+    //  by those amounts.  Result: the camera position can only
+    //  move within the range where EVERY screen pixel still lands
+    //  inside the working area — guaranteeing nothing beyond the
+    //  box is ever visible.
+    //
+    //  If no WorkingArea is found the bounds are unclamped
+    //  (float.Min / float.Max).
+    // ─────────────────────────────────────────────────────────────
+    private (float minX, float maxX, float minZ, float maxZ) GetCameraBounds(SceneConfig cfg)
+    {
+        if (!_hasWorkingArea)
+            return (float.MinValue, float.MaxValue, float.MinValue, float.MaxValue);
+
+        Plane ground = new Plane(Vector3.up, new Vector3(0f, _waGroundY, 0f));
+        Vector3 camPos = cameraTransform.position;
+
+        // Viewport corners: (0,0) bottom-left … (1,1) top-right
+        Vector3[] vpCorners =
+        {
+            new Vector3(0f, 0f, 0f),
+            new Vector3(1f, 0f, 0f),
+            new Vector3(0f, 1f, 0f),
+            new Vector3(1f, 1f, 0f)
+        };
+
+        float visMinX = camPos.x, visMaxX = camPos.x;
+        float visMinZ = camPos.z, visMaxZ = camPos.z;
+        bool anyHit = false;
+
+        foreach (var vp in vpCorners)
+        {
+            Ray ray = cameraDisplay.ViewportPointToRay(vp);
+            if (ground.Raycast(ray, out float dist) && dist > 0f)
+            {
+                Vector3 hit = ray.GetPoint(dist);
+                if (!anyHit)
+                {
+                    visMinX = visMaxX = hit.x;
+                    visMinZ = visMaxZ = hit.z;
+                    anyHit = true;
+                }
+                else
+                {
+                    visMinX = Mathf.Min(visMinX, hit.x);
+                    visMaxX = Mathf.Max(visMaxX, hit.x);
+                    visMinZ = Mathf.Min(visMinZ, hit.z);
+                    visMaxZ = Mathf.Max(visMaxZ, hit.z);
+                }
+            }
+        }
+
+        if (!anyHit)
+            return (_waMinX, _waMaxX, _waMinZ, _waMaxZ);
+
+        // How far the visible ground extends from the camera's own X/Z
+        float extLeft = camPos.x - visMinX;   // positive
+        float extRight = visMaxX - camPos.x;
+        float extBack = camPos.z - visMinZ;
+        float extFront = visMaxZ - camPos.z;
+
+        // Shrink the working area inward by those extents
+        float clampMinX = _waMinX + extLeft;
+        float clampMaxX = _waMaxX - extRight;
+        float clampMinZ = _waMinZ + extBack;
+        float clampMaxZ = _waMaxZ - extFront;
+
+        // Safety: if the frustum is wider than the working area at this
+        // zoom level, collapse to the centre so the camera at least stays
+        // centred rather than jittering.
+        if (clampMinX > clampMaxX)
+            clampMinX = clampMaxX = (_waMinX + _waMaxX) * 0.5f;
+        if (clampMinZ > clampMaxZ)
+            clampMinZ = clampMaxZ = (_waMinZ + _waMaxZ) * 0.5f;
+
+        return (clampMinX, clampMaxX, clampMinZ, clampMaxZ);
+    }
+
+    // ─────────────────────────────────────────────────────────────
     //  Mouse Drag Pan (always active when Zoom mode is enabled)
     // ─────────────────────────────────────────────────────────────
     private void HandleMouseDrag(SceneConfig cfg)
     {
+        // ── Block input during the opening zoom transition ────────
+        if (_zoomTransitionCoroutine != null)
+        {
+            _isDragging = false;
+            return;
+        }
+
         // ── Placement guard: don't pan camera while placing a device ──
         if (PlacementManager.Instance != null && PlacementManager.Instance.IsDragging)
         {
@@ -722,14 +750,15 @@ public class CameraManager : MonoBehaviour
         _targetXZPosition.x += deltaX;
         _targetXZPosition.z += deltaZ;
 
-        // ── Clamp target within map bounds ────────────────────────
-        _targetXZPosition.x = Mathf.Clamp(_targetXZPosition.x, cfg.minLocationX, cfg.maxLocationX);
-        _targetXZPosition.z = Mathf.Clamp(_targetXZPosition.z, cfg.minLocationZ, cfg.maxLocationZ);
+        // ── Clamp target within frustum-inset working-area bounds ──
+        var (minX, maxX, minZ, maxZ) = GetCameraBounds(cfg);
+        _targetXZPosition.x = Mathf.Clamp(_targetXZPosition.x, minX, maxX);
+        _targetXZPosition.z = Mathf.Clamp(_targetXZPosition.z, minZ, maxZ);
 
         // ── Apply directly during drag for responsive feel ────────
         Vector3 newPos = cameraTransform.position;
-        newPos.x = Mathf.Clamp(newPos.x + deltaX, cfg.minLocationX, cfg.maxLocationX);
-        newPos.z = Mathf.Clamp(newPos.z + deltaZ, cfg.minLocationZ, cfg.maxLocationZ);
+        newPos.x = Mathf.Clamp(newPos.x + deltaX, minX, maxX);
+        newPos.z = Mathf.Clamp(newPos.z + deltaZ, minZ, maxZ);
 
         cameraTransform.position = newPos;
     }

@@ -203,10 +203,6 @@ MonoBehaviour:
   - sceneName: MainMenu
     startPosition: {x: 268, y: 70, z: 105}
     startRotation: {x: 53, y: -90, z: 0}
-    minLocationX: 120
-    maxLocationX: 270.5
-    minLocationZ: 0
-    maxLocationZ: 0
     cameraMode: 1
     movementSpeed: 10
     zoomMultiplier: 0
@@ -215,7 +211,7 @@ MonoBehaviour:
     initialZoom: 60
     autoTransitionOnStart: 0
     transitionDuration: 2
-    transitionDelay: 2
+    postTransitionHold: 2
     zoomSmoothTime: 0
     positionSmoothTime: 0
     dragSensitivity: 0
@@ -225,10 +221,6 @@ MonoBehaviour:
   - sceneName: LV1
     startPosition: {x: 118, y: 134, z: 158}
     startRotation: {x: 73.6, y: 0, z: 0}
-    minLocationX: 50
-    maxLocationX: 210
-    minLocationZ: 100
-    maxLocationZ: 180
     cameraMode: 2
     movementSpeed: 0
     zoomMultiplier: 50
@@ -237,11 +229,11 @@ MonoBehaviour:
     initialZoom: 1
     autoTransitionOnStart: 1
     transitionDuration: 2
-    transitionDelay: 2
+    postTransitionHold: 2
     zoomSmoothTime: 0.25
     positionSmoothTime: 0.2
     dragSensitivity: 0.3
-    dragZoomThreshold: 50
+    dragZoomThreshold: 3.9
     targetZoom: 30
     zoomVelocity: 0.0005
   cameraDisplay: {fileID: 0}
