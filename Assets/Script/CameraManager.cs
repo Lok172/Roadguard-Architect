@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
 
 #if UNITY_EDITOR
@@ -7,6 +8,11 @@ using UnityEditor;
 
 public class CameraManager : MonoBehaviour
 {
+    // ─────────────────────────────────────────────────────────────
+    //  Camera mode — only one can be active at a time
+    // ─────────────────────────────────────────────────────────────
+    public enum CameraMode { None, AutoPan, Zoom }
+
     // ─────────────────────────────────────────────────────────────
     //  Per-scene configuration
     // ─────────────────────────────────────────────────────────────
@@ -21,56 +27,61 @@ public class CameraManager : MonoBehaviour
         public Vector3 startPosition = new Vector3(270f, 70f, 110f);
         public Vector3 startRotation = new Vector3(53f, -90f, 0f);
 
-        [Header("Auto Pan (disabled while player is dragging)")]
+        [Tooltip("X-axis bounds — used by auto-pan and zoom-pan")]
         public float minLocationX = 110f;
+        [Tooltip("X-axis bounds — used by auto-pan and zoom-pan")]
         public float maxLocationX = 270f;
+
+        [Tooltip("Z-axis bounds — used by zoom-pan only")]
+        public float minLocationZ = 80f;
+        [Tooltip("Z-axis bounds — used by zoom-pan only")]
+        public float maxLocationZ = 140f;
+
+        // ── Camera Mode ────────────────────────────────────────
+        [Header("Camera Mode (Auto Pan or Zoom — pick one)")]
+        public CameraMode cameraMode = CameraMode.AutoPan;
+
+        // ── Auto Pan ───────────────────────────────────────────
+        [Header("Auto Pan Settings")]
         public float movementSpeed = 5f;
 
-        [Header("Zoom (Optional)")]
-        public bool enableZoom = false;
-
+        // ── Zoom ───────────────────────────────────────────────
         [Header("Zoom Settings")]
         public float zoomMultiplier = 50f;
         public float minZoom = 30f;
         public float maxZoom = 90f;
+
+        [Tooltip("FOV/ortho size the reveal STARTS at. Must be between Min Zoom " +
+                 "and Max Zoom — values below Min Zoom are clamped automatically.")]
+        public float initialZoom = 60f;
+
+        [Tooltip("Automatically transition from Initial Zoom to Max Zoom when the scene loads")]
+        public bool autoTransitionOnStart = false;
+
+        [Tooltip("Duration (seconds) of the auto-transition from Initial Zoom to Max Zoom")]
+        public float transitionDuration = 2f;
+
+        [Tooltip("Seconds to wait before the zoom transition begins")]
+        public float transitionDelay = 2f;
+
         public float zoomSmoothTime = 0.25f;
 
-        public float targetZoom;
-        public float zoomVelocity;
-
-        [Tooltip("FOV/ortho size when zoomed in (smaller = closer)")]
-        public float zoomInValue = 30f;
-        [Tooltip("FOV/ortho size when zoomed out (larger = wider)")]
-        public float zoomOutValue = 60f;
-        [Tooltip("Seconds to complete one full zoom cycle")]
-        public float zoomCycleDuration = 4f;
-
-        // ── Mouse Drag Settings ──────────────────────────────────
-        [Header("Mouse Drag Pan (left mouse button)")]
-        [Tooltip("Enable left-mouse-drag to pan the camera")]
-        public bool enableMouseDrag = true;
+        [Tooltip("How quickly the camera position catches up to the target " +
+                 "during zoom-toward-cursor. Lower = smoother but laggier.")]
+        public float positionSmoothTime = 0.2f;
 
         [Tooltip("How sensitive the drag is — higher = moves more per pixel")]
         public float dragSensitivity = 0.3f;
 
         [Tooltip("Only allow drag when zoomed in beyond this threshold. " +
-                 "Set to 0 to always allow drag regardless of zoom level.")]
+                 "Set to 0 to always allow drag regardless of zoom level. " +
+                 "Also marks where the camera starts gliding back to start as you zoom out — " +
+                 "a LOWER value gives a longer, smoother return.")]
         public float dragZoomThreshold = 55f;
 
-        [Tooltip("Also allow Z-axis drag (forward/back)? " +
-                 "Useful if your camera can pan vertically on screen.")]
-        public bool dragAxisZ = true;
-
-        [Tooltip("Z-axis clamp — min world Z the camera can drag to")]
-        public float minLocationZ = 80f;
-        [Tooltip("Z-axis clamp — max world Z the camera can drag to")]
-        public float maxLocationZ = 140f;
-
-        // ── Position smooth settings ─────────────────────────────
-        [Header("Position Smoothing")]
-        [Tooltip("How quickly the camera position catches up to the target " +
-                 "during zoom-toward-cursor. Lower = smoother but laggier.")]
-        public float positionSmoothTime = 0.2f;
+        // ── Internal zoom state (not shown in inspector) ───────
+        [HideInInspector] public float targetZoom;
+        [HideInInspector] public float zoomVelocity;
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -82,23 +93,35 @@ public class CameraManager : MonoBehaviour
     [Header("Camera Reference (auto-found if empty)")]
     [SerializeField] private Camera cameraDisplay;
 
+    [Header("Working Area Boundary")]
+    [Tooltip("Assign a flat Quad/Plane on the ground. The camera will be " +
+             "clamped so the screen NEVER shows anything beyond this rectangle. " +
+             "Leave empty to use per-scene min/max bounds only.")]
+    [SerializeField] private Transform workingArea;
+
     // ─────────────────────────────────────────────────────────────
     //  Private state
     // ─────────────────────────────────────────────────────────────
     private Transform cameraTransform;
     private int panDirection = 1;
-    private float zoomTimer = 0f;
     private int activeSceneIndex = -1;
 
-    // ── Drag state ────────────────────────────────────────────────
+    // ── Drag state ──────────────────────────────────────────────
     private bool _isDragging = false;
     private Vector3 _lastMousePos = Vector3.zero;
 
-    // ── Smooth zoom-toward-cursor state ───────────────────────────
-    private Vector3 _preZoomPosition;     // camera XZ before any zooming began
+    // ── Smooth zoom-toward-cursor state ─────────────────────────
+    private Vector3 _preZoomPosition;
     private bool _hasStoredPreZoom = false;
-    private Vector3 _targetXZPosition;    // where we WANT the camera XZ to be
-    private Vector3 _positionVelocity;    // used by SmoothDamp for position
+    private Vector3 _targetXZPosition;
+    private Vector3 _positionVelocity;
+
+    // ── Zoom transition coroutine handle ────────────────────────
+    private Coroutine _zoomTransitionCoroutine;
+
+    // ── Cached working-area bounds (refreshed every frame) ──────
+    private bool _hasWorkingAreaBounds;
+    private float _waMinX, _waMaxX, _waMinZ, _waMaxZ, _waGroundY;
 
     // ─────────────────────────────────────────────────────────────
     //  Unity lifecycle
@@ -118,24 +141,117 @@ public class CameraManager : MonoBehaviour
         SceneConfig cfg = ActiveConfig;
         if (cfg == null) return;
 
-        // ── Zoom first (zoom level decides if drag / pan is allowed) ──
-        if (cfg.enableZoom)
-            HandleZoom(cfg);
+        switch (cfg.cameraMode)
+        {
+            case CameraMode.Zoom:
+                HandleZoom(cfg);
+                HandleMouseDrag(cfg);
+                break;
 
-        // ── Mouse drag ────────────────────────────────────────────
-        if (cfg.enableMouseDrag)
-            HandleMouseDrag(cfg);
+            case CameraMode.AutoPan:
+                HandlePan(cfg);
+                break;
+        }
 
-        // ── Auto-pan — ONLY when fully zoomed out AND not dragging ──
-        //    FIX #2 & #3: auto-pan was overwriting X position while
-        //    zoomed in, making X-drag useless and snapping position
-        //    to the pan boundary on drag start.
-        //    ADDITIONAL FIX: also check _hasStoredPreZoom so auto-pan
-        //    stops IMMEDIATELY on zoom-in, not after the actual FOV
-        //    catches up (which caused the camera to drift to the left
-        //    boundary during the SmoothDamp lag).
-        if (!_isDragging && !IsZoomedIn(cfg) && !_hasStoredPreZoom)
-            HandlePan(cfg);
+        // ── Final hard clamp: guarantee nothing beyond workingArea is visible ──
+        ClampCameraToWorkingArea();
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    //  Working-area frustum clamp
+    //  Raycasts the four screen corners onto the ground plane and
+    //  pushes the camera back if any visible point spills outside.
+    // ─────────────────────────────────────────────────────────────
+    private void RefreshWorkingAreaBounds()
+    {
+        _hasWorkingAreaBounds = false;
+        if (workingArea == null) return;
+
+        Renderer rend = workingArea.GetComponent<Renderer>();
+        if (rend != null)
+        {
+            Bounds b = rend.bounds;
+            _waMinX = b.min.x;
+            _waMaxX = b.max.x;
+            _waMinZ = b.min.z;
+            _waMaxZ = b.max.z;
+            _waGroundY = b.center.y;
+            _hasWorkingAreaBounds = true;
+            return;
+        }
+
+        // Fallback for objects with no Renderer — use localScale of a Quad
+        // (Unity default Quad is 1×1; Plane is 10×10).
+        Collider col = workingArea.GetComponent<Collider>();
+        if (col != null)
+        {
+            Bounds b = col.bounds;
+            _waMinX = b.min.x;
+            _waMaxX = b.max.x;
+            _waMinZ = b.min.z;
+            _waMaxZ = b.max.z;
+            _waGroundY = b.center.y;
+            _hasWorkingAreaBounds = true;
+        }
+    }
+
+    private void ClampCameraToWorkingArea()
+    {
+        RefreshWorkingAreaBounds();
+        if (!_hasWorkingAreaBounds || cameraDisplay == null) return;
+
+        Plane ground = new Plane(Vector3.up, new Vector3(0f, _waGroundY, 0f));
+
+        // Raycast all four screen corners to the ground plane.
+        float visMinX = float.MaxValue, visMaxX = float.MinValue;
+        float visMinZ = float.MaxValue, visMaxZ = float.MinValue;
+        int hits = 0;
+
+        Vector3[] corners = new Vector3[]
+        {
+            new Vector3(0f,            0f,             0f),
+            new Vector3(Screen.width,  0f,             0f),
+            new Vector3(Screen.width,  Screen.height,  0f),
+            new Vector3(0f,            Screen.height,  0f)
+        };
+
+        foreach (Vector3 corner in corners)
+        {
+            Ray ray = cameraDisplay.ScreenPointToRay(corner);
+            if (ground.Raycast(ray, out float enter))
+            {
+                Vector3 pt = ray.GetPoint(enter);
+                if (pt.x < visMinX) visMinX = pt.x;
+                if (pt.x > visMaxX) visMaxX = pt.x;
+                if (pt.z < visMinZ) visMinZ = pt.z;
+                if (pt.z > visMaxZ) visMaxZ = pt.z;
+                hits++;
+            }
+        }
+
+        // If not all corners hit (camera nearly parallel to ground), bail out.
+        if (hits < 4) return;
+
+        // Calculate how much the visible rect overshoots.
+        float shiftX = 0f;
+        if (visMinX < _waMinX) shiftX = _waMinX - visMinX;
+        else if (visMaxX > _waMaxX) shiftX = _waMaxX - visMaxX;
+
+        float shiftZ = 0f;
+        if (visMinZ < _waMinZ) shiftZ = _waMinZ - visMinZ;
+        else if (visMaxZ > _waMaxZ) shiftZ = _waMaxZ - visMaxZ;
+
+        if (Mathf.Abs(shiftX) < 0.001f && Mathf.Abs(shiftZ) < 0.001f) return;
+
+        // Push the camera back inside.
+        Vector3 pos = cameraTransform.position;
+        pos.x += shiftX;
+        pos.z += shiftZ;
+        cameraTransform.position = pos;
+
+        // Keep the smooth-damp target in sync so it doesn't fight back.
+        _targetXZPosition.x += shiftX;
+        _targetXZPosition.z += shiftZ;
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -143,18 +259,17 @@ public class CameraManager : MonoBehaviour
     // ─────────────────────────────────────────────────────────────
     private bool IsZoomedIn(SceneConfig cfg)
     {
-        if (!cfg.enableZoom) return false;
+        if (cfg.cameraMode != CameraMode.Zoom) return false;
 
         float currentZoom = cameraDisplay.orthographic
             ? cameraDisplay.orthographicSize
             : cameraDisplay.fieldOfView;
 
-        // Consider "zoomed in" if we're more than 1 unit below maxZoom
         return currentZoom < cfg.maxZoom - 1f;
     }
 
     // ─────────────────────────────────────────────────────────────
-    //  PageManager detection (unchanged)
+    //  PageManager detection
     // ─────────────────────────────────────────────────────────────
     private string lastDetectedUI = null;
 
@@ -167,7 +282,22 @@ public class CameraManager : MonoBehaviour
         if (currentUI == lastDetectedUI) return;
 
         lastDetectedUI = currentUI;
-        SwitchToScene(currentUI);
+
+        int idx = scenes.FindIndex(s => s.sceneName == currentUI);
+        if (idx >= 0)
+        {
+            // Switching to another configured level → full apply + reveal.
+            SwitchToScene(idx);
+        }
+        else
+        {
+            // We just left a configured level for a UI that has NO camera
+            // config (e.g. a menu). Reset the camera we were showing so its
+            // zoom/position don't linger, then disable camera control until
+            // a configured level is loaded again.
+            ResetActiveCameraOnExit();
+            activeSceneIndex = -1;
+        }
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -194,6 +324,96 @@ public class CameraManager : MonoBehaviour
             return;
         }
         SwitchToScene(idx);
+    }
+
+    /// <summary>
+    /// Smoothly transitions the camera from initialZoom to maxZoom
+    /// over the given duration (in seconds). Useful for cinematic
+    /// zoom-out reveals or resetting the view programmatically.
+    /// </summary>
+    public void TransitionToMaxZoom(float duration = 2f)
+    {
+        SceneConfig cfg = ActiveConfig;
+        if (cfg == null || cfg.cameraMode != CameraMode.Zoom)
+        {
+            Debug.LogWarning("[CameraManager] TransitionToMaxZoom requires an active scene with Zoom mode.");
+            return;
+        }
+
+        if (_zoomTransitionCoroutine != null)
+        {
+            StopCoroutine(_zoomTransitionCoroutine);
+
+            if (GameManager.Instance != null)
+                GameManager.Instance.ResumeDayTick();
+        }
+
+        _zoomTransitionCoroutine = StartCoroutine(ZoomTransitionRoutine(cfg, duration));
+    }
+
+    private IEnumerator ZoomTransitionRoutine(SceneConfig cfg, float duration)
+    {
+        // Pause the game day tick while the transition plays
+        if (GameManager.Instance != null)
+            GameManager.Instance.PauseDayTick();
+
+        // FIX: clamp the reveal's start zoom into the valid range so a
+        // misconfigured Initial Zoom (e.g. below Min Zoom) can't produce a
+        // degenerate "pinhole" view at the start of the reveal.
+        float startZoom = Mathf.Clamp(cfg.initialZoom, cfg.minZoom, cfg.maxZoom);
+        float endZoom = cfg.maxZoom;
+
+        // Snap camera to initial zoom as the starting point
+        SetCameraZoomImmediate(cameraDisplay, startZoom);
+        cfg.targetZoom = startZoom;
+        cfg.zoomVelocity = 0f;
+
+        // Reset position to start (like a fresh scene load)
+        cameraTransform.position = cfg.startPosition;
+        cameraTransform.rotation = Quaternion.Euler(cfg.startRotation);
+        _hasStoredPreZoom = false;
+        _positionVelocity = Vector3.zero;
+        _isDragging = false;
+
+        // Optional delay before the reveal begins
+        if (cfg.transitionDelay > 0f)
+            yield return new WaitForSeconds(cfg.transitionDelay);
+
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+
+            // Smooth ease-in-out curve
+            float smooth = t * t * (3f - 2f * t);
+
+            float currentZoom = Mathf.Lerp(startZoom, endZoom, smooth);
+
+            if (cameraDisplay.orthographic)
+                cameraDisplay.orthographicSize = currentZoom;
+            else
+                cameraDisplay.fieldOfView = currentZoom;
+
+            cfg.targetZoom = currentZoom;
+
+            yield return null;
+        }
+
+        // Ensure we land exactly on maxZoom
+        SetCameraZoomImmediate(cameraDisplay, endZoom);
+        cfg.targetZoom = endZoom;
+        cfg.zoomVelocity = 0f;
+
+        // Hold for a moment before the game starts
+        yield return new WaitForSeconds(2f);
+
+        // Resume the game day tick now that the transition is done
+        if (GameManager.Instance != null)
+            GameManager.Instance.ResumeDayTick();
+
+        _zoomTransitionCoroutine = null;
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -225,8 +445,17 @@ public class CameraManager : MonoBehaviour
         SceneConfig cfg = ActiveConfig;
         if (cfg == null || cameraTransform == null) return;
 
+        // Stop any running zoom transition (and resume day tick if it was paused)
+        if (_zoomTransitionCoroutine != null)
+        {
+            StopCoroutine(_zoomTransitionCoroutine);
+            _zoomTransitionCoroutine = null;
+
+            if (GameManager.Instance != null)
+                GameManager.Instance.ResumeDayTick();
+        }
+
         panDirection = 1;
-        zoomTimer = 0f;
         _isDragging = false;
         _hasStoredPreZoom = false;
         _positionVelocity = Vector3.zero;
@@ -236,18 +465,63 @@ public class CameraManager : MonoBehaviour
 
         _targetXZPosition = cfg.startPosition;
 
-        if (cfg.enableZoom)
+        if (cfg.cameraMode == CameraMode.Zoom)
         {
-            cfg.targetZoom = cfg.zoomOutValue;
+            // FIX: clamp Initial Zoom into [minZoom, maxZoom] so a stray value
+            // (like 1 when Min Zoom is 4) can't snap the camera to a pinhole.
+            float startZoom = Mathf.Clamp(cfg.initialZoom, cfg.minZoom, cfg.maxZoom);
+            cfg.targetZoom = startZoom;
             cfg.zoomVelocity = 0f;
-            SetCameraZoomImmediate(cameraDisplay, cfg.zoomOutValue);
+            SetCameraZoomImmediate(cameraDisplay, startZoom);
+
+            // Auto-transition from initialZoom → maxZoom on scene load
+            if (cfg.autoTransitionOnStart)
+                _zoomTransitionCoroutine = StartCoroutine(ZoomTransitionRoutine(cfg, cfg.transitionDuration));
         }
 
         Debug.Log($"[CameraManager] Switched to scene: '{cfg.sceneName}'");
     }
 
+    /// <summary>
+    /// Called when the player leaves a configured level for a UI that has no
+    /// camera config (e.g. a menu). Snaps the camera back to a clean, fully
+    /// zoomed-out resting state and clears all interactive zoom/drag state so
+    /// nothing lingers and re-entering the level starts fresh.
+    /// </summary>
+    private void ResetActiveCameraOnExit()
+    {
+        SceneConfig cfg = ActiveConfig;
+        if (cfg == null || cameraTransform == null) return;
+
+        if (_zoomTransitionCoroutine != null)
+        {
+            StopCoroutine(_zoomTransitionCoroutine);
+            _zoomTransitionCoroutine = null;
+
+            if (GameManager.Instance != null)
+                GameManager.Instance.ResumeDayTick();
+        }
+
+        _isDragging = false;
+        _hasStoredPreZoom = false;
+        _positionVelocity = Vector3.zero;
+
+        cameraTransform.position = cfg.startPosition;
+        cameraTransform.rotation = Quaternion.Euler(cfg.startRotation);
+        _targetXZPosition = cfg.startPosition;
+
+        if (cfg.cameraMode == CameraMode.Zoom)
+        {
+            cfg.targetZoom = cfg.maxZoom;   // clean, fully zoomed-out state
+            cfg.zoomVelocity = 0f;
+            SetCameraZoomImmediate(cameraDisplay, cfg.maxZoom);
+        }
+
+        Debug.Log("[CameraManager] Left configured level → camera reset to resting state.");
+    }
+
     // ─────────────────────────────────────────────────────────────
-    //  Auto Pan  (only runs when fully zoomed out and not dragging)
+    //  Auto Pan
     // ─────────────────────────────────────────────────────────────
     private void HandlePan(SceneConfig cfg)
     {
@@ -262,16 +536,7 @@ public class CameraManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────────────────────
-    //  Zoom  (FIXED: smooth position interpolation toward cursor)
-    //
-    //  FIX #1: Instead of instantly jumping the camera position
-    //  toward the cursor each scroll tick, we update a _targetXZ
-    //  and SmoothDamp the actual position toward it every frame.
-    //  This makes position and FOV animate in sync — no bounce.
-    //
-    //  FIX #3: ResetView only fires when the target zoom AND the
-    //  actual zoom are both at maxZoom (truly fully zoomed out),
-    //  preventing premature position snaps.
+    //  Zoom (smooth position interpolation toward cursor)
     // ─────────────────────────────────────────────────────────────
     private void HandleZoom(SceneConfig cfg)
     {
@@ -284,7 +549,7 @@ public class CameraManager : MonoBehaviour
             cfg.targetZoom -= scroll * cfg.zoomMultiplier;
             cfg.targetZoom = Mathf.Clamp(cfg.targetZoom, cfg.minZoom, cfg.maxZoom);
 
-            float zoomDelta = cfg.targetZoom - prevZoom; // negative = zooming in
+            float zoomDelta = cfg.targetZoom - prevZoom;
 
             // ── Store the pre-zoom camera position on first zoom-in ──
             if (!_hasStoredPreZoom && zoomDelta < 0f)
@@ -312,34 +577,42 @@ public class CameraManager : MonoBehaviour
                 }
             }
 
-            // ── Zoom OUT: blend the TARGET back toward pre-zoom position ──
-            if (zoomDelta > 0f && _hasStoredPreZoom)
-            {
-                float t = Mathf.InverseLerp(cfg.minZoom, cfg.maxZoom, cfg.targetZoom);
-                _targetXZPosition.x = Mathf.Lerp(_targetXZPosition.x, _preZoomPosition.x, t * 0.3f);
-                _targetXZPosition.z = Mathf.Lerp(_targetXZPosition.z, _preZoomPosition.z, t * 0.3f);
-            }
+            // NOTE: Zoom-OUT no longer blends here. The return-to-start is
+            // computed every frame below and LOCKED to the zoom level, so it
+            // keeps working after you stop scrolling and after you drag, and
+            // always lands EXACTLY on startPosition at full zoom-out.
         }
 
         // ── Smoothly animate FOV/ortho toward target ──────────────
         SetCameraZoomSmooth(cameraDisplay, cfg.targetZoom, cfg);
 
-        // ── Smoothly animate POSITION toward target (FIX #1) ──────
-        //    Only when zoomed in — don't fight auto-pan when fully out
-        if (_hasStoredPreZoom)
-        {
-            Vector3 pos = cameraTransform.position;
-            Vector3 target = new Vector3(_targetXZPosition.x, pos.y, _targetXZPosition.z);
-            Vector3 smoothed = Vector3.SmoothDamp(pos, target, ref _positionVelocity, cfg.positionSmoothTime);
-            cameraTransform.position = smoothed;
-        }
-
-        // ── Fully zoomed out? Reset only when BOTH target AND actual
-        //    are at maxZoom — prevents premature snaps (FIX #3) ────
         float currentZoom = cameraDisplay.orthographic
             ? cameraDisplay.orthographicSize
             : cameraDisplay.fieldOfView;
 
+        // ── Animate POSITION, blending toward start as we zoom out ──
+        if (_hasStoredPreZoom)
+        {
+            // returnT is 0 while inside the draggable (zoomed-in) range, then
+            // ramps to 1 at max zoom. Because it is a pure function of the
+            // current zoom level, there is no idle drift while you hold a zoom,
+            // dragging stays fully free below the threshold, and the target is
+            // EXACTLY startPosition once zoom reaches max — even after a drag.
+            float bandStart = (cfg.dragZoomThreshold > 0f) ? cfg.dragZoomThreshold : cfg.minZoom;
+            float returnT = Mathf.InverseLerp(bandStart, cfg.maxZoom, currentZoom);
+
+            float blendedX = Mathf.Lerp(_targetXZPosition.x, cfg.startPosition.x, returnT);
+            float blendedZ = Mathf.Lerp(_targetXZPosition.z, cfg.startPosition.z, returnT);
+
+            Vector3 pos = cameraTransform.position;
+            Vector3 target = new Vector3(blendedX, pos.y, blendedZ);
+            Vector3 smoothed = Vector3.SmoothDamp(pos, target, ref _positionVelocity, cfg.positionSmoothTime);
+            cameraTransform.position = smoothed;
+        }
+
+        // ── Fully zoomed out? Land EXACTLY on start, then clear state ──
+        // (No position-distance gate: by this point returnT is 1 so the camera
+        //  is already at start — this just guarantees a pixel-perfect landing.)
         bool targetIsMax = Mathf.Abs(cfg.targetZoom - cfg.maxZoom) < 0.1f;
         bool actualIsMax = Mathf.Abs(currentZoom - cfg.maxZoom) < 0.5f;
 
@@ -377,15 +650,7 @@ public class CameraManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────────────────────
-    //  Mouse Drag Pan
-    //
-    //  FIX #2: X-axis drag now works because auto-pan is disabled
-    //  while zoomed in (see Update). The drag position is also
-    //  synced to _targetXZPosition so zoom and drag don't fight.
-    //
-    //  FIX #3: Drag starts from wherever the camera currently is
-    //  (the zoom-toward-cursor position), not from the auto-pan
-    //  boundary.
+    //  Mouse Drag Pan (always active when Zoom mode is enabled)
     // ─────────────────────────────────────────────────────────────
     private void HandleMouseDrag(SceneConfig cfg)
     {
@@ -398,7 +663,7 @@ public class CameraManager : MonoBehaviour
 
         // ── Check if zoom level allows drag ───────────────────────
         bool zoomedInEnough = true;
-        if (cfg.enableZoom && cfg.dragZoomThreshold > 0f)
+        if (cfg.dragZoomThreshold > 0f)
         {
             float currentZoom = cameraDisplay.orthographic
                 ? cameraDisplay.orthographicSize
@@ -442,10 +707,7 @@ public class CameraManager : MonoBehaviour
 
         float sensitivity = cfg.dragSensitivity * zoomFactor;
 
-        // ── FIX #1: Use camera-relative axes so drag works
-        //    regardless of camera Y rotation (e.g. -90°).
-        //    Screen-horizontal → camera right, screen-vertical → camera forward,
-        //    both projected onto the horizontal (XZ) plane.
+        // ── Camera-relative axes so drag works regardless of rotation ──
         Vector3 camRight = cameraTransform.right;
         Vector3 camForward = cameraTransform.forward;
         camRight.y = 0f; camRight.Normalize();
@@ -456,24 +718,18 @@ public class CameraManager : MonoBehaviour
         float deltaX = worldDelta.x;
         float deltaZ = worldDelta.z;
 
-        // ── Update the TARGET position (not the camera directly) ──
-        //    This keeps drag and zoom-toward-cursor in sync.
+        // ── Update the TARGET position (keeps drag and zoom in sync) ──
         _targetXZPosition.x += deltaX;
-        if (cfg.dragAxisZ)
-            _targetXZPosition.z += deltaZ;
+        _targetXZPosition.z += deltaZ;
 
         // ── Clamp target within map bounds ────────────────────────
         _targetXZPosition.x = Mathf.Clamp(_targetXZPosition.x, cfg.minLocationX, cfg.maxLocationX);
-        if (cfg.dragAxisZ)
-            _targetXZPosition.z = Mathf.Clamp(_targetXZPosition.z, cfg.minLocationZ, cfg.maxLocationZ);
+        _targetXZPosition.z = Mathf.Clamp(_targetXZPosition.z, cfg.minLocationZ, cfg.maxLocationZ);
 
         // ── Apply directly during drag for responsive feel ────────
-        //    (the SmoothDamp in HandleZoom will also run but the
-        //    target matches so it won't fight)
         Vector3 newPos = cameraTransform.position;
         newPos.x = Mathf.Clamp(newPos.x + deltaX, cfg.minLocationX, cfg.maxLocationX);
-        if (cfg.dragAxisZ)
-            newPos.z = Mathf.Clamp(newPos.z + deltaZ, cfg.minLocationZ, cfg.maxLocationZ);
+        newPos.z = Mathf.Clamp(newPos.z + deltaZ, cfg.minLocationZ, cfg.maxLocationZ);
 
         cameraTransform.position = newPos;
     }
@@ -512,6 +768,10 @@ public class CameraManagerEditor : Editor
             if (GUILayout.Button($"Switch → {name}"))
                 manager.SwitchToScene(name);
         }
+
+        EditorGUILayout.Space(4);
+        if (GUILayout.Button("Transition: Initial Zoom → Max Zoom"))
+            manager.TransitionToMaxZoom();
     }
 }
 #endif

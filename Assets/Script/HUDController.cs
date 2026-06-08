@@ -95,7 +95,7 @@ public class HUDController : MonoBehaviour
     private void HandleCapital(float capital)
     {
         if (capitalText != null)
-            capitalText.text = $"RM{Mathf.RoundToInt(capital)}";
+            capitalText.text = $"RM{Mathf.RoundToInt(capital)}k";
     }
 
     // Progress bar fill + "75 %"

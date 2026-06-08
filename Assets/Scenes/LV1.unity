@@ -130,7 +130,6 @@ GameObject:
   - component: {fileID: 47705282}
   - component: {fileID: 47705285}
   - component: {fileID: 47705284}
-  - component: {fileID: 47705283}
   m_Layer: 3
   m_Name: ResRoad_07
   m_TagString: RoadTile
@@ -153,18 +152,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1585712471}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &47705283
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 47705281}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e7b2134b3404d7e4f8cc8d7468209668, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadTileAutoRegister
 --- !u!114 &47705284
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -354,7 +341,6 @@ GameObject:
   - component: {fileID: 295042563}
   - component: {fileID: 295042566}
   - component: {fileID: 295042565}
-  - component: {fileID: 295042564}
   m_Layer: 3
   m_Name: ResRoad_05
   m_TagString: RoadTile
@@ -377,18 +363,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1585712471}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &295042564
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 295042562}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e7b2134b3404d7e4f8cc8d7468209668, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadTileAutoRegister
 --- !u!114 &295042565
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -780,7 +754,6 @@ GameObject:
   - component: {fileID: 1358407952}
   - component: {fileID: 1358407955}
   - component: {fileID: 1358407954}
-  - component: {fileID: 1358407953}
   m_Layer: 3
   m_Name: ResRoad_09
   m_TagString: RoadTile
@@ -803,18 +776,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1585712471}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1358407953
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1358407951}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e7b2134b3404d7e4f8cc8d7468209668, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadTileAutoRegister
 --- !u!114 &1358407954
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -961,7 +922,6 @@ GameObject:
   - component: {fileID: 1471402190}
   - component: {fileID: 1471402193}
   - component: {fileID: 1471402192}
-  - component: {fileID: 1471402191}
   m_Layer: 3
   m_Name: ResRoad_08
   m_TagString: RoadTile
@@ -984,18 +944,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1585712471}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1471402191
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1471402189}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e7b2134b3404d7e4f8cc8d7468209668, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadTileAutoRegister
 --- !u!114 &1471402192
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1060,7 +1008,7 @@ GameObject:
   - component: {fileID: 1585712469}
   - component: {fileID: 1585712472}
   m_Layer: 0
-  m_Name: RightRRT
+  m_Name: RoadSection 2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1147,7 +1095,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RoadSection
   dailyAccidentGain: 0.5
   perCorrectDeviceReduction: 2
-  happinessPerAccidentRate: 3
+  happinessPerAccidentRate: 1.5
   maxTotalDevices: 10
   overThresholdPenaltyRange: {x: 10, y: 15}
   _sectionAccidentRate: 0
@@ -1310,7 +1258,7 @@ GameObject:
   - component: {fileID: 1955268217}
   - component: {fileID: 1955268219}
   m_Layer: 0
-  m_Name: LeftRFT
+  m_Name: RoadSection 1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1419,7 +1367,6 @@ GameObject:
   - component: {fileID: 2085068629}
   - component: {fileID: 2085068632}
   - component: {fileID: 2085068631}
-  - component: {fileID: 2085068630}
   m_Layer: 3
   m_Name: ResRoad_06
   m_TagString: RoadTile
@@ -1442,18 +1389,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1585712471}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2085068630
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2085068628}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e7b2134b3404d7e4f8cc8d7468209668, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadTileAutoRegister
 --- !u!114 &2085068631
 MonoBehaviour:
   m_ObjectHideFlags: 0
