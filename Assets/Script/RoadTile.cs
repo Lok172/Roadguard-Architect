@@ -11,15 +11,11 @@ public enum ZoneType { Residential, Commercial, Industrial, Highway }
 public enum TrafficDeviceType { None, StopSign, TrafficLight, SpeedBump }
 public enum PlacementResult { Success, AlreadyOccupied, DeviceNotAllowed, InsufficientFunds, PoorPlacement }
 
-// NEW: segment classification — drives the placement-correctness table.
+// Segment classification — drives the placement-correctness table.
 public enum TileSegmentType { Middle, End, Intersection }
 
-// NEW: which tile-local axis counts as "forward".  Lets the designer
-// mark forward direction without rotating the GameObject itself.
+// Which tile-local axis counts as "forward".
 public enum ForwardAxis { LocalPosZ, LocalNegZ, LocalPosX, LocalNegX }
-
-// NEW: discrete facing direction in tile-local space.
-public enum FacingDirection { None, PosZ, PosX, NegZ, NegX }
 
 // Compass corner labels in tile-local axes.
 public enum TileCorner { None, NorthWest, NorthEast, SouthEast, SouthWest, Center }
@@ -33,7 +29,7 @@ public static class DeviceData
     public struct DeviceStats
     {
         public float costRM;
-        public int accidentReduction;       // legacy field (now unused — per-day system handles it)
+        public int accidentReduction;       // legacy (per-day system handles it)
         public float happinessDeltaGood;
         public float happinessDeltaPoor;
         public bool unsuitableInResidential;
@@ -63,7 +59,6 @@ public class PlacedSlot
     public TileCorner corner;
     public TrafficDeviceType deviceType;
     public GameObject deviceObject;
-    public FacingDirection facing;
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -79,12 +74,12 @@ public class RoadTile : MonoBehaviour
     public ZoneType zoneType = ZoneType.Residential;
     public string tileID = "";
 
-    // ── Segment Classification (new) ──────────
+    // ── Segment Classification ────────────────
     [Header("Segment Classification")]
-    [Tooltip("Determines what device counts / corners / facings are 'correct' on this tile.")]
+    [Tooltip("Determines what device counts / corners are 'correct' on this tile.")]
     public TileSegmentType segmentType = TileSegmentType.Middle;
 
-    [Tooltip("Tile-local axis that counts as 'forward'. Lets you mark forward without rotating the GameObject.")]
+    [Tooltip("Tile-local axis that counts as 'forward'.")]
     public ForwardAxis forwardAxis = ForwardAxis.LocalPosZ;
 
     // ── Multi-Device ──────────────────────────
@@ -95,12 +90,9 @@ public class RoadTile : MonoBehaviour
     // ── Geometry ──────────────────────────────
     [Header("Corner Layout")]
     [Min(0f)] public float cornerInset = 0.5f;
-    public float deviceYOffset = 0f;
+    public float deviceYOffset = 3f;
 
-    [Tooltip("Width scale (perpendicular to forward) applied to placed speed bumps.")]
-    public float speedBumpWidthScale = 0.8f;
-
-    // ── Allowed Devices (zone-level UI filter; orthogonal to correctness) ──
+    // ── Allowed Devices ───────────────────────
     [Header("Allowed Devices")]
     public List<TrafficDeviceType> allowedDevices = new List<TrafficDeviceType>();
 
@@ -110,7 +102,7 @@ public class RoadTile : MonoBehaviour
     public int PlacedCount => _slots.Count;
     public bool isOccupied => _slots.Count >= maxDevices;
 
-    // Backwards-compat helpers for any old read-only callers
+    // Backwards-compat helpers
     public TrafficDeviceType placedDeviceType => _slots.Count > 0 ? _slots[0].deviceType : TrafficDeviceType.None;
     public GameObject placedDeviceObject => _slots.Count > 0 ? _slots[0].deviceObject : null;
 
@@ -118,10 +110,7 @@ public class RoadTile : MonoBehaviour
     private RoadSection _section;
     public RoadSection Section => _section;
 
-    // Tracks whether a TrafficLight-mix penalty has been charged for the current config.
-    private bool _conflictPenaltyAppliedForCurrentMix = false;
-
-    // ── Grow Effect (cosmetic, unchanged) ─────
+    // ── Grow Effect ───────────────────────────
     [Header("Grow Effect")]
     public bool playGrowOnStart = true;
     [Min(0.05f)] public float growDuration = 0.4f;
@@ -178,15 +167,6 @@ public class RoadTile : MonoBehaviour
         _ => Vector3.forward,
     };
 
-    public FacingDirection BackwardFacing => forwardAxis switch
-    {
-        ForwardAxis.LocalPosZ => FacingDirection.NegZ,
-        ForwardAxis.LocalNegZ => FacingDirection.PosZ,
-        ForwardAxis.LocalPosX => FacingDirection.NegX,
-        ForwardAxis.LocalNegX => FacingDirection.PosX,
-        _ => FacingDirection.NegZ,
-    };
-
     /// <summary>True if a corner sits at the "far end" relative to forward.</summary>
     public bool IsAtFarEnd(TileCorner c) => forwardAxis switch
     {
@@ -218,16 +198,6 @@ public class RoadTile : MonoBehaviour
         };
     }
 
-    /// <summary>Convert a FacingDirection to a local rotation. Assumes prefab's "forward" = +Z.</summary>
-    public Quaternion FacingToLocalRotation(FacingDirection f) => f switch
-    {
-        FacingDirection.PosZ => Quaternion.identity,
-        FacingDirection.PosX => Quaternion.Euler(0f, 90f, 0f),
-        FacingDirection.NegZ => Quaternion.Euler(0f, 180f, 0f),
-        FacingDirection.NegX => Quaternion.Euler(0f, 270f, 0f),
-        _ => Quaternion.identity,
-    };
-
     public TileCorner GetNearestCorner(Vector3 worldPoint, TrafficDeviceType device)
     {
         if (device == TrafficDeviceType.SpeedBump) return TileCorner.Center;
@@ -245,24 +215,7 @@ public class RoadTile : MonoBehaviour
         return TileCorner.SouthWest;
     }
 
-    /// <summary>The default facing the ghost should show on a corner (before middle-mouse override).</summary>
-    public FacingDirection GetDefaultFacing(TileCorner corner, TrafficDeviceType device)
-    {
-        if (device == TrafficDeviceType.SpeedBump)
-            return forwardAxis switch
-            {
-                ForwardAxis.LocalPosZ => FacingDirection.PosX,
-                ForwardAxis.LocalNegZ => FacingDirection.NegX,
-                ForwardAxis.LocalPosX => FacingDirection.NegZ,
-                ForwardAxis.LocalNegX => FacingDirection.PosZ,
-                _ => FacingDirection.PosX,
-            };
-
-        // Stop sign / Traffic light default = facing back along forward axis
-        return BackwardFacing;
-    }
-
-    /// <summary>The "correct" count cap per (segment, device) pair — from your table.</summary>
+    /// <summary>The "correct" count cap per (segment, device) pair.</summary>
     public int GetCorrectCountLimit(TrafficDeviceType d) => (segmentType, d) switch
     {
         (TileSegmentType.Middle, TrafficDeviceType.SpeedBump) => 1,
@@ -270,19 +223,18 @@ public class RoadTile : MonoBehaviour
         (TileSegmentType.End, TrafficDeviceType.SpeedBump) => 1,
         (TileSegmentType.End, TrafficDeviceType.TrafficLight) => 1,
         (TileSegmentType.Intersection, TrafficDeviceType.TrafficLight) => 4,
-        _ => 0   // anything else is "NA"
+        _ => 0
     };
 
     /// <summary>
-    /// True if this slot counts as a CORRECT placement: right type for the tile,
-    /// right corner, right facing, AND within the count limit.
+    /// True if this slot is a CORRECT placement: right type, right corner,
+    /// and within the count limit.
     /// </summary>
     public bool IsSlotCorrect(PlacedSlot slot)
     {
         int limit = GetCorrectCountLimit(slot.deviceType);
         if (limit <= 0) return false;
 
-        // Index of this slot among same-type slots (placement order)
         int orderIdx = 0;
         bool found = false;
         for (int i = 0; i < _slots.Count; i++)
@@ -300,20 +252,20 @@ public class RoadTile : MonoBehaviour
 
             case TrafficDeviceType.StopSign:
                 if (segmentType != TileSegmentType.End) return false;
-                return IsAtFarEnd(slot.corner) && slot.facing == BackwardFacing;
+                return IsAtFarEnd(slot.corner);
 
             case TrafficDeviceType.TrafficLight:
                 if (segmentType == TileSegmentType.End)
-                    return IsAtFarEnd(slot.corner) && slot.facing == BackwardFacing;
+                    return IsAtFarEnd(slot.corner);
 
                 if (segmentType == TileSegmentType.Intersection)
                 {
-                    // Must face a UNIQUE direction vs all earlier lights on the tile.
+                    // Must be at a UNIQUE corner vs all earlier lights.
                     foreach (var earlier in _slots)
                     {
                         if (earlier == slot) break;
                         if (earlier.deviceType == TrafficDeviceType.TrafficLight
-                            && earlier.facing == slot.facing)
+                            && earlier.corner == slot.corner)
                             return false;
                     }
                     return true;
@@ -329,17 +281,6 @@ public class RoadTile : MonoBehaviour
         int n = 0;
         foreach (var s in _slots) if (IsSlotCorrect(s)) n++;
         return n;
-    }
-
-    public bool HasTrafficLightMixConflict()
-    {
-        bool hasLight = false, hasOther = false;
-        foreach (var s in _slots)
-        {
-            if (s.deviceType == TrafficDeviceType.TrafficLight) hasLight = true;
-            else if (s.deviceType != TrafficDeviceType.None) hasOther = true;
-        }
-        return hasLight && hasOther;
     }
 
     public bool IsCornerOccupied(TileCorner corner)
@@ -403,18 +344,21 @@ public class RoadTile : MonoBehaviour
         if (playerCapital < DeviceData.GetCost(device))
             return PlacementResult.InsufficientFunds;
 
-        // NA placements ARE allowed — just won't count as "correct".
         if (GetCorrectCountLimit(device) <= 0)
             return PlacementResult.PoorPlacement;
 
         return PlacementResult.Success;
     }
 
-    /// <summary>Place a device at a specific corner and facing direction.</summary>
+    /// <summary>
+    /// Place a device at a specific corner.
+    /// The caller (PlacementManager) creates the GameObject and handles its
+    /// visual setup (sprite, scale, billboard).  This method only parents,
+    /// positions, and records the slot.
+    /// </summary>
     public PlacementResult PlaceDevice(
         TrafficDeviceType device,
         TileCorner corner,
-        FacingDirection facing,
         GameObject deviceObject,
         float playerCapital,
         out float happinessDelta,
@@ -429,50 +373,21 @@ public class RoadTile : MonoBehaviour
             gate == PlacementResult.InsufficientFunds)
             return gate;
 
-        // Speed bumps don't have a meaningful "facing" — clamp.
-        if (device == TrafficDeviceType.SpeedBump)
-            facing = GetDefaultFacing(TileCorner.Center, device);
-
-        // Commit slot
         PlacedSlot slot = new PlacedSlot
         {
             corner = corner,
             deviceType = device,
-            deviceObject = deviceObject,
-            facing = facing
+            deviceObject = deviceObject
         };
         _slots.Add(slot);
 
-        // Position + rotation
+        // Parent & position — scale / rotation left to the creator.
         deviceObject.transform.SetParent(transform, worldPositionStays: false);
         deviceObject.transform.localPosition = GetCornerLocalPosition(corner);
-        deviceObject.transform.localRotation = FacingToLocalRotation(facing);
-
-        if (device == TrafficDeviceType.SpeedBump)
-        {
-            Vector3 s = (forwardAxis == ForwardAxis.LocalPosZ || forwardAxis == ForwardAxis.LocalNegZ)
-                ? new Vector3(1f, 1f, speedBumpWidthScale)
-                : new Vector3(speedBumpWidthScale, 1f, 1f);
-            deviceObject.transform.localScale = s;
-        }
-        else
-        {
-            deviceObject.transform.localScale = Vector3.one;
-        }
-
-        // Traffic-light mix penalty (one-time per conflict event)
-        bool conflictNow = HasTrafficLightMixConflict();
-        if (conflictNow && !_conflictPenaltyAppliedForCurrentMix)
-        {
-            float penalty = -Random.Range(8f, 12f);
-            happinessDelta += penalty;
-            _conflictPenaltyAppliedForCurrentMix = true;
-            Debug.Log($"[RoadTile] {tileID}: TrafficLight + other device → happiness {penalty:F1}");
-        }
 
         costSpent = DeviceData.GetCost(device);
 
-        // Ask the road-section about its count threshold
+        // Section threshold
         if (_section != null)
         {
             float thresholdPenalty = _section.CheckOverThresholdPenalty();
@@ -489,7 +404,7 @@ public class RoadTile : MonoBehaviour
         OnDevicePlaced?.Invoke(this, !isCorrect);
         RefreshOverlay(TrafficDeviceType.None);
 
-        Debug.Log($"[RoadTile] {tileID}: placed {device} @ {corner} facing {facing} " +
+        Debug.Log($"[RoadTile] {tileID}: placed {device} @ {corner} " +
                   $"({(isCorrect ? "CORRECT" : "incorrect")}) cost=RM{costSpent} " +
                   $"deltaHappiness={happinessDelta:+0.0;-0.0} totalOnTile={_slots.Count}/{maxDevices}");
 
@@ -505,9 +420,6 @@ public class RoadTile : MonoBehaviour
         if (toRemove.deviceObject != null) Destroy(toRemove.deviceObject);
         _slots.Remove(toRemove);
 
-        if (!HasTrafficLightMixConflict())
-            _conflictPenaltyAppliedForCurrentMix = false;
-
         OnDeviceRemoved?.Invoke(this);
         RefreshOverlay(TrafficDeviceType.None);
     }
@@ -517,7 +429,6 @@ public class RoadTile : MonoBehaviour
         foreach (var s in _slots)
             if (s.deviceObject != null) Destroy(s.deviceObject);
         _slots.Clear();
-        _conflictPenaltyAppliedForCurrentMix = false;
         OnDeviceRemoved?.Invoke(this);
         RefreshOverlay(TrafficDeviceType.None);
     }
@@ -594,8 +505,9 @@ public class RoadTile : MonoBehaviour
                              TileCorner.SouthEast, TileCorner.SouthWest };
         foreach (var c in all)
         {
-            Gizmos.color = IsAtFarEnd(c) ? new Color(0f, 1f, 0f, 0.9f)
-                                         : new Color(1f, 0.2f, 0.2f, 0.6f);
+            Gizmos.color = IsAtFarEnd(c)
+                ? new Color(0f, 1f, 0f, 0.9f)
+                : new Color(1f, 0.2f, 0.2f, 0.6f);
             Gizmos.DrawSphere(GetCornerLocalPosition(c), 0.15f);
         }
 

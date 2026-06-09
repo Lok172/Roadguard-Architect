@@ -3,20 +3,20 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 // ─────────────────────────────────────────────────────────────────
-//  GAME MANAGER (v3)
+//  GAME MANAGER (v6)
 //
-//  CHANGES vs v2:
-//    • Tracks a list of RoadSections (not individual tiles for
-//      accident purposes — tiles are still registered for legacy
-//      events). Each in-game day, every section ticks:
-//          rate += dailyAccidentGain
-//          rate -= perCorrectDeviceReduction × correct device count
-//      then a happiness loss of (rate × happinessPerAccidentRate)
-//      is applied across all sections.
-//    • TryPlaceDevice now takes (RoadTile, device, corner, facing).
-//    • AccidentRate (city total) = startAccidentRate baseline +
-//      ceil(sum of all section rates).  Broadcast on change.
+//  CHANGES vs v5:
+//    • Added Developer Cheats section (Inspector-tunable):
+//      - devMode toggle
+//      - devHappiness, devMoney, devTotalDays overrides
+//      - Custom Inspector with "Activate Dev Mode" / "Deactivate"
+//        buttons.
+//    • Everything else unchanged from v5.
 // ─────────────────────────────────────────────────────────────────
 
 public class GameManager : MonoBehaviour
@@ -49,6 +49,37 @@ public class GameManager : MonoBehaviour
     public float safetyMultiplier = 1.5f;
     public float baseTaxPerDay = 50f;
 
+    [Header("Low Accident Streak Bonus")]
+    [Tooltip("Accident rate must stay strictly below this for the streak to count.")]
+    public int lowAccidentThreshold = 3;
+
+    [Tooltip("Consecutive days below threshold before the first bonus fires.")]
+    public int lowAccidentStreakRequired = 5;
+
+    [Tooltip("After the first bonus, a new bonus fires every this-many days (while streak holds).")]
+    public int lowAccidentBonusInterval = 3;
+
+    [Tooltip("Min happiness bonus per trigger.")]
+    public float lowAccidentBonusMin = 3f;
+
+    [Tooltip("Max happiness bonus per trigger.")]
+    public float lowAccidentBonusMax = 7f;
+
+    // ── Developer Cheats ──────────────────────────────────────────
+    [Header("Developer Cheats")]
+    [Tooltip("When active, happiness is locked, money and days are overridden.")]
+    public bool devMode = false;
+
+    [Tooltip("Happiness is clamped to this value every frame while devMode is on.")]
+    [Range(0f, 100f)]
+    public float devHappiness = 100f;
+
+    [Tooltip("Capital is set to this value when dev mode is activated.")]
+    public float devMoney = 99999f;
+
+    [Tooltip("Total days is set to this value when dev mode is activated.")]
+    public int devTotalDays = 1000;
+
     [Header("Runtime State (read-only)")]
     [SerializeField] private float _capital;
     [SerializeField] private float _happiness;
@@ -56,6 +87,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private int _baselineAccidentRate;
     [SerializeField] private int _daysPassed;
     [SerializeField] private bool _gameRunning;
+    [SerializeField] private int _consecutiveLowAccidentDays;
     private bool _dayTickPaused;
 
     public float Capital => _capital;
@@ -64,9 +96,13 @@ public class GameManager : MonoBehaviour
     public int DaysPassed => _daysPassed;
     public int TotalDays => totalDays;
     public bool GameRunning => _gameRunning;
+    public int ConsecutiveLowAccidentDays => _consecutiveLowAccidentDays;
 
+    // ── Tile registry (kept for legacy event subscribers) ──
     private readonly List<RoadTile> _allTiles = new List<RoadTile>();
-    private readonly List<RoadSection> _allSections = new List<RoadSection>();
+
+    // ── Road Manager ──
+    private RoadManager _roadManager;
 
     [Header("Events")]
     public UnityEvent<float> OnCapitalChanged;
@@ -88,6 +124,19 @@ public class GameManager : MonoBehaviour
 
     private void Start() => InitLevel(currentLevel);
 
+    private void LateUpdate()
+    {
+        // Dev mode: lock happiness every frame
+        if (devMode && _gameRunning)
+        {
+            if (!Mathf.Approximately(_happiness, devHappiness))
+            {
+                _happiness = devHappiness;
+                OnHappinessChanged?.Invoke(_happiness);
+            }
+        }
+    }
+
     public void InitLevel(int level)
     {
         StopAllCoroutines();
@@ -101,11 +150,17 @@ public class GameManager : MonoBehaviour
         _daysPassed = 0;
         _gameRunning = true;
         _dayTickPaused = false;
+        _consecutiveLowAccidentDays = 0;
+
+        // Apply dev overrides if active at level start
+        if (devMode) ApplyDevOverrides();
 
         StartCoroutine(BroadcastNextFrame());
         StartCoroutine(DayTickRoutine());
 
-        Debug.Log($"[GameManager] Level {level} started. Capital=RM{_capital} BaselineAccident={_baselineAccidentRate}");
+        Debug.Log($"[GameManager] Level {level} started. Capital=RM{_capital} " +
+                  $"BaselineAccident={_baselineAccidentRate}" +
+                  (devMode ? " [DEV MODE]" : ""));
     }
 
     private IEnumerator BroadcastNextFrame()
@@ -115,13 +170,46 @@ public class GameManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────
-    //  TILE / SECTION REGISTRY
+    //  DEVELOPER CHEATS
+    // ─────────────────────────────────────────
+
+    /// <summary>
+    /// Activates dev mode: sets money, days, and locks happiness.
+    /// Safe to call from Inspector button or code at any time.
+    /// </summary>
+    public void ActivateDevMode()
+    {
+        devMode = true;
+        ApplyDevOverrides();
+        Debug.Log("[GameManager] DEV MODE ACTIVATED — " +
+                  $"Happiness={devHappiness}, Money=RM{devMoney}, Days={devTotalDays}");
+    }
+
+    /// <summary>Deactivates dev mode. Current values are kept but no longer locked.</summary>
+    public void DeactivateDevMode()
+    {
+        devMode = false;
+        Debug.Log("[GameManager] DEV MODE DEACTIVATED — values unlocked.");
+    }
+
+    private void ApplyDevOverrides()
+    {
+        _happiness = devHappiness;
+        _capital = devMoney;
+        totalDays = devTotalDays;
+
+        OnHappinessChanged?.Invoke(_happiness);
+        OnCapitalChanged?.Invoke(_capital);
+        OnDayChanged?.Invoke(_daysPassed, totalDays);
+    }
+
+    // ─────────────────────────────────────────
+    //  TILE / ROAD MANAGER REGISTRY
     // ─────────────────────────────────────────
 
     public void RegisterTile(RoadTile tile)
     {
-        if (_allTiles.Contains(tile)) return;
-        _allTiles.Add(tile);
+        if (!_allTiles.Contains(tile)) _allTiles.Add(tile);
     }
 
     public void UnregisterTile(RoadTile tile)
@@ -129,18 +217,15 @@ public class GameManager : MonoBehaviour
         _allTiles.Remove(tile);
     }
 
-    public void RegisterRoadSection(RoadSection section)
+    public void RegisterRoadManager(RoadManager rm)
     {
-        if (!_allSections.Contains(section))
-        {
-            _allSections.Add(section);
-            Debug.Log($"[GameManager] Registered RoadSection '{section.name}' ({_allSections.Count} total).");
-        }
+        _roadManager = rm;
+        Debug.Log($"[GameManager] RoadManager registered ({rm.Sections.Count} sections).");
     }
 
-    public void UnregisterRoadSection(RoadSection section)
+    public void UnregisterRoadManager(RoadManager rm)
     {
-        _allSections.Remove(section);
+        if (_roadManager == rm) _roadManager = null;
     }
 
     // ─────────────────────────────────────────
@@ -158,11 +243,10 @@ public class GameManager : MonoBehaviour
         RoadTile tile,
         TrafficDeviceType device,
         TileCorner corner,
-        FacingDirection facing,
         GameObject deviceObject)
     {
         PlacementResult result = tile.PlaceDevice(
-            device, corner, facing, deviceObject, _capital,
+            device, corner, deviceObject, _capital,
             out float happinessDelta,
             out float costSpent);
 
@@ -175,7 +259,6 @@ public class GameManager : MonoBehaviour
         if (!Mathf.Approximately(happinessDelta, 0f))
             ModifyHappiness(happinessDelta);
 
-        // Recompute aggregate accident rate (sections may have changed correct counts)
         RecomputeCityAccidentRate();
         return result;
     }
@@ -197,7 +280,7 @@ public class GameManager : MonoBehaviour
         if (!Mathf.Approximately(prev, _happiness))
             OnHappinessChanged?.Invoke(_happiness);
 
-        if (_happiness <= 0f) TriggerGameOver();
+        if (_happiness <= 0f && !devMode) TriggerGameOver();
     }
 
     private float CalculateDailyTaxRevenue()
@@ -211,8 +294,8 @@ public class GameManager : MonoBehaviour
     private void RecomputeCityAccidentRate()
     {
         float sum = _baselineAccidentRate;
-        foreach (var s in _allSections)
-            if (s != null) sum += s.SectionAccidentRate;
+        if (_roadManager != null)
+            sum += _roadManager.GetTotalSectionAccidentRate();
 
         int newRate = Mathf.CeilToInt(sum);
         if (newRate != _accidentRate)
@@ -234,31 +317,49 @@ public class GameManager : MonoBehaviour
             yield return new WaitForSeconds(secondsPerDay);
             if (!_gameRunning) break;
 
-            // Wait while placement drag is active
-            while (_dayTickPaused)
-                yield return null;
+            while (_dayTickPaused) yield return null;
 
             _daysPassed++;
             OnDayChanged?.Invoke(_daysPassed, totalDays);
 
-            // 1) Each section advances by one day. Sum up happiness penalties.
-            float totalHappinessDelta = 0f;
-            foreach (var s in _allSections)
+            // 1) Sections advance (via RoadManager).
+            if (_roadManager != null)
             {
-                if (s == null) continue;
-                totalHappinessDelta += s.TickDay(); // negative
+                float sectionDelta = _roadManager.TickAllSections();
+                if (!Mathf.Approximately(sectionDelta, 0f))
+                    ModifyHappiness(sectionDelta);
             }
-            if (!Mathf.Approximately(totalHappinessDelta, 0f))
-                ModifyHappiness(totalHappinessDelta);
 
-            // 2) Update city aggregate rate
+            // 2) Update city aggregate rate.
             RecomputeCityAccidentRate();
 
-            // 3) Tax revenue
+            // 3) Low-accident streak bonus.
+            if (_accidentRate < lowAccidentThreshold)
+            {
+                _consecutiveLowAccidentDays++;
+
+                if (_consecutiveLowAccidentDays >= lowAccidentStreakRequired)
+                {
+                    int daysPastStreak = _consecutiveLowAccidentDays - lowAccidentStreakRequired;
+                    if (daysPastStreak % lowAccidentBonusInterval == 0)
+                    {
+                        float bonus = Random.Range(lowAccidentBonusMin, lowAccidentBonusMax);
+                        ModifyHappiness(bonus);
+                        Debug.Log($"[GameManager] Low-accident streak bonus: +{bonus:F1} happiness " +
+                                  $"(streak day {_consecutiveLowAccidentDays})");
+                    }
+                }
+            }
+            else
+            {
+                _consecutiveLowAccidentDays = 0;
+            }
+
+            // 4) Tax revenue.
             float tax = CalculateDailyTaxRevenue();
             ModifyCapital(tax);
 
-            if (_daysPassed >= totalDays) TriggerGameOver();
+            if (_daysPassed >= totalDays && !devMode) TriggerGameOver();
         }
     }
 
@@ -320,3 +421,79 @@ public class GameManager : MonoBehaviour
         return Mathf.Clamp(Mathf.RoundToInt(raw * 100f), 1, 10000);
     }
 }
+
+// ─────────────────────────────────────────────────────────────────
+//  CUSTOM INSPECTOR — Developer Cheat Buttons
+// ─────────────────────────────────────────────────────────────────
+
+#if UNITY_EDITOR
+[CustomEditor(typeof(GameManager))]
+public class GameManagerEditor : Editor
+{
+    public override void OnInspectorGUI()
+    {
+        DrawDefaultInspector();
+
+        GameManager gm = (GameManager)target;
+
+        EditorGUILayout.Space(10);
+        EditorGUILayout.LabelField("Developer Controls", EditorStyles.boldLabel);
+
+        // ── Status ───────────────────────────
+        if (gm.devMode)
+        {
+            EditorGUILayout.HelpBox(
+                "DEV MODE ACTIVE\n" +
+                $"Happiness locked to {gm.devHappiness}\n" +
+                $"Money = RM {gm.devMoney:N0}\n" +
+                $"Total days = {gm.devTotalDays}\n" +
+                "Game-over from happiness/day-limit is disabled.",
+                MessageType.Warning);
+        }
+        else
+        {
+            EditorGUILayout.HelpBox(
+                "Dev mode is OFF. Click below to activate.",
+                MessageType.Info);
+        }
+
+        EditorGUILayout.Space(4);
+
+        // ── Buttons ──────────────────────────
+        if (!gm.devMode)
+        {
+            GUI.backgroundColor = new Color(0.3f, 0.85f, 1f);
+            if (GUILayout.Button("⚡  Activate Dev Mode", GUILayout.Height(32)))
+            {
+                Undo.RecordObject(gm, "Activate Dev Mode");
+                gm.ActivateDevMode();
+                EditorUtility.SetDirty(gm);
+            }
+        }
+        else
+        {
+            GUI.backgroundColor = new Color(1f, 0.65f, 0.3f);
+            if (GUILayout.Button("✕  Deactivate Dev Mode", GUILayout.Height(32)))
+            {
+                Undo.RecordObject(gm, "Deactivate Dev Mode");
+                gm.DeactivateDevMode();
+                EditorUtility.SetDirty(gm);
+            }
+        }
+
+        GUI.backgroundColor = Color.white;
+
+        // ── Runtime info ─────────────────────
+        if (Application.isPlaying)
+        {
+            EditorGUILayout.Space(6);
+            EditorGUILayout.LabelField("Live Stats", EditorStyles.miniLabel);
+            EditorGUILayout.LabelField($"Capital: RM {gm.Capital:N0}");
+            EditorGUILayout.LabelField($"Happiness: {gm.Happiness:F1}");
+            EditorGUILayout.LabelField($"Accident Rate: {gm.AccidentRate}");
+            EditorGUILayout.LabelField($"Day: {gm.DaysPassed} / {gm.TotalDays}");
+            Repaint();
+        }
+    }
+}
+#endif

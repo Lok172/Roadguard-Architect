@@ -772,13 +772,11 @@ MonoBehaviour:
     deviceType: 3
   - clickableObject: {fileID: 694289043}
     deviceType: 2
-  citySceneName: LvUI & Manager
-  stopSignSprite: {fileID: 21300000, guid: 788598ec40ba3e84090ebff421706846, type: 3}
-  speedBumpSprite: {fileID: 21300000, guid: cc9a1f854e10ea14bbd57338dcc057c1, type: 3}
-  trafficLightSprite: {fileID: 21300000, guid: 7f06a7210d97f484384fc08440661fa5, type: 3}
-  deviceIconWorldSize: 4.5
-  spriteSortingOrder: 30
-  billboardIcons: 1
+  citySceneName: City
+  stopSignPrefab: {fileID: 2728864140495543427, guid: ef95e020517139d40b597642fa5b67c5, type: 3}
+  speedBumpPrefab: {fileID: 4215604704346448080, guid: bc2468208af9b6041bbe70a6998e8edc, type: 3}
+  trafficLightPrefab: {fileID: 1341625856912566824, guid: d1f818701eb567e42ad84a827c056006, type: 3}
+  ghostMaterial: {fileID: 0}
   tintValid: {r: 0.2, g: 1, b: 0.3, a: 0.55}
   tintWarning: {r: 1, g: 0.6, b: 0, a: 0.55}
   tintBlocked: {r: 1, g: 0.15, b: 0.15, a: 0.55}
@@ -1725,17 +1723,6 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
---- !u!114 &1097181717 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 8614087474253051675, guid: 4184066ae9b73544baea01172c719f11, type: 3}
-  m_PrefabInstance: {fileID: 676750434}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
 --- !u!1 &1121382381
 GameObject:
   m_ObjectHideFlags: 0
@@ -2218,18 +2205,12 @@ MonoBehaviour:
   safetyThreshold: 3
   safetyMultiplier: 1.5
   baseTaxPerDay: 100
-  lowAccidentThreshold: 3
-  lowAccidentStreakRequired: 5
-  lowAccidentBonusInterval: 3
-  lowAccidentBonusMin: 3
-  lowAccidentBonusMax: 7
   _capital: 1000
   _happiness: 0
   _accidentRate: 0
   _baselineAccidentRate: 0
   _daysPassed: 0
   _gameRunning: 1
-  _consecutiveLowAccidentDays: 0
   OnCapitalChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -2960,7 +2941,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f6e96e8f786e601498ff9ce50bf52847, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HUDController
-  accidentText: {fileID: 1097181717}
+  accidentText: {fileID: 0}
   happinessBar: {fileID: 1121382383}
   happinessPct: {fileID: 420064612}
   dateText: {fileID: 794002075}

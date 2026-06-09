@@ -5,37 +5,18 @@ using UnityEngine;
 // ─────────────────────────────────────────────────────────────────
 //  ROAD SECTION
 //
-//  Attach to any parent GameObject that has RoadTile children
-//  (any depth). At Awake it harvests all child tiles, assigns
-//  itself to them, and registers with GameManager so its
-//  per-day mechanics tick.
+//  Owns a group of child RoadTiles and tracks this section's
+//  accident rate.  Daily-tick parameters (gain, reduction,
+//  happiness-per-rate) are now held by RoadManager, which calls
+//  TickDay() with the values each in-game day.
 //
-//  Per-day mechanics (forwarded by GameManager each in-game day):
-//    • _sectionAccidentRate += dailyAccidentGain
-//    • _sectionAccidentRate -= perCorrectDeviceReduction × (correct device count)
-//    • Happiness loss this day = _sectionAccidentRate × happinessPerAccidentRate
-//
-//  One-time mechanic:
-//    • When a tile in this section places a device that pushes the
-//      total device count over `maxTotalDevices`, a random
-//      happiness penalty in `overThresholdPenaltyRange` fires.
-//    • Penalty re-arms once the section drops back to <= threshold.
+//  Still owns the device-count threshold penalty independently.
 // ─────────────────────────────────────────────────────────────────
 
 public class RoadSection : MonoBehaviour
 {
-    [Header("Daily Accident Mechanics")]
-    [Tooltip("Accident rate this section gains every in-game day.")]
-    public float dailyAccidentGain = 2f;
-
-    [Tooltip("Accident rate removed per CORRECT device on this section's tiles, per day.")]
-    public float perCorrectDeviceReduction = 2f;
-
-    [Tooltip("Happiness lost per +1 of this section's accident rate, per day.")]
-    public float happinessPerAccidentRate = 3f;
-
     [Header("Device Count Threshold")]
-    [Tooltip("Total devices (across all tiles in this section) allowed before the over-threshold penalty fires.")]
+    [Tooltip("Total devices (across all tiles) allowed before the over-threshold penalty fires.")]
     public int maxTotalDevices = 10;
 
     [Tooltip("Random one-time happiness penalty magnitude (X=min, Y=max) when device count exceeds the threshold.")]
@@ -60,27 +41,8 @@ public class RoadSection : MonoBehaviour
         foreach (var t in _childTiles) t.AssignSection(this);
     }
 
-    private void Start()
-    {
-        StartCoroutine(RegisterWhenReady());
-    }
-
-    private IEnumerator RegisterWhenReady()
-    {
-        while (GameManager.Instance == null)
-            yield return null;
-
-        GameManager.Instance.RegisterRoadSection(this);
-    }
-
-    private void OnDestroy()
-    {
-        if (GameManager.Instance != null)
-            GameManager.Instance.UnregisterRoadSection(this);
-    }
-
     // ─────────────────────────────────────────
-    //  TILE REGISTRATION  (used by generator-spawned tiles)
+    //  TILE REGISTRATION  (for dynamically-spawned tiles)
     // ─────────────────────────────────────────
 
     public void RegisterTile(RoadTile tile)
@@ -118,20 +80,21 @@ public class RoadSection : MonoBehaviour
     }
 
     // ─────────────────────────────────────────
-    //  DAILY TICK  (called by GameManager once per in-game day)
+    //  DAILY TICK  (called by RoadManager each in-game day)
     // ─────────────────────────────────────────
 
     /// <summary>
-    /// Advances this section by one day.
-    /// Returns the happiness delta the section produced (always <=0).
+    /// Advances this section by one day using parameters supplied by
+    /// <see cref="RoadManager"/>.
+    /// Returns the happiness delta (always &lt;= 0).
     /// </summary>
-    public float TickDay()
+    public float TickDay(float accidentGain, float reductionPerCorrectDevice, float happinessPerRate)
     {
-        _sectionAccidentRate += dailyAccidentGain;
-        _sectionAccidentRate -= perCorrectDeviceReduction * CountCorrectDevices();
+        _sectionAccidentRate += accidentGain;
+        _sectionAccidentRate -= reductionPerCorrectDevice * CountCorrectDevices();
         _sectionAccidentRate = Mathf.Max(0f, _sectionAccidentRate);
 
-        return -_sectionAccidentRate * happinessPerAccidentRate;
+        return -_sectionAccidentRate * happinessPerRate;
     }
 
     // ─────────────────────────────────────────
@@ -140,9 +103,9 @@ public class RoadSection : MonoBehaviour
 
     /// <summary>
     /// Call after a device is placed on a child tile.
-    /// Returns a (negative) happiness penalty if the threshold was just crossed,
-    /// or 0 if no penalty applies. Penalty fires at most once until the section
-    /// drops back to <= threshold.
+    /// Returns a negative happiness penalty if the threshold was just crossed,
+    /// or 0 if no penalty applies.  Penalty fires at most once until the
+    /// section drops back to &lt;= threshold (then re-arms).
     /// </summary>
     public float CheckOverThresholdPenalty()
     {
@@ -166,7 +129,6 @@ public class RoadSection : MonoBehaviour
     {
         if (_childTiles == null || _childTiles.Count == 0) return;
 
-        // Lasso the child tiles with a faint outline
         Bounds b = new Bounds(transform.position, Vector3.zero);
         bool hasAny = false;
         foreach (var t in _childTiles)

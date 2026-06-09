@@ -233,7 +233,7 @@ MonoBehaviour:
     zoomSmoothTime: 0.25
     positionSmoothTime: 0.2
     dragSensitivity: 0.3
-    dragZoomThreshold: 50
+    dragZoomThreshold: 3.9
     targetZoom: 30
     zoomVelocity: 0.0005
   cameraDisplay: {fileID: 0}

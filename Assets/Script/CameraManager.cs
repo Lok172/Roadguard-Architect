@@ -64,9 +64,7 @@ public class CameraManager : MonoBehaviour
         public float dragSensitivity = 0.3f;
 
         [Tooltip("Only allow drag when zoomed in beyond this threshold. " +
-                 "Set to 0 to always allow drag regardless of zoom level. " +
-                 "Also marks where the camera starts gliding back to start as you zoom out — " +
-                 "a LOWER value gives a longer, smoother return.")]
+                 "Set to 0 to always allow drag regardless of zoom level.")]
         public float dragZoomThreshold = 55f;
 
         // ── Internal zoom state (not shown in inspector) ───────
@@ -172,15 +170,10 @@ public class CameraManager : MonoBehaviour
         int idx = scenes.FindIndex(s => s.sceneName == currentUI);
         if (idx >= 0)
         {
-            // Switching to another configured level → full apply + reveal.
             SwitchToScene(idx);
         }
         else
         {
-            // We just left a configured level for a UI that has NO camera
-            // config (e.g. a menu). Reset the camera we were showing so its
-            // zoom/position don't linger, then disable camera control until
-            // a configured level is loaded again.
             ResetActiveCameraOnExit();
             activeSceneIndex = -1;
         }
@@ -214,8 +207,7 @@ public class CameraManager : MonoBehaviour
 
     /// <summary>
     /// Smoothly transitions the camera from initialZoom to maxZoom
-    /// over the given duration (in seconds). Useful for cinematic
-    /// zoom-out reveals or resetting the view programmatically.
+    /// over the given duration (in seconds).
     /// </summary>
     public void TransitionToMaxZoom(float duration = 2f)
     {
@@ -239,22 +231,16 @@ public class CameraManager : MonoBehaviour
 
     private IEnumerator ZoomTransitionRoutine(SceneConfig cfg, float duration)
     {
-        // Pause the game day tick while the transition plays
         if (GameManager.Instance != null)
             GameManager.Instance.PauseDayTick();
 
-        // FIX: clamp the reveal's start zoom into the valid range so a
-        // misconfigured Initial Zoom (e.g. below Min Zoom) can't produce a
-        // degenerate "pinhole" view at the start of the reveal.
         float startZoom = Mathf.Clamp(cfg.initialZoom, cfg.minZoom, cfg.maxZoom);
         float endZoom = cfg.maxZoom;
 
-        // Snap camera to initial zoom as the starting point
         SetCameraZoomImmediate(cameraDisplay, startZoom);
         cfg.targetZoom = startZoom;
         cfg.zoomVelocity = 0f;
 
-        // Reset position to start (like a fresh scene load)
         cameraTransform.position = cfg.startPosition;
         cameraTransform.rotation = Quaternion.Euler(cfg.startRotation);
         _hasStoredPreZoom = false;
@@ -267,8 +253,6 @@ public class CameraManager : MonoBehaviour
         {
             elapsed += Time.deltaTime;
             float t = Mathf.Clamp01(elapsed / duration);
-
-            // Smooth ease-in-out curve
             float smooth = t * t * (3f - 2f * t);
 
             float currentZoom = Mathf.Lerp(startZoom, endZoom, smooth);
@@ -283,16 +267,13 @@ public class CameraManager : MonoBehaviour
             yield return null;
         }
 
-        // Ensure we land exactly on maxZoom
         SetCameraZoomImmediate(cameraDisplay, endZoom);
         cfg.targetZoom = endZoom;
         cfg.zoomVelocity = 0f;
 
-        // Hold the view for a moment so the player can take in the map
         if (cfg.postTransitionHold > 0f)
             yield return new WaitForSeconds(cfg.postTransitionHold);
 
-        // Resume the game day tick now that the transition is done
         if (GameManager.Instance != null)
             GameManager.Instance.ResumeDayTick();
 
@@ -324,10 +305,7 @@ public class CameraManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────────────────────
-    //  Working-area detection (tag: "WorkingArea")
-    //  Finds the quad/plane in the scene and caches its world-
-    //  space AABB.  Called every time a scene config is applied
-    //  so it always matches the current level.
+    //  Working-area detection
     // ─────────────────────────────────────────────────────────────
     private void CacheWorkingArea()
     {
@@ -368,7 +346,6 @@ public class CameraManager : MonoBehaviour
         SceneConfig cfg = ActiveConfig;
         if (cfg == null || cameraTransform == null) return;
 
-        // Stop any running zoom transition (and resume day tick if it was paused)
         if (_zoomTransitionCoroutine != null)
         {
             StopCoroutine(_zoomTransitionCoroutine);
@@ -388,19 +365,15 @@ public class CameraManager : MonoBehaviour
 
         _targetXZPosition = cfg.startPosition;
 
-        // Re-detect working area (may differ per level)
         CacheWorkingArea();
 
         if (cfg.cameraMode == CameraMode.Zoom)
         {
-            // FIX: clamp Initial Zoom into [minZoom, maxZoom] so a stray value
-            // (like 1 when Min Zoom is 4) can't snap the camera to a pinhole.
             float startZoom = Mathf.Clamp(cfg.initialZoom, cfg.minZoom, cfg.maxZoom);
             cfg.targetZoom = startZoom;
             cfg.zoomVelocity = 0f;
             SetCameraZoomImmediate(cameraDisplay, startZoom);
 
-            // Auto-transition from initialZoom → maxZoom on scene load
             if (cfg.autoTransitionOnStart)
                 _zoomTransitionCoroutine = StartCoroutine(ZoomTransitionRoutine(cfg, cfg.transitionDuration));
         }
@@ -408,12 +381,6 @@ public class CameraManager : MonoBehaviour
         Debug.Log($"[CameraManager] Switched to scene: '{cfg.sceneName}'");
     }
 
-    /// <summary>
-    /// Called when the player leaves a configured level for a UI that has no
-    /// camera config (e.g. a menu). Snaps the camera back to a clean, fully
-    /// zoomed-out resting state and clears all interactive zoom/drag state so
-    /// nothing lingers and re-entering the level starts fresh.
-    /// </summary>
     private void ResetActiveCameraOnExit()
     {
         SceneConfig cfg = ActiveConfig;
@@ -438,7 +405,7 @@ public class CameraManager : MonoBehaviour
 
         if (cfg.cameraMode == CameraMode.Zoom)
         {
-            cfg.targetZoom = cfg.maxZoom;   // clean, fully zoomed-out state
+            cfg.targetZoom = cfg.maxZoom;
             cfg.zoomVelocity = 0f;
             SetCameraZoomImmediate(cameraDisplay, cfg.maxZoom);
         }
@@ -465,11 +432,19 @@ public class CameraManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────────────────────
-    //  Zoom (smooth position interpolation toward cursor)
+    //  Zoom — zoom-ratio approach for accurate cursor tracking
+    //
+    //  Uses  newZoom / oldZoom  to compute the proportional camera
+    //  shift each scroll step.  This ensures the world-point under
+    //  the cursor stays visually pinned during zoom-in, even when
+    //  starting from max zoom.
+    //
+    //  On zoom-out the target position blends back toward
+    //  startPosition so the camera returns home naturally.
     // ─────────────────────────────────────────────────────────────
     private void HandleZoom(SceneConfig cfg)
     {
-        // ── Block input during the opening zoom transition ────────
+        // ── Block input during opening transition ────────────────
         if (_zoomTransitionCoroutine != null) return;
 
         float scroll = Input.GetAxis("Mouse ScrollWheel");
@@ -478,79 +453,96 @@ public class CameraManager : MonoBehaviour
         {
             float prevZoom = cfg.targetZoom;
 
-            cfg.targetZoom -= scroll * cfg.zoomMultiplier;
-            cfg.targetZoom = Mathf.Clamp(cfg.targetZoom, cfg.minZoom, cfg.maxZoom);
+            cfg.targetZoom = Mathf.Clamp(
+                cfg.targetZoom - scroll * cfg.zoomMultiplier,
+                cfg.minZoom,
+                cfg.maxZoom);
 
             float zoomDelta = cfg.targetZoom - prevZoom;
 
-            // ── Store the pre-zoom camera position on first zoom-in ──
-            if (!_hasStoredPreZoom && zoomDelta < 0f)
+            // Clamped with no actual change — kill residual velocity
+            if (Mathf.Approximately(zoomDelta, 0f))
             {
-                _preZoomPosition = cameraTransform.position;
-                _targetXZPosition = cameraTransform.position;
                 _positionVelocity = Vector3.zero;
-                _hasStoredPreZoom = true;
             }
-
-            // ── Zoom IN: shift the TARGET position toward cursor ──
-            if (zoomDelta < 0f)
+            else
             {
-                Ray ray = cameraDisplay.ScreenPointToRay(Input.mousePosition);
-                Plane groundPlane = new Plane(Vector3.up,
-                    new Vector3(0f, _hasWorkingArea ? _waGroundY : 0f, 0f));
-
-                if (groundPlane.Raycast(ray, out float enter))
+                // ── Store pre-zoom position on first zoom-in ─────────
+                if (!_hasStoredPreZoom && zoomDelta < 0f)
                 {
-                    Vector3 worldCursor = ray.GetPoint(enter);
+                    _preZoomPosition = cameraTransform.position;
+                    _targetXZPosition = cameraTransform.position;
+                    _positionVelocity = Vector3.zero;
+                    _hasStoredPreZoom = true;
+                }
 
-                    float fraction = Mathf.Abs(zoomDelta) / (cfg.maxZoom - cfg.minZoom);
-                    Vector3 direction = worldCursor - _targetXZPosition;
-                    direction.y = 0f;
-                    _targetXZPosition += direction * fraction * 1.5f;
+                // ── ZOOM IN → shift target toward cursor ─────────────
+                if (zoomDelta < 0f)
+                {
+                    Ray ray = cameraDisplay.ScreenPointToRay(Input.mousePosition);
+                    Plane groundPlane = new Plane(Vector3.up,
+                        new Vector3(0f, _hasWorkingArea ? _waGroundY : 0f, 0f));
 
-                    // Clamp to frustum-inset bounds
-                    var (mnX, mxX, mnZ, mxZ) = GetCameraBounds(cfg);
-                    _targetXZPosition.x = Mathf.Clamp(_targetXZPosition.x, mnX, mxX);
-                    _targetXZPosition.z = Mathf.Clamp(_targetXZPosition.z, mnZ, mxZ);
+                    if (groundPlane.Raycast(ray, out float enter))
+                    {
+                        Vector3 worldCursor = ray.GetPoint(enter);
+
+                        // Zoom-ratio: the fraction of the view that "collapsed"
+                        // toward the cursor this step.  Gives a proportionally
+                        // correct shift regardless of current zoom level.
+                        float zoomRatio = cfg.targetZoom / prevZoom;  // < 1
+                        Vector3 dir = worldCursor - _targetXZPosition;
+                        dir.y = 0f;
+                        _targetXZPosition += dir * (1f - zoomRatio);
+                    }
+                }
+                // ── ZOOM OUT → blend target back toward start ────────
+                else if (_hasStoredPreZoom)
+                {
+                    // How close we are to fully zoomed out (0 = minZoom, 1 = maxZoom)
+                    float normalised = Mathf.InverseLerp(cfg.minZoom, cfg.maxZoom, cfg.targetZoom);
+
+                    // Blend strength ramps up as we approach maxZoom so the
+                    // camera arrives at startPosition right when fully zoomed out
+                    float blendStrength = normalised * 0.25f;
+
+                    _targetXZPosition = Vector3.Lerp(
+                        _targetXZPosition, cfg.startPosition, blendStrength);
+                }
+
+                // ── Clamp target to working-area bounds ──────────────
+                if (_hasWorkingArea)
+                {
+                    _targetXZPosition.x = Mathf.Clamp(_targetXZPosition.x, _waMinX, _waMaxX);
+                    _targetXZPosition.z = Mathf.Clamp(_targetXZPosition.z, _waMinZ, _waMaxZ);
                 }
             }
-
-            // NOTE: Zoom-OUT no longer blends here. The return-to-start is
-            // computed every frame below and LOCKED to the zoom level, so it
-            // keeps working after you stop scrolling and after you drag, and
-            // always lands EXACTLY on startPosition at full zoom-out.
         }
 
-        // ── Smoothly animate FOV/ortho toward target ──────────────
+        // ── Smoothly animate FOV / ortho toward target ───────────
         SetCameraZoomSmooth(cameraDisplay, cfg.targetZoom, cfg);
 
         float currentZoom = cameraDisplay.orthographic
             ? cameraDisplay.orthographicSize
             : cameraDisplay.fieldOfView;
 
-        // ── Animate POSITION, blending toward start as we zoom out ──
+        // ── Animate position toward _targetXZPosition ────────────
         if (_hasStoredPreZoom)
         {
-            // returnT is 0 while inside the draggable (zoomed-in) range, then
-            // ramps to 1 at max zoom. Because it is a pure function of the
-            // current zoom level, there is no idle drift while you hold a zoom,
-            // dragging stays fully free below the threshold, and the target is
-            // EXACTLY startPosition once zoom reaches max — even after a drag.
-            float bandStart = (cfg.dragZoomThreshold > 0f) ? cfg.dragZoomThreshold : cfg.minZoom;
-            float returnT = Mathf.InverseLerp(bandStart, cfg.maxZoom, currentZoom);
+            // Lock Y to startPosition — zoom never intentionally changes height
+            Vector3 target = new Vector3(
+                _targetXZPosition.x,
+                cfg.startPosition.y,
+                _targetXZPosition.z);
 
-            float blendedX = Mathf.Lerp(_targetXZPosition.x, cfg.startPosition.x, returnT);
-            float blendedZ = Mathf.Lerp(_targetXZPosition.z, cfg.startPosition.z, returnT);
+            Vector3 smoothed = Vector3.SmoothDamp(
+                cameraTransform.position, target,
+                ref _positionVelocity, cfg.positionSmoothTime);
 
-            Vector3 pos = cameraTransform.position;
-            Vector3 target = new Vector3(blendedX, pos.y, blendedZ);
-            Vector3 smoothed = Vector3.SmoothDamp(pos, target, ref _positionVelocity, cfg.positionSmoothTime);
             cameraTransform.position = smoothed;
         }
 
-        // ── Fully zoomed out? Land EXACTLY on start, then clear state ──
-        // (No position-distance gate: by this point returnT is 1 so the camera
-        //  is already at start — this just guarantees a pixel-perfect landing.)
+        // ── Fully zoomed out → snap exactly to start, clear state
         bool targetIsMax = Mathf.Abs(cfg.targetZoom - cfg.maxZoom) < 0.1f;
         bool actualIsMax = Mathf.Abs(currentZoom - cfg.maxZoom) < 0.5f;
 
@@ -589,17 +581,6 @@ public class CameraManager : MonoBehaviour
 
     // ─────────────────────────────────────────────────────────────
     //  Frustum-inset camera bounds
-    //
-    //  Projects the four screen corners onto the working-area
-    //  ground plane, measures how far they extend from the camera
-    //  position, then shrinks the working-area rectangle inward
-    //  by those amounts.  Result: the camera position can only
-    //  move within the range where EVERY screen pixel still lands
-    //  inside the working area — guaranteeing nothing beyond the
-    //  box is ever visible.
-    //
-    //  If no WorkingArea is found the bounds are unclamped
-    //  (float.Min / float.Max).
     // ─────────────────────────────────────────────────────────────
     private (float minX, float maxX, float minZ, float maxZ) GetCameraBounds(SceneConfig cfg)
     {
@@ -609,7 +590,6 @@ public class CameraManager : MonoBehaviour
         Plane ground = new Plane(Vector3.up, new Vector3(0f, _waGroundY, 0f));
         Vector3 camPos = cameraTransform.position;
 
-        // Viewport corners: (0,0) bottom-left … (1,1) top-right
         Vector3[] vpCorners =
         {
             new Vector3(0f, 0f, 0f),
@@ -647,21 +627,16 @@ public class CameraManager : MonoBehaviour
         if (!anyHit)
             return (_waMinX, _waMaxX, _waMinZ, _waMaxZ);
 
-        // How far the visible ground extends from the camera's own X/Z
-        float extLeft = camPos.x - visMinX;   // positive
+        float extLeft = camPos.x - visMinX;
         float extRight = visMaxX - camPos.x;
         float extBack = camPos.z - visMinZ;
         float extFront = visMaxZ - camPos.z;
 
-        // Shrink the working area inward by those extents
         float clampMinX = _waMinX + extLeft;
         float clampMaxX = _waMaxX - extRight;
         float clampMinZ = _waMinZ + extBack;
         float clampMaxZ = _waMaxZ - extFront;
 
-        // Safety: if the frustum is wider than the working area at this
-        // zoom level, collapse to the centre so the camera at least stays
-        // centred rather than jittering.
         if (clampMinX > clampMaxX)
             clampMinX = clampMaxX = (_waMinX + _waMaxX) * 0.5f;
         if (clampMinZ > clampMaxZ)
@@ -671,25 +646,23 @@ public class CameraManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────────────────────
-    //  Mouse Drag Pan (always active when Zoom mode is enabled)
+    //  Mouse Drag Pan
     // ─────────────────────────────────────────────────────────────
     private void HandleMouseDrag(SceneConfig cfg)
     {
-        // ── Block input during the opening zoom transition ────────
+        // ── Block input during opening transition ────────────────
         if (_zoomTransitionCoroutine != null)
         {
             _isDragging = false;
             return;
         }
 
-        // ── Placement guard: don't pan camera while placing a device ──
         if (PlacementManager.Instance != null && PlacementManager.Instance.IsDragging)
         {
             _isDragging = false;
             return;
         }
 
-        // ── Check if zoom level allows drag ───────────────────────
         bool zoomedInEnough = true;
         if (cfg.dragZoomThreshold > 0f)
         {
@@ -700,14 +673,12 @@ public class CameraManager : MonoBehaviour
             zoomedInEnough = currentZoom < cfg.dragZoomThreshold;
         }
 
-        // ── Mouse button DOWN — start drag ────────────────────────
         if (Input.GetMouseButtonDown(0) && zoomedInEnough)
         {
             _isDragging = true;
             _lastMousePos = Input.mousePosition;
         }
 
-        // ── Mouse button UP — end drag ────────────────────────────
         if (Input.GetMouseButtonUp(0))
         {
             _isDragging = false;
@@ -715,15 +686,12 @@ public class CameraManager : MonoBehaviour
 
         if (!_isDragging) return;
 
-        // ── If zoom changed mid-drag and player is no longer zoomed in,
-        //    cancel the drag gracefully
         if (!zoomedInEnough)
         {
             _isDragging = false;
             return;
         }
 
-        // ── Frame-by-frame mouse delta ────────────────────────────
         Vector3 currentMouse = Input.mousePosition;
         Vector3 frameDelta = currentMouse - _lastMousePos;
         _lastMousePos = currentMouse;
@@ -735,7 +703,6 @@ public class CameraManager : MonoBehaviour
 
         float sensitivity = cfg.dragSensitivity * zoomFactor;
 
-        // ── Camera-relative axes so drag works regardless of rotation ──
         Vector3 camRight = cameraTransform.right;
         Vector3 camForward = cameraTransform.forward;
         camRight.y = 0f; camRight.Normalize();
@@ -746,16 +713,13 @@ public class CameraManager : MonoBehaviour
         float deltaX = worldDelta.x;
         float deltaZ = worldDelta.z;
 
-        // ── Update the TARGET position (keeps drag and zoom in sync) ──
         _targetXZPosition.x += deltaX;
         _targetXZPosition.z += deltaZ;
 
-        // ── Clamp target within frustum-inset working-area bounds ──
         var (minX, maxX, minZ, maxZ) = GetCameraBounds(cfg);
         _targetXZPosition.x = Mathf.Clamp(_targetXZPosition.x, minX, maxX);
         _targetXZPosition.z = Mathf.Clamp(_targetXZPosition.z, minZ, maxZ);
 
-        // ── Apply directly during drag for responsive feel ────────
         Vector3 newPos = cameraTransform.position;
         newPos.x = Mathf.Clamp(newPos.x + deltaX, minX, maxX);
         newPos.z = Mathf.Clamp(newPos.z + deltaZ, minZ, maxZ);
