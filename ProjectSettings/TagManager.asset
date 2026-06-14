@@ -8,6 +8,7 @@ TagManager:
   - LVButton
   - RoadTile
   - WorkingArea
+  - 'Car '
   layers:
   - Default
   - TransparentFX
@@ -15,7 +16,7 @@ TagManager:
   - RoadTile
   - Water
   - UI
-  - 
+  - Car
   - 
   - 
   - 

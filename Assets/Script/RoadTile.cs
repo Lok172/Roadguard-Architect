@@ -89,7 +89,12 @@ public class RoadTile : MonoBehaviour
 
     // ── Geometry ──────────────────────────────
     [Header("Corner Layout")]
-    [Min(0f)] public float cornerInset = 0.5f;
+    [Tooltip("How far corner snap-points are inset from the tile edge along the X axis (width).")]
+    [Min(0f)] public float cornerInsetX = 0.5f;
+
+    [Tooltip("How far corner snap-points are inset from the tile edge along the Z axis (depth).")]
+    [Min(0f)] public float cornerInsetZ = 0.5f;
+
     public float deviceYOffset = 3f;
 
     // ── Allowed Devices ───────────────────────
@@ -198,8 +203,8 @@ public class RoadTile : MonoBehaviour
         Vector3 size = col != null ? col.size : Vector3.one;
         Vector3 center = col != null ? col.center : Vector3.zero;
 
-        float hx = Mathf.Max(0f, size.x * 0.5f - cornerInset);
-        float hz = Mathf.Max(0f, size.z * 0.5f - cornerInset);
+        float hx = Mathf.Max(0f, size.x * 0.5f - cornerInsetX);
+        float hz = Mathf.Max(0f, size.z * 0.5f - cornerInsetZ);
         float y = deviceYOffset;
 
         return corner switch
@@ -301,6 +306,33 @@ public class RoadTile : MonoBehaviour
     public bool IsCornerOccupied(TileCorner corner)
     {
         foreach (var s in _slots) if (s.corner == corner) return true;
+        return false;
+    }
+
+    // ─────────────────────────────────────────
+    //  CORNER DEVICE QUERIES  (used by CarAgent for traffic-device reactions)
+    // ─────────────────────────────────────────
+
+    /// <summary>
+    /// Returns true if the given corner has a device of exactly <paramref name="type"/> placed on it.
+    /// Used by CarAgent to check individual corners for traffic-light edge logic
+    /// and for speed-bump center-slot detection.
+    /// </summary>
+    public bool HasDeviceAtCorner(TileCorner corner, TrafficDeviceType type)
+    {
+        foreach (var s in _slots)
+            if (s.corner == corner && s.deviceType == type) return true;
+        return false;
+    }
+
+    /// <summary>
+    /// Returns true if ANY slot on this tile has a device of <paramref name="type"/>,
+    /// regardless of corner. Used by CarAgent for stop-sign reaction.
+    /// </summary>
+    public bool HasAnyDeviceOfType(TrafficDeviceType type)
+    {
+        foreach (var s in _slots)
+            if (s.deviceType == type) return true;
         return false;
     }
 
