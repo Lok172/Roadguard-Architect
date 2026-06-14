@@ -307,6 +307,61 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 7685390950970284027, guid: d374a94dd67794348972ce9dc03de613, type: 3}
   m_PrefabInstance: {fileID: 480499699}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &130691779
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 130691781}
+  - component: {fileID: 130691780}
+  m_Layer: 0
+  m_Name: TileOverlayManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &130691780
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 130691779}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 71bdf257927401e4cbe1e76ec7c1baf7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TileOverlayManager
+  cubeOffset: {x: 0, y: 0, z: 0}
+  slabThickness: 0.02
+  colourAvailable: {r: 0.67058825, g: 0.87058824, b: 0.99215686, a: 1}
+  colourOccupied: {r: 0.9, g: 0.15, b: 0.15, a: 1}
+  colourSuitable: {r: 0.1, g: 0.9, b: 0.4, a: 1}
+  colourNotSuitable: {r: 1, g: 0.654902, b: 0, a: 1}
+  glowSpeed: 0.5
+  startAlpha: 0.1
+  endAlpha: 0.8
+  metallic: 0.45
+  smoothness: 0.5
+--- !u!4 &130691781
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 130691779}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 19.19086, y: 1.2305, z: 200.10425}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &189404567
 GameObject:
   m_ObjectHideFlags: 0
@@ -787,7 +842,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 8
   cityCamera: {fileID: 0}
-  ghostYOffset: 0.1
+  ghostYOffset: 0.6
 --- !u!4 &383910025
 Transform:
   m_ObjectHideFlags: 0
@@ -2967,6 +3022,9 @@ MonoBehaviour:
   accidentText: {fileID: 1097181717}
   happinessBar: {fileID: 1121382383}
   happinessPct: {fileID: 420064612}
+  normalColour: {r: 0.2, g: 0.85, b: 0.35, a: 1}
+  warningColour: {r: 1, g: 0.6, b: 0, a: 1}
+  warningThreshold: 50
   dateText: {fileID: 794002075}
   dayText: {fileID: 200956993}
   capitalText: {fileID: 1178641580}
@@ -3214,3 +3272,4 @@ SceneRoots:
   - {fileID: 1358407953}
   - {fileID: 383910025}
   - {fileID: 1255809372691935059}
+  - {fileID: 130691781}
