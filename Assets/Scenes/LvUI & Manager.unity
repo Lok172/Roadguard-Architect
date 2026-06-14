@@ -2223,6 +2223,10 @@ MonoBehaviour:
   lowAccidentBonusInterval: 3
   lowAccidentBonusMin: 3
   lowAccidentBonusMax: 7
+  devMode: 1
+  devHappiness: 100
+  devMoney: 99999
+  devTotalDays: 1000
   _capital: 1000
   _happiness: 0
   _accidentRate: 0

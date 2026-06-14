@@ -4,28 +4,50 @@ using UnityEngine;
 using UnityEngine.UI;
 
 // ─────────────────────────────────────────────────────────────────
-//  HUD CONTROLLER
-//  Update the HUD elements based on GameManager's events.
+//  HUD CONTROLLER  (v2 — HappinessBarUI merged in)
 //
-//  Calendar:
-//    DateText always starts from TODAY's real system date
+//  Manages all HUD elements based on GameManager events.
+//
+//  Happiness bar colour:
+//    >= warningThreshold  → normalColour  (default green)
+//    <  warningThreshold  → warningColour (default orange)
+//
+//  Calendar starts from TODAY's real system date.
 // ─────────────────────────────────────────────────────────────────
 
 public class HUDController : MonoBehaviour
 {
+    // ── Accident Rate ──────────────────────────────────────────────
     [Header("Accident Rate")]
     [SerializeField] private TextMeshProUGUI accidentText;
 
+    // ── Happiness ──────────────────────────────────────────────────
     [Header("Happiness")]
-    [SerializeField] private Image happinessBar;  // Image Type → Filled
-    [SerializeField] private TextMeshProUGUI happinessPct;  // "75 %"
+    [Tooltip("The Image component used as the fill bar (Image Type → Filled).")]
+    [SerializeField] private Image happinessBar;
 
+    [Tooltip("The percentage label, e.g. '75 %'.")]
+    [SerializeField] private TextMeshProUGUI happinessPct;
+
+    [Header("Happiness Bar Colour")]
+    [Tooltip("Bar colour when happiness is AT or ABOVE the warning threshold.")]
+    public Color normalColour = new Color(0.20f, 0.85f, 0.35f, 1f);   // Green
+
+    [Tooltip("Bar colour when happiness drops BELOW the warning threshold.")]
+    public Color warningColour = new Color(1.00f, 0.60f, 0.00f, 1f);   // Orange
+
+    [Tooltip("Happiness percentage below which the bar turns orange (0–100).")]
+    [Range(0f, 100f)]
+    public float warningThreshold = 50f;
+
+    // ── Calendar ───────────────────────────────────────────────────
     [Header("Calendar")]
     [SerializeField] private TextMeshProUGUI dateText;      // "28/5/2026"
     [SerializeField] private TextMeshProUGUI dayText;       // "Day 58/90"
 
+    // ── Capital ────────────────────────────────────────────────────
     [Header("Capital")]
-    [SerializeField] private TextMeshProUGUI capitalText;   // "RM1000"
+    [SerializeField] private TextMeshProUGUI capitalText;   // "RM1000k"
 
     // Captured once in Awake — always "today" when the game launches.
     private System.DateTime _calendarStart;
@@ -36,14 +58,11 @@ public class HUDController : MonoBehaviour
 
     private void Awake()
     {
-        // Use the real system date as day-0 of the in-game calendar.
         _calendarStart = System.DateTime.Today;
     }
 
     private void OnEnable()
     {
-        // Subscribe early; GameManager defers BroadcastState by one
-        // frame so we are guaranteed to receive the initial values.
         SubscribeToGameManager();
     }
 
@@ -60,7 +79,6 @@ public class HUDController : MonoBehaviour
     {
         if (GameManager.Instance == null)
         {
-            // GameManager Awake hasn't run yet — retry next frame.
             StartCoroutine(RetrySubscribe());
             return;
         }
@@ -91,18 +109,21 @@ public class HUDController : MonoBehaviour
     //  EVENT HANDLERS
     // ─────────────────────────────────────────
 
-    // "RM1000"
+    // "RM1000k"
     private void HandleCapital(float capital)
     {
         if (capitalText != null)
             capitalText.text = $"RM{Mathf.RoundToInt(capital)}k";
     }
 
-    // Progress bar fill + "75 %"
+    // Progress bar fill + percentage label + bar colour
     private void HandleHappiness(float happiness)
     {
         if (happinessBar != null)
+        {
             happinessBar.fillAmount = happiness / 100f;
+            happinessBar.color = happiness < warningThreshold ? warningColour : normalColour;
+        }
 
         if (happinessPct != null)
             happinessPct.text = $"{Mathf.RoundToInt(happiness)} %";

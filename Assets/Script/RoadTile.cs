@@ -100,7 +100,22 @@ public class RoadTile : MonoBehaviour
     [SerializeField] private List<PlacedSlot> _slots = new List<PlacedSlot>();
     public IReadOnlyList<PlacedSlot> Slots => _slots;
     public int PlacedCount => _slots.Count;
-    public bool isOccupied => _slots.Count >= maxDevices;
+
+    /// <summary>
+    /// True only when BOTH all corner slots (up to maxDevices) AND the center
+    /// slot are occupied — no slot of any kind remains on this tile.
+    /// </summary>
+    public bool isOccupied
+    {
+        get
+        {
+            bool centerTaken = IsCornerOccupied(TileCorner.Center);
+            int cornerCount = 0;
+            foreach (var s in _slots)
+                if (s.corner != TileCorner.Center) cornerCount++;
+            return cornerCount >= maxDevices && centerTaken;
+        }
+    }
 
     // Backwards-compat helpers
     public TrafficDeviceType placedDeviceType => _slots.Count > 0 ? _slots[0].deviceType : TrafficDeviceType.None;
@@ -290,14 +305,24 @@ public class RoadTile : MonoBehaviour
     }
 
     // ─────────────────────────────────────────
-    //  OVERLAY
+    //  OVERLAY  (v3 — updated state names)
     // ─────────────────────────────────────────
 
+    /// <summary>
+    /// Determines which overlay state this tile should show for a
+    /// given active device type.
+    /// </summary>
     public OverlayState GetOverlayState(TrafficDeviceType device)
     {
-        if (device == TrafficDeviceType.None) return OverlayState.Default;
-        if (allowedDevices.Count > 0 && !allowedDevices.Contains(device)) return OverlayState.Hidden;
-        if (_slots.Count >= maxDevices) return OverlayState.Occupied;
+        // No device selected → show availability status.
+        if (device == TrafficDeviceType.None)
+            return isOccupied ? OverlayState.Occupied : OverlayState.Available;
+
+        if (allowedDevices.Count > 0 && !allowedDevices.Contains(device))
+            return OverlayState.Hidden;
+
+        if (_slots.Count >= maxDevices)
+            return OverlayState.Occupied;
 
         if (device == TrafficDeviceType.SpeedBump && IsCornerOccupied(TileCorner.Center))
             return OverlayState.Occupied;
@@ -309,8 +334,10 @@ public class RoadTile : MonoBehaviour
             if (cornerCount >= 4) return OverlayState.Occupied;
         }
 
-        if (GetCorrectCountLimit(device) <= 0) return OverlayState.PoorPlacement;
-        return OverlayState.Valid;
+        if (GetCorrectCountLimit(device) <= 0)
+            return OverlayState.NotSuitable;       // was PoorPlacement
+
+        return OverlayState.Suitable;               // was Valid
     }
 
     public void RefreshOverlay(TrafficDeviceType activeDevice = TrafficDeviceType.None)
@@ -325,15 +352,24 @@ public class RoadTile : MonoBehaviour
 
     public PlacementResult CanPlace(TrafficDeviceType device, TileCorner corner, float playerCapital)
     {
-        if (_slots.Count >= maxDevices) return PlacementResult.AlreadyOccupied;
-
         if (device == TrafficDeviceType.SpeedBump)
         {
+            // SpeedBump occupies the CENTER slot only — never count-capped by corner limit.
             if (corner != TileCorner.Center) return PlacementResult.DeviceNotAllowed;
             if (IsCornerOccupied(TileCorner.Center)) return PlacementResult.AlreadyOccupied;
+            // Still respect a hard overall cap (e.g. if maxDevices == 1 on a tiny tile).
+            // Count cap only applies when ALL slots including center would be exceeded.
+            // Corner slots are separate, so only block if center is already taken (handled above).
         }
         else
         {
+            // Corner devices: block if no more CORNER slots are available.
+            int cornerCount = 0;
+            foreach (var s in _slots)
+                if (s.corner != TileCorner.Center) cornerCount++;
+            int maxCorners = maxDevices; // maxDevices governs corner cap for non-bump devices
+            if (cornerCount >= maxCorners) return PlacementResult.AlreadyOccupied;
+
             if (corner == TileCorner.Center || corner == TileCorner.None) return PlacementResult.DeviceNotAllowed;
             if (IsCornerOccupied(corner)) return PlacementResult.AlreadyOccupied;
         }

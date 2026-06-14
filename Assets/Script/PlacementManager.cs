@@ -14,16 +14,15 @@ public class PlacementProxy : MonoBehaviour, IPointerDownHandler
 }
 
 // ─────────────────────────────────────────────────────────────────
-//  PlacementManager (v5 — 2D sprites)
+//  PlacementManager (v7 — per-corner overlay hover)
 //
-//  CHANGES vs v4:
-//    • Device visuals are now world-space SpriteRenderers instead
-//      of 3D prefabs.  Assign the same Sprite assets used in the
-//      UI panel to stopSignSprite / speedBumpSprite / trafficLightSprite.
-//    • Ghost tinting uses SpriteRenderer.color (no custom material).
-//    • BillboardSprite component keeps placed icons facing the
-//      camera (toggle with billboardIcons).
-//    • Middle mouse rotation and facing direction fully removed.
+//  CHANGES vs v6:
+//    • ShowPlacementOverlays / UpdateHoverOverlay push drag context
+//      into each tile's TileOverlay via SetDragState / ClearDragState,
+//      enabling per-corner red-on-hover colouring.
+//    • ResetAllOverlays calls ClearDragState on all tiles instead of
+//      hard-setting Available/Occupied.
+//    • Everything else identical to v6.
 // ─────────────────────────────────────────────────────────────────
 
 public class PlacementManager : MonoBehaviour
@@ -171,11 +170,6 @@ public class PlacementManager : MonoBehaviour
     //  SPRITE OBJECT FACTORY
     // ─────────────────────────────────────────
 
-    /// <summary>
-    /// Creates a world-space GameObject with a SpriteRenderer,
-    /// scaled to <see cref="deviceIconWorldSize"/>, optionally
-    /// billboarded.
-    /// </summary>
     private GameObject CreateSpriteObject(Sprite sprite, string name, bool isGhost = false)
     {
         GameObject go = new GameObject(name);
@@ -220,7 +214,7 @@ public class PlacementManager : MonoBehaviour
 
         SetGhostTint(tintNeutral);
 
-        // Disable any accidental colliders (shouldn't be any, but safety).
+        // Disable any accidental colliders.
         foreach (Collider c in _ghostObject.GetComponentsInChildren<Collider>())
             c.enabled = false;
 
@@ -282,10 +276,6 @@ public class PlacementManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Predicts whether placing this device here would count as correct,
-    /// without actually placing anything.  Mirrors RoadTile.IsSlotCorrect.
-    /// </summary>
     private bool SimulateCorrectness(RoadTile tile, TrafficDeviceType device, TileCorner corner)
     {
         int limit = tile.GetCorrectCountLimit(device);
@@ -328,16 +318,41 @@ public class PlacementManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────
-    //  OVERLAY
+    //  OVERLAY  (v7 — per-corner hover via SetDragState)
     // ─────────────────────────────────────────
 
-    private void UpdateHoverOverlay() => _hoveredTile = RaycastToTile(out _);
+    /// <summary>
+    /// Called every Update frame while dragging.
+    /// Pushes the current hovered tile + corner into each tile's overlay
+    /// so TileOverlay can colour the hovered occupied corner red.
+    /// </summary>
+    private void UpdateHoverOverlay()
+    {
+        RoadTile nowHovered = RaycastToTile(out Vector3 hitPoint);
+
+        if (nowHovered != _hoveredTile)
+        {
+            // Refresh the tile we just left
+            if (_hoveredTile != null && _hoveredTile.Overlay != null)
+                _hoveredTile.Overlay.SetDragState(_selectedDevice, false);
+
+            _hoveredTile = nowHovered;
+        }
+
+        if (_hoveredTile != null && _hoveredTile.Overlay != null)
+        {
+            TileCorner corner = _hoveredTile.GetNearestCorner(hitPoint, _selectedDevice);
+            bool onOccupied = _hoveredTile.IsCornerOccupied(corner);
+            _hoveredTile.Overlay.SetDragState(_selectedDevice, onOccupied);
+        }
+    }
 
     private void ShowPlacementOverlays(TrafficDeviceType device)
     {
         RoadTile[] all = FindObjectsByType<RoadTile>(FindObjectsSortMode.None);
         foreach (RoadTile t in all)
-            if (t.Overlay != null) t.Overlay.SetState(t.GetOverlayState(device));
+            if (t.Overlay != null)
+                t.Overlay.SetDragState(device, cursorOnOccupiedCorner: false);
     }
 
     private void ResetAllOverlays()
@@ -345,7 +360,7 @@ public class PlacementManager : MonoBehaviour
         RoadTile[] all = FindObjectsByType<RoadTile>(FindObjectsSortMode.None);
         foreach (RoadTile t in all)
             if (t.Overlay != null)
-                t.Overlay.SetState(t.isOccupied ? OverlayState.Occupied : OverlayState.Default);
+                t.Overlay.ClearDragState();
     }
 
     // ─────────────────────────────────────────
@@ -370,7 +385,6 @@ public class PlacementManager : MonoBehaviour
 
         if (targetCorner == TileCorner.None) { CancelPlacement(); return; }
 
-        // Create the final placed sprite object.
         GameObject deviceObj = CreateSpriteObject(sprite, $"Device_{_selectedDevice}");
 
         Scene cityScene = SceneManager.GetSceneByName(citySceneName);
