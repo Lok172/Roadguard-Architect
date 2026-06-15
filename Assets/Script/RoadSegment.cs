@@ -52,6 +52,13 @@ public class RoadSegment : MonoBehaviour
              "(more connections = more complexity).")]
     [Min(0f)] public float intersectionComplexityFactor = 0.01f;
 
+    [Tooltip("How much each recent accident on this segment adds to risk. " +
+             "risk += recentAccidentCount * accidentRiskFactor")]
+    [Min(0f)] public float accidentRiskFactor = 0.05f;
+
+    [Tooltip("Seconds before an accident's risk contribution decays away.")]
+    [Min(1f)] public float accidentMemoryDuration = 60f;
+
     // ── Lane Offset ───────────────────────────
     [Header("Lane Offset")]
     [Tooltip("Lateral offset from the segment centre-line (world units). " +
@@ -72,6 +79,21 @@ public class RoadSegment : MonoBehaviour
     // Device risk reduction is re-computed whenever a device is placed/removed.
     private float _deviceRiskReduction;
     public float DeviceRiskReduction => _deviceRiskReduction;
+
+    // Accident history — timestamps of recent accidents on this segment.
+    private readonly List<float> _accidentTimestamps = new List<float>();
+
+    /// <summary>
+    /// Number of accidents still within the memory window.
+    /// </summary>
+    public int RecentAccidentCount
+    {
+        get
+        {
+            PruneOldAccidents();
+            return _accidentTimestamps.Count;
+        }
+    }
 
     // ── Cached length ─────────────────────────
     private float _length = -1f;
@@ -185,6 +207,54 @@ public class RoadSegment : MonoBehaviour
 
     public IReadOnlyList<CarAgent> CarsOnSegment => _carsOnSegment;
 
+    /// <summary>
+    /// Finds two cars on this segment travelling in the same direction
+    /// (same segmentFrom → segmentTo). Returns true if a pair was found.
+    /// carB is ahead, carA is behind.
+    /// </summary>
+    public bool FindSameDirectionPair(out CarAgent carA, out CarAgent carB)
+    {
+        carA = null; carB = null;
+        if (_carsOnSegment.Count < 2) return false;
+
+        // Group by direction (compare target nodes).
+        for (int i = 0; i < _carsOnSegment.Count; i++)
+        {
+            var ci = _carsOnSegment[i];
+            if (ci == null || ci.SegmentTo == null) continue;
+
+            for (int j = i + 1; j < _carsOnSegment.Count; j++)
+            {
+                var cj = _carsOnSegment[j];
+                if (cj == null || cj.SegmentTo == null) continue;
+                if (ci.SegmentTo != cj.SegmentTo) continue;
+
+                // Same direction — figure out who is in front.
+                // Project both onto the A→B line; higher t = closer to target.
+                float ti = GetTAtPosition(ci.transform.position);
+                float tj = GetTAtPosition(cj.transform.position);
+
+                // If travelling B→A, higher t means further from target (rear).
+                bool towardsB = (ci.SegmentTo == intersectionB);
+
+                if (towardsB)
+                {
+                    // Higher t = closer to B = front car.
+                    carB = (ti >= tj) ? ci : cj;
+                    carA = (ti >= tj) ? cj : ci;
+                }
+                else
+                {
+                    // Lower t = closer to A = front car.
+                    carB = (ti <= tj) ? ci : cj;
+                    carA = (ti <= tj) ? cj : ci;
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
     // ─────────────────────────────────────────
     //  RISK CALCULATION
     // ─────────────────────────────────────────
@@ -201,13 +271,35 @@ public class RoadSegment : MonoBehaviour
         if (intersectionA != null) complexity += intersectionA.ConnectedSegments.Count;
         if (intersectionB != null) complexity += intersectionB.ConnectedSegments.Count;
 
+        PruneOldAccidents();
+
         float risk = baseRisk
                    + speedFactor * 0.1f
                    + _carsOnSegment.Count * densityRiskFactor
                    + complexity * intersectionComplexityFactor
+                   + _accidentTimestamps.Count * accidentRiskFactor
                    - _deviceRiskReduction;
 
         return Mathf.Clamp01(risk);
+    }
+
+    // ─────────────────────────────────────────
+    //  ACCIDENT HISTORY
+    // ─────────────────────────────────────────
+
+    /// <summary>
+    /// Records that an accident just happened on this segment.
+    /// Its risk contribution decays after accidentMemoryDuration seconds.
+    /// </summary>
+    public void RecordAccident()
+    {
+        _accidentTimestamps.Add(Time.time);
+    }
+
+    private void PruneOldAccidents()
+    {
+        float cutoff = Time.time - accidentMemoryDuration;
+        _accidentTimestamps.RemoveAll(t => t < cutoff);
     }
 
     // ─────────────────────────────────────────

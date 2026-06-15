@@ -131,11 +131,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4a6fe283fc4c212418b26f3c58c2a09c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CarAgent
-  baseSpeed: 8
+  baseSpeed: 100
   arrivalThreshold: 0.3
-  laneBlendDistance: 1.5
   followCheckDistance: 11.03
-  followSpeedMultiplier: 0.3
+  followSpeedMultiplier: 0.764
   carLayerMask:
     serializedVersion: 2
     m_Bits: 64
