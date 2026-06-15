@@ -203,105 +203,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 6, y: 0.1, z: 20}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!1 &67178739
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 67178741}
-  - component: {fileID: 67178740}
-  m_Layer: 0
-  m_Name: Seg_13
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &67178740
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 67178739}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: Seg_13
-  intersectionA: {fileID: 1540047303}
-  intersectionB: {fileID: 561344581}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  laneOffset: 1.2
-  _isBlocked: 0
---- !u!4 &67178741
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 67178739}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 135, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &87931450
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 87931452}
-  - component: {fileID: 87931451}
-  m_Layer: 0
-  m_Name: Int_03
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &87931451
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 87931450}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: Int_03
-  _connectedSegments: []
---- !u!4 &87931452
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 87931450}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 30, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &179802631
 GameObject:
   m_ObjectHideFlags: 0
@@ -335,8 +236,8 @@ MonoBehaviour:
   generateSegments: 1
   startLocalPosition: {x: 0, y: 0, z: 0}
   direction: {x: 1, y: 0, z: 0}
-  nodeCount: 24
-  nodeSpacing: 10
+  nodeCount: 3
+  nodeSpacing: 120
   intersectionIDPrefix: Int
   segmentIDPrefix: Seg
   defaultSpeedLimit: 10
@@ -344,54 +245,12 @@ MonoBehaviour:
   defaultDensityRisk: 0.02
   defaultLaneOffset: 1.2
   generatedIntersections:
-  - {fileID: 1015405313}
-  - {fileID: 1733220870}
-  - {fileID: 1644760354}
-  - {fileID: 87931451}
-  - {fileID: 591332834}
-  - {fileID: 1242167677}
-  - {fileID: 1316304073}
-  - {fileID: 1855522724}
-  - {fileID: 696781543}
-  - {fileID: 1419381831}
-  - {fileID: 1440653899}
-  - {fileID: 1596137147}
-  - {fileID: 1995531217}
-  - {fileID: 1540047303}
-  - {fileID: 561344581}
-  - {fileID: 1581181117}
-  - {fileID: 547464898}
-  - {fileID: 244222286}
-  - {fileID: 411887385}
-  - {fileID: 591113043}
-  - {fileID: 1602109427}
-  - {fileID: 1520009646}
-  - {fileID: 1131351146}
-  - {fileID: 189722346}
+  - {fileID: 252034694}
+  - {fileID: 1524402830}
+  - {fileID: 331002956}
   generatedSegments:
-  - {fileID: 1100517212}
-  - {fileID: 1920819796}
-  - {fileID: 947786468}
-  - {fileID: 1345537509}
-  - {fileID: 2054759923}
-  - {fileID: 603797122}
-  - {fileID: 1571205242}
-  - {fileID: 2140847959}
-  - {fileID: 638577239}
-  - {fileID: 1323698277}
-  - {fileID: 1114381907}
-  - {fileID: 1856433485}
-  - {fileID: 1180031637}
-  - {fileID: 67178740}
-  - {fileID: 203688019}
-  - {fileID: 1786266727}
-  - {fileID: 1588823228}
-  - {fileID: 1170844802}
-  - {fileID: 1365703553}
-  - {fileID: 1117703232}
-  - {fileID: 1105936723}
-  - {fileID: 2110598876}
-  - {fileID: 1204454441}
+  - {fileID: 781179509}
+  - {fileID: 1209250785}
 --- !u!4 &179802633
 Transform:
   m_ObjectHideFlags: 0
@@ -405,153 +264,12 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1015405314}
-  - {fileID: 1733220871}
-  - {fileID: 1644760355}
-  - {fileID: 87931452}
-  - {fileID: 591332835}
-  - {fileID: 1242167678}
-  - {fileID: 1316304074}
-  - {fileID: 1855522725}
-  - {fileID: 696781544}
-  - {fileID: 1419381832}
-  - {fileID: 1440653900}
-  - {fileID: 1596137148}
-  - {fileID: 1995531218}
-  - {fileID: 1540047304}
-  - {fileID: 561344582}
-  - {fileID: 1581181118}
-  - {fileID: 547464899}
-  - {fileID: 244222287}
-  - {fileID: 411887386}
-  - {fileID: 591113044}
-  - {fileID: 1602109428}
-  - {fileID: 1520009647}
-  - {fileID: 1131351147}
-  - {fileID: 189722347}
-  - {fileID: 1100517213}
-  - {fileID: 1920819797}
-  - {fileID: 947786469}
-  - {fileID: 1345537510}
-  - {fileID: 2054759924}
-  - {fileID: 603797123}
-  - {fileID: 1571205243}
-  - {fileID: 2140847960}
-  - {fileID: 638577240}
-  - {fileID: 1323698278}
-  - {fileID: 1114381908}
-  - {fileID: 1856433486}
-  - {fileID: 1180031638}
-  - {fileID: 67178741}
-  - {fileID: 203688020}
-  - {fileID: 1786266728}
-  - {fileID: 1588823229}
-  - {fileID: 1170844803}
-  - {fileID: 1365703554}
-  - {fileID: 1117703233}
-  - {fileID: 1105936724}
-  - {fileID: 2110598877}
-  - {fileID: 1204454442}
+  - {fileID: 252034695}
+  - {fileID: 1524402831}
+  - {fileID: 331002957}
+  - {fileID: 781179510}
+  - {fileID: 1209250786}
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &189722345
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 189722347}
-  - component: {fileID: 189722346}
-  m_Layer: 0
-  m_Name: Int_23
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &189722346
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 189722345}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: Int_23
-  _connectedSegments: []
---- !u!4 &189722347
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 189722345}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 230, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &203688018
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 203688020}
-  - component: {fileID: 203688019}
-  m_Layer: 0
-  m_Name: Seg_14
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &203688019
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 203688018}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: Seg_14
-  intersectionA: {fileID: 561344581}
-  intersectionB: {fileID: 1581181117}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  laneOffset: 1.2
-  _isBlocked: 0
---- !u!4 &203688020
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 203688018}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 145, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &203844586
 GameObject:
@@ -680,7 +398,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
---- !u!1 &244222285
+--- !u!1 &252034693
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -688,39 +406,39 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 244222287}
-  - component: {fileID: 244222286}
+  - component: {fileID: 252034695}
+  - component: {fileID: 252034694}
   m_Layer: 0
-  m_Name: Int_17
+  m_Name: Int_00
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &244222286
+--- !u!114 &252034694
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 244222285}
+  m_GameObject: {fileID: 252034693}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: Int_17
+  intersectionID: Int_00
   _connectedSegments: []
---- !u!4 &244222287
+--- !u!4 &252034695
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 244222285}
+  m_GameObject: {fileID: 252034693}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 170, y: 0, z: 0}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -810,7 +528,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 6, y: 0.1, z: 20}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!1 &411887384
+--- !u!1 &331002955
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -818,39 +536,39 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 411887386}
-  - component: {fileID: 411887385}
+  - component: {fileID: 331002957}
+  - component: {fileID: 331002956}
   m_Layer: 0
-  m_Name: Int_18
+  m_Name: Int_02
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &411887385
+--- !u!114 &331002956
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 411887384}
+  m_GameObject: {fileID: 331002955}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: Int_18
+  intersectionID: Int_02
   _connectedSegments: []
---- !u!4 &411887386
+--- !u!4 &331002957
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 411887384}
+  m_GameObject: {fileID: 331002955}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 180, y: 0, z: 0}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 240, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -940,52 +658,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 5.8, y: 0.1, z: 20}
   m_Center: {x: 0.2, y: 0, z: 0}
---- !u!1 &547464897
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 547464899}
-  - component: {fileID: 547464898}
-  m_Layer: 0
-  m_Name: Int_16
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &547464898
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 547464897}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: Int_16
-  _connectedSegments: []
---- !u!4 &547464899
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 547464897}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 160, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &559998829
 GameObject:
   m_ObjectHideFlags: 0
@@ -1094,52 +766,6 @@ MonoBehaviour:
   - {fileID: 863621222}
   - {fileID: 1031422091}
   - {fileID: 626638856}
---- !u!1 &561344580
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 561344582}
-  - component: {fileID: 561344581}
-  m_Layer: 0
-  m_Name: Int_14
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &561344581
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 561344580}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: Int_14
-  _connectedSegments: []
---- !u!4 &561344582
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 561344580}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 140, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &566163739
 GameObject:
   m_ObjectHideFlags: 0
@@ -1224,151 +850,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 6, y: 0.1, z: 20}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!1 &591113042
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 591113044}
-  - component: {fileID: 591113043}
-  m_Layer: 0
-  m_Name: Int_19
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &591113043
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 591113042}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: Int_19
-  _connectedSegments: []
---- !u!4 &591113044
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 591113042}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 190, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &591332833
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 591332835}
-  - component: {fileID: 591332834}
-  m_Layer: 0
-  m_Name: Int_04
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &591332834
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 591332833}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: Int_04
-  _connectedSegments: []
---- !u!4 &591332835
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 591332833}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 40, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &603797121
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 603797123}
-  - component: {fileID: 603797122}
-  m_Layer: 0
-  m_Name: Seg_05
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &603797122
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 603797121}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: Seg_05
-  intersectionA: {fileID: 1242167677}
-  intersectionB: {fileID: 1316304073}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  laneOffset: 1.2
-  _isBlocked: 0
---- !u!4 &603797123
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 603797121}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 55, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &626638854
 GameObject:
   m_ObjectHideFlags: 0
@@ -1453,7 +934,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 5.8, y: 0.1, z: 20}
   m_Center: {x: 0.2, y: 0, z: 0}
---- !u!1 &638577238
+--- !u!1 &781179508
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1461,92 +942,46 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 638577240}
-  - component: {fileID: 638577239}
+  - component: {fileID: 781179510}
+  - component: {fileID: 781179509}
   m_Layer: 0
-  m_Name: Seg_08
+  m_Name: Seg_00
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &638577239
+--- !u!114 &781179509
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 638577238}
+  m_GameObject: {fileID: 781179508}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: Seg_08
-  intersectionA: {fileID: 696781543}
-  intersectionB: {fileID: 1419381831}
+  segmentID: Seg_00
+  intersectionA: {fileID: 252034694}
+  intersectionB: {fileID: 1524402830}
   speedLimit: 10
   baseRisk: 0.1
   densityRiskFactor: 0.02
   intersectionComplexityFactor: 0.01
   laneOffset: 1.2
   _isBlocked: 0
---- !u!4 &638577240
+--- !u!4 &781179510
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 638577238}
+  m_GameObject: {fileID: 781179508}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 85, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &696781542
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 696781544}
-  - component: {fileID: 696781543}
-  m_Layer: 0
-  m_Name: Int_08
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &696781543
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 696781542}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: Int_08
-  _connectedSegments: []
---- !u!4 &696781544
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 696781542}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 80, y: 0, z: 0}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 60, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1720,105 +1155,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 5.8, y: 0.1, z: 20}
   m_Center: {x: 0.2, y: 0, z: 0}
---- !u!1 &947786467
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 947786469}
-  - component: {fileID: 947786468}
-  m_Layer: 0
-  m_Name: Seg_02
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &947786468
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 947786467}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: Seg_02
-  intersectionA: {fileID: 1644760354}
-  intersectionB: {fileID: 87931451}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  laneOffset: 1.2
-  _isBlocked: 0
---- !u!4 &947786469
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 947786467}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 25, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1015405312
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1015405314}
-  - component: {fileID: 1015405313}
-  m_Layer: 0
-  m_Name: Int_00
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1015405313
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1015405312}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: Int_00
-  _connectedSegments: []
---- !u!4 &1015405314
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1015405312}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1031422089
 GameObject:
   m_ObjectHideFlags: 0
@@ -2006,264 +1342,6 @@ MonoBehaviour:
   tileLayer: RoadTile
   tileTag: RoadTile
   generatedTiles: []
---- !u!1 &1100517211
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1100517213}
-  - component: {fileID: 1100517212}
-  m_Layer: 0
-  m_Name: Seg_00
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1100517212
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1100517211}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: Seg_00
-  intersectionA: {fileID: 1015405313}
-  intersectionB: {fileID: 1733220870}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  laneOffset: 1.2
-  _isBlocked: 0
---- !u!4 &1100517213
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1100517211}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 5, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1105936722
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1105936724}
-  - component: {fileID: 1105936723}
-  m_Layer: 0
-  m_Name: Seg_20
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1105936723
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1105936722}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: Seg_20
-  intersectionA: {fileID: 1602109427}
-  intersectionB: {fileID: 1520009646}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  laneOffset: 1.2
-  _isBlocked: 0
---- !u!4 &1105936724
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1105936722}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 205, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1114381906
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1114381908}
-  - component: {fileID: 1114381907}
-  m_Layer: 0
-  m_Name: Seg_10
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1114381907
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1114381906}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: Seg_10
-  intersectionA: {fileID: 1440653899}
-  intersectionB: {fileID: 1596137147}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  laneOffset: 1.2
-  _isBlocked: 0
---- !u!4 &1114381908
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1114381906}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 105, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1117703231
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1117703233}
-  - component: {fileID: 1117703232}
-  m_Layer: 0
-  m_Name: Seg_19
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1117703232
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1117703231}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: Seg_19
-  intersectionA: {fileID: 591113043}
-  intersectionB: {fileID: 1602109427}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  laneOffset: 1.2
-  _isBlocked: 0
---- !u!4 &1117703233
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1117703231}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 195, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1131351145
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1131351147}
-  - component: {fileID: 1131351146}
-  m_Layer: 0
-  m_Name: Int_22
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1131351146
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1131351145}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: Int_22
-  _connectedSegments: []
---- !u!4 &1131351147
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1131351145}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 220, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1159925161
 GameObject:
   m_ObjectHideFlags: 0
@@ -2348,7 +1426,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 6, y: 0.1, z: 20}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!1 &1170844801
+--- !u!1 &1209250784
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2356,198 +1434,46 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1170844803}
-  - component: {fileID: 1170844802}
+  - component: {fileID: 1209250786}
+  - component: {fileID: 1209250785}
   m_Layer: 0
-  m_Name: Seg_17
+  m_Name: Seg_01
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1170844802
+--- !u!114 &1209250785
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1170844801}
+  m_GameObject: {fileID: 1209250784}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: Seg_17
-  intersectionA: {fileID: 244222286}
-  intersectionB: {fileID: 411887385}
+  segmentID: Seg_01
+  intersectionA: {fileID: 1524402830}
+  intersectionB: {fileID: 331002956}
   speedLimit: 10
   baseRisk: 0.1
   densityRiskFactor: 0.02
   intersectionComplexityFactor: 0.01
   laneOffset: 1.2
   _isBlocked: 0
---- !u!4 &1170844803
+--- !u!4 &1209250786
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1170844801}
+  m_GameObject: {fileID: 1209250784}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 175, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1180031636
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1180031638}
-  - component: {fileID: 1180031637}
-  m_Layer: 0
-  m_Name: Seg_12
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1180031637
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1180031636}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: Seg_12
-  intersectionA: {fileID: 1995531217}
-  intersectionB: {fileID: 1540047303}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  laneOffset: 1.2
-  _isBlocked: 0
---- !u!4 &1180031638
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1180031636}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 125, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1204454440
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1204454442}
-  - component: {fileID: 1204454441}
-  m_Layer: 0
-  m_Name: Seg_22
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1204454441
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1204454440}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: Seg_22
-  intersectionA: {fileID: 1131351146}
-  intersectionB: {fileID: 189722346}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  laneOffset: 1.2
-  _isBlocked: 0
---- !u!4 &1204454442
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1204454440}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 225, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1242167676
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1242167678}
-  - component: {fileID: 1242167677}
-  m_Layer: 0
-  m_Name: Int_05
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1242167677
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1242167676}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: Int_05
-  _connectedSegments: []
---- !u!4 &1242167678
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1242167676}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 50, y: 0, z: 0}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 180, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2605,7 +1531,7 @@ MonoBehaviour:
   perCorrectDeviceReduction: 2
   happinessPerAccidentRate: 3
   _sections: []
---- !u!1 &1316304072
+--- !u!1 &1524402829
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2613,687 +1539,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1316304074}
-  - component: {fileID: 1316304073}
-  m_Layer: 0
-  m_Name: Int_06
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1316304073
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1316304072}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: Int_06
-  _connectedSegments: []
---- !u!4 &1316304074
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1316304072}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 60, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1323698276
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1323698278}
-  - component: {fileID: 1323698277}
-  m_Layer: 0
-  m_Name: Seg_09
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1323698277
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1323698276}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: Seg_09
-  intersectionA: {fileID: 1419381831}
-  intersectionB: {fileID: 1440653899}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  laneOffset: 1.2
-  _isBlocked: 0
---- !u!4 &1323698278
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1323698276}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 95, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1345537508
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1345537510}
-  - component: {fileID: 1345537509}
-  m_Layer: 0
-  m_Name: Seg_03
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1345537509
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1345537508}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: Seg_03
-  intersectionA: {fileID: 87931451}
-  intersectionB: {fileID: 591332834}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  laneOffset: 1.2
-  _isBlocked: 0
---- !u!4 &1345537510
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1345537508}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 35, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1365703552
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1365703554}
-  - component: {fileID: 1365703553}
-  m_Layer: 0
-  m_Name: Seg_18
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1365703553
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1365703552}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: Seg_18
-  intersectionA: {fileID: 411887385}
-  intersectionB: {fileID: 591113043}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  laneOffset: 1.2
-  _isBlocked: 0
---- !u!4 &1365703554
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1365703552}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 185, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1419381830
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1419381832}
-  - component: {fileID: 1419381831}
-  m_Layer: 0
-  m_Name: Int_09
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1419381831
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1419381830}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: Int_09
-  _connectedSegments: []
---- !u!4 &1419381832
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1419381830}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 90, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1440653898
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1440653900}
-  - component: {fileID: 1440653899}
-  m_Layer: 0
-  m_Name: Int_10
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1440653899
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1440653898}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: Int_10
-  _connectedSegments: []
---- !u!4 &1440653900
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1440653898}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 100, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1520009645
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1520009647}
-  - component: {fileID: 1520009646}
-  m_Layer: 0
-  m_Name: Int_21
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1520009646
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1520009645}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: Int_21
-  _connectedSegments: []
---- !u!4 &1520009647
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1520009645}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 210, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1540047302
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1540047304}
-  - component: {fileID: 1540047303}
-  m_Layer: 0
-  m_Name: Int_13
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1540047303
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1540047302}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: Int_13
-  _connectedSegments: []
---- !u!4 &1540047304
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1540047302}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 130, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1571205241
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1571205243}
-  - component: {fileID: 1571205242}
-  m_Layer: 0
-  m_Name: Seg_06
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1571205242
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1571205241}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: Seg_06
-  intersectionA: {fileID: 1316304073}
-  intersectionB: {fileID: 1855522724}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  laneOffset: 1.2
-  _isBlocked: 0
---- !u!4 &1571205243
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1571205241}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 65, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1581181116
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1581181118}
-  - component: {fileID: 1581181117}
-  m_Layer: 0
-  m_Name: Int_15
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1581181117
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1581181116}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: Int_15
-  _connectedSegments: []
---- !u!4 &1581181118
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1581181116}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 150, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1588823227
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1588823229}
-  - component: {fileID: 1588823228}
-  m_Layer: 0
-  m_Name: Seg_16
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1588823228
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1588823227}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: Seg_16
-  intersectionA: {fileID: 547464898}
-  intersectionB: {fileID: 244222286}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  laneOffset: 1.2
-  _isBlocked: 0
---- !u!4 &1588823229
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1588823227}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 165, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1596137146
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1596137148}
-  - component: {fileID: 1596137147}
-  m_Layer: 0
-  m_Name: Int_11
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1596137147
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1596137146}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: Int_11
-  _connectedSegments: []
---- !u!4 &1596137148
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1596137146}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 110, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1602109426
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1602109428}
-  - component: {fileID: 1602109427}
-  m_Layer: 0
-  m_Name: Int_20
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1602109427
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1602109426}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: Int_20
-  _connectedSegments: []
---- !u!4 &1602109428
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1602109426}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 200, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1644760353
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1644760355}
-  - component: {fileID: 1644760354}
-  m_Layer: 0
-  m_Name: Int_02
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1644760354
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1644760353}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: Int_02
-  _connectedSegments: []
---- !u!4 &1644760355
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1644760353}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 20, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1733220869
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1733220871}
-  - component: {fileID: 1733220870}
+  - component: {fileID: 1524402831}
+  - component: {fileID: 1524402830}
   m_Layer: 0
   m_Name: Int_01
   m_TagString: Untagged
@@ -3301,13 +1548,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1733220870
+--- !u!114 &1524402830
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1733220869}
+  m_GameObject: {fileID: 1524402829}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
@@ -3315,16 +1562,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
   intersectionID: Int_01
   _connectedSegments: []
---- !u!4 &1733220871
+--- !u!4 &1524402831
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1733220869}
+  m_GameObject: {fileID: 1524402829}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 10, y: 0, z: 0}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 120, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3414,59 +1661,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 6, y: 0.1, z: 20}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!1 &1786266726
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1786266728}
-  - component: {fileID: 1786266727}
-  m_Layer: 0
-  m_Name: Seg_15
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1786266727
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1786266726}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: Seg_15
-  intersectionA: {fileID: 1581181117}
-  intersectionB: {fileID: 547464898}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  laneOffset: 1.2
-  _isBlocked: 0
---- !u!4 &1786266728
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1786266726}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 155, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1824987417
 GameObject:
   m_ObjectHideFlags: 0
@@ -3551,158 +1745,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 6, y: 0.1, z: 20}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!1 &1855522723
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1855522725}
-  - component: {fileID: 1855522724}
-  m_Layer: 0
-  m_Name: Int_07
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1855522724
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1855522723}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: Int_07
-  _connectedSegments: []
---- !u!4 &1855522725
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1855522723}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 70, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1856433484
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1856433486}
-  - component: {fileID: 1856433485}
-  m_Layer: 0
-  m_Name: Seg_11
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1856433485
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1856433484}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: Seg_11
-  intersectionA: {fileID: 1596137147}
-  intersectionB: {fileID: 1995531217}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  laneOffset: 1.2
-  _isBlocked: 0
---- !u!4 &1856433486
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1856433484}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 115, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1920819795
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1920819797}
-  - component: {fileID: 1920819796}
-  m_Layer: 0
-  m_Name: Seg_01
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1920819796
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1920819795}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: Seg_01
-  intersectionA: {fileID: 1733220870}
-  intersectionB: {fileID: 1644760354}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  laneOffset: 1.2
-  _isBlocked: 0
---- !u!4 &1920819797
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1920819795}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 15, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1928849525
 GameObject:
   m_ObjectHideFlags: 0
@@ -4113,52 +2155,6 @@ MonoBehaviour:
   despawnPoint: {fileID: 0}
   concurrentCars: 2
   respawnDelay: 3
---- !u!1 &1995531216
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1995531218}
-  - component: {fileID: 1995531217}
-  m_Layer: 0
-  m_Name: Int_12
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1995531217
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1995531216}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: Int_12
-  _connectedSegments: []
---- !u!4 &1995531218
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1995531216}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 120, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2025755223
 GameObject:
   m_ObjectHideFlags: 0
@@ -4243,59 +2239,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 6, y: 0.1, z: 20}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!1 &2054759922
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2054759924}
-  - component: {fileID: 2054759923}
-  m_Layer: 0
-  m_Name: Seg_04
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &2054759923
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2054759922}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: Seg_04
-  intersectionA: {fileID: 591332834}
-  intersectionB: {fileID: 1242167677}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  laneOffset: 1.2
-  _isBlocked: 0
---- !u!4 &2054759924
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2054759922}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 45, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2062908655
 GameObject:
   m_ObjectHideFlags: 0
@@ -4353,12 +2296,9 @@ MonoBehaviour:
   respawnDelay: 3
   autoCollectIntersections: 1
   intersections: []
-  spawnIntersections:
-  - {fileID: 1015405313}
-  - {fileID: 189722346}
-  despawnIntersections:
-  - {fileID: 1015405313}
-  - {fileID: 189722346}
+  endpointIntersections:
+  - {fileID: 252034694}
+  - {fileID: 331002956}
   riskEvalInterval: 5
   crashVFXPrefab: {fileID: 0}
   crashRecoveryDuration: 5
@@ -4446,112 +2386,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 6, y: 0.1, z: 20}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!1 &2110598875
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2110598877}
-  - component: {fileID: 2110598876}
-  m_Layer: 0
-  m_Name: Seg_21
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &2110598876
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2110598875}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: Seg_21
-  intersectionA: {fileID: 1520009646}
-  intersectionB: {fileID: 1131351146}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  laneOffset: 1.2
-  _isBlocked: 0
---- !u!4 &2110598877
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2110598875}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 215, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &2140847958
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2140847960}
-  - component: {fileID: 2140847959}
-  m_Layer: 0
-  m_Name: Seg_07
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &2140847959
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2140847958}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: Seg_07
-  intersectionA: {fileID: 1855522724}
-  intersectionB: {fileID: 696781543}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  laneOffset: 1.2
-  _isBlocked: 0
---- !u!4 &2140847960
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2140847958}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 75, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 179802633}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

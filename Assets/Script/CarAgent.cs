@@ -3,29 +3,17 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // ─────────────────────────────────────────────────────────────────
-//  CAR AGENT  (v3 — lane offsets + drag-pause)
+//  CAR AGENT  (v4 — stable lane, no ghost, no stuck)
 //
-//  Attach to every car prefab.
-//
-//  Life cycle:
-//    Initialise(startNode, allNodes)
-//    → A* to random destination (or fixed endpoint from CarManager)
-//    → move along segment frame-by-frame, offset into own lane
-//    → reach next intersection → A* again → repeat
-//    → if segment blocked: join queue, wait, reroute when cleared
-//    → SetCrashed() → VFX, freeze, recovery → ReturnToPool
-//
-//  LANE OFFSET
-//    Each segment carries a laneOffset value.  CarAgent asks the
-//    segment for the correct lateral offset based on travel direction
-//    (from → to) and moves along the offset line rather than the
-//    segment centre.  Approaching an intersection the car blends
-//    back toward the node position so the path stays continuous.
-//
-//  DRAG PAUSE
-//    CarManager.IsDragging flag pauses all movement and suspends
-//    the crash VFX coroutine timing so nothing happens while the
-//    user is panning/rotating the camera.
+//  KEY FIXES vs v3:
+//    • EnterSegment NO LONGER teleports position. The car always
+//      moves continuously; position is only set once at spawn via
+//      CarManager calling PlaceAtLaneStart() before activation.
+//    • PickNewDestinationAndRoute filters out _currentNode from
+//      candidate destinations so FindPath always returns ≥ 2 nodes.
+//    • RetryRoute now despawns after max retries instead of looping
+//      forever, preventing invisible stuck cars.
+//    • _isMoving guard prevents OnReachedNode re-entry.
 // ─────────────────────────────────────────────────────────────────
 
 public class CarAgent : MonoBehaviour
@@ -35,29 +23,23 @@ public class CarAgent : MonoBehaviour
     [Tooltip("Default cruising speed (units/sec). Clamped to segment speedLimit.")]
     public float baseSpeed = 8f;
 
-    [Tooltip("How close to the next intersection centre before snapping to it.")]
-    public float arrivalThreshold = 0.3f;
-
-    // ── Lane Offset Blend ─────────────────────
-    [Header("Lane Offset")]
-    [Tooltip("World units from intersection at which the car begins blending " +
-             "back to the node centre (for smooth turns).")]
-    [Min(0f)] public float laneBlendDistance = 1.5f;
+    [Tooltip("How close to the laned target before triggering arrival.")]
+    public float arrivalThreshold = 0.25f;
 
     // ── Car Following ─────────────────────────
     [Header("Car Following")]
-    [Tooltip("Distance to look ahead for cars on the same segment.")]
-    public float followCheckDistance = 4f;
+    [Tooltip("Distance ahead (from car front) to check for cars on the same lane.")]
+    public float followCheckDistance = 8f;
 
-    [Tooltip("Speed multiplier applied when following a car ahead (0=stop, 1=full speed).")]
+    [Tooltip("Speed multiplier when following a car ahead (0=stop, 1=full speed).")]
     [Range(0f, 1f)] public float followSpeedMultiplier = 0.3f;
 
-    [Tooltip("Layer mask for detecting other cars ahead.")]
+    [Tooltip("Layer mask that contains the Car layer.")]
     public LayerMask carLayerMask;
 
     // ── Traffic Light ─────────────────────────
     [Header("Traffic Light")]
-    [Tooltip("Base stop time (n). Both-corner edge → n sec; one-corner edge → 2n sec.")]
+    [Tooltip("Base stop time n. Both-corner edge = n sec; one-corner edge = 2n sec.")]
     public float trafficLightWaitN = 3f;
 
     // ── Speed Bump ────────────────────────────
@@ -70,12 +52,11 @@ public class CarAgent : MonoBehaviour
     [Range(0f, 1f)] public float stopSignStopChance = 0.5f;
     public float stopSignDuration = 2f;
 
-    // ── Queue / Blocked ───────────────────────
+    // ── Blocked Segment ───────────────────────
     [Header("Blocked Segment")]
-    [Tooltip("How often (seconds) a queued car re-checks if it can reroute.")]
     public float rerouteCheckInterval = 2f;
 
-    // ── Runtime (read-only) ───────────────────
+    // ── Runtime (read-only Inspector) ─────────
     [Header("Runtime (read-only)")]
     [SerializeField] private float _currentSpeed;
     [SerializeField] private bool _isCrashed;
@@ -90,21 +71,29 @@ public class CarAgent : MonoBehaviour
     private List<RoadIntersection> _path = new List<RoadIntersection>();
     private int _pathIndex = 1;
     private List<RoadIntersection> _allNodes;
+    private List<RoadIntersection> _endPoints; // valid destinations (spawn/despawn list)
     private readonly HashSet<RoadTile> _processingTiles = new HashSet<RoadTile>();
     private bool _active;
+    private bool _inArrival; // re-entry guard
     private Rigidbody _rb;
-
-    // Track travel direction for lane offset.
-    private RoadIntersection _segmentFrom;  // intersection we departed from
-    private RoadIntersection _segmentTo;    // intersection we are heading to
+    private RoadIntersection _segmentFrom;
+    private RoadIntersection _segmentTo;
 
     // ─────────────────────────────────────────
-    //  INITIALISE  (called by CarManager after pool checkout)
+    //  INITIALISE
     // ─────────────────────────────────────────
 
-    public void Initialise(RoadIntersection startNode, List<RoadIntersection> allNodes)
+    /// <summary>
+    /// Called by CarManager. allNodes = full graph for A*.
+    /// endPoints = valid destination intersections (spawn/despawn list).
+    /// CarManager must call PlaceAtLaneStart() BEFORE SetActive(true).
+    /// </summary>
+    public void Initialise(RoadIntersection startNode,
+                           List<RoadIntersection> allNodes,
+                           List<RoadIntersection> endPoints)
     {
         _allNodes = allNodes;
+        _endPoints = endPoints;
         _currentNode = startNode;
         _currentSegment = null;
         _segmentFrom = null;
@@ -112,22 +101,14 @@ public class CarAgent : MonoBehaviour
         _isCrashed = false;
         _isStopped = false;
         _isQueued = false;
+        _inArrival = false;
         _active = true;
         _currentSpeed = baseSpeed;
+        _path.Clear();
+        _pathIndex = 1;
         _processingTiles.Clear();
-
-        transform.position = startNode.transform.position;
-
-        // Defer by one frame so the car's position is committed to the renderer
-        // before movement begins — prevents a one-frame ghost at the intersection.
-        StartCoroutine(InitialiseNextFrame());
-    }
-
-    private IEnumerator InitialiseNextFrame()
-    {
-        yield return null;   // wait one frame
-        if (_active && !_isCrashed)
-            PickNewDestinationAndRoute();
+        // position is set by CarManager.PlaceAtLaneStart() before this call
+        PickNewDestinationAndRoute();
     }
 
     // ─────────────────────────────────────────
@@ -142,10 +123,8 @@ public class CarAgent : MonoBehaviour
 
     private void Update()
     {
-        // Pause everything while the user is click-dragging.
         if (CarManager.IsDragging) return;
-
-        if (!_active || _isCrashed || _isStopped || _isQueued) return;
+        if (!_active || _isCrashed || _isStopped || _isQueued || _inArrival) return;
         if (_targetNode == null) return;
         MoveTowardTarget();
     }
@@ -158,12 +137,10 @@ public class CarAgent : MonoBehaviour
     {
         float speed = _currentSpeed;
 
-        // Car following — raycast from the FRONT of the car's bounds
-        // so we don't hit our own collider and get accurate spacing.
-        Bounds bounds = GetComponentInChildren<Renderer>()?.bounds
-                             ?? new Bounds(transform.position, Vector3.one);
-        Vector3 rayOrigin = transform.position + transform.forward * (bounds.extents.z + 0.1f);
-
+        // Raycast from car front to avoid self-hit.
+        Bounds b = GetComponentInChildren<Renderer>()?.bounds
+                            ?? new Bounds(transform.position, Vector3.one);
+        Vector3 rayOrigin = transform.position + transform.forward * (b.extents.z + 0.1f);
         if (Physics.Raycast(rayOrigin, transform.forward,
                             out RaycastHit hit, followCheckDistance, carLayerMask))
         {
@@ -171,28 +148,10 @@ public class CarAgent : MonoBehaviour
                 speed *= followSpeedMultiplier;
         }
 
-        // ── Compute laned target position ─────
-        // The car travels along its offset lane the entire segment.
-        // Within laneBlendDistance of the next intersection, blend the
-        // offset to zero so the car converges to the node centre for clean turns.
-        Vector3 nodePos = _targetNode.transform.position;
-        Vector3 lanedTarget;
+        // The car always targets (nextNode + laneOffset) — never node centre.
+        Vector3 laneTarget = LaneTargetFor(_targetNode, _segmentFrom, _segmentTo, _currentSegment);
 
-        if (_currentSegment != null && _segmentFrom != null && _segmentTo != null)
-        {
-            Vector3 offset = _currentSegment.GetLaneOffsetVector(_segmentFrom, _segmentTo);
-            float distToNode = Vector3.Distance(transform.position, nodePos);
-
-            // blend = 1.0 when far away (full offset), 0.0 at the node (centre).
-            float blend = Mathf.Clamp01(distToNode / Mathf.Max(0.001f, laneBlendDistance));
-            lanedTarget = nodePos + offset * blend;
-        }
-        else
-        {
-            lanedTarget = nodePos;
-        }
-
-        Vector3 dir = lanedTarget - transform.position;
+        Vector3 dir = laneTarget - transform.position;
         float dist = dir.magnitude;
 
         if (dist > 0.01f)
@@ -200,15 +159,36 @@ public class CarAgent : MonoBehaviour
 
         float step = speed * Time.deltaTime;
 
-        if (step >= dist || dist <= arrivalThreshold)
+        if (dist <= arrivalThreshold || step >= dist)
         {
-            transform.position = nodePos;   // snap to node centre on arrival
-            OnReachedNode(_targetNode);
+            // Snap to laned arrival point (NOT node centre) so EnterSegment
+            // snapping from.position+offset is a zero-distance move.
+            transform.position = laneTarget;
+            if (!_inArrival)
+            {
+                _inArrival = true;
+                OnReachedNode(_targetNode);
+            }
         }
         else
         {
             transform.position += dir.normalized * step;
         }
+    }
+
+    /// <summary>
+    /// Returns the world position the car should move toward:
+    /// nextNode.position + segment lane offset.
+    /// Falls back to bare node position if segment/direction not set.
+    /// </summary>
+    private static Vector3 LaneTargetFor(RoadIntersection node,
+                                          RoadIntersection from,
+                                          RoadIntersection to,
+                                          RoadSegment seg)
+    {
+        if (seg != null && from != null && to != null)
+            return node.transform.position + seg.GetLaneOffsetVector(from, to);
+        return node.transform.position;
     }
 
     // ─────────────────────────────────────────
@@ -227,14 +207,21 @@ public class CarAgent : MonoBehaviour
 
         _currentNode = node;
 
+        // Arrived at destination or end of path → pick new destination.
         if (node == _destination || _pathIndex >= _path.Count)
         {
+            _inArrival = false;
             PickNewDestinationAndRoute();
             return;
         }
 
+        _inArrival = false;
         AdvanceAlongPath();
     }
+
+    // ─────────────────────────────────────────
+    //  PATH ADVANCE
+    // ─────────────────────────────────────────
 
     private void AdvanceAlongPath()
     {
@@ -249,13 +236,14 @@ public class CarAgent : MonoBehaviour
 
         if (seg == null)
         {
+            // Path has a broken link — reroute.
             PickNewDestinationAndRoute();
             return;
         }
 
         if (seg.IsBlocked)
         {
-            StartCoroutine(WaitForSegmentOrReroute(seg, nextNode));
+            StartCoroutine(WaitForSegmentOrReroute(seg));
             return;
         }
 
@@ -265,24 +253,13 @@ public class CarAgent : MonoBehaviour
 
     private void EnterSegment(RoadSegment seg, RoadIntersection from, RoadIntersection next)
     {
-        bool isFirstSegment = (_currentSegment == null);
-
         _currentSegment = seg;
         _segmentFrom = from;
         _segmentTo = next;
         _targetNode = next;
         _currentSpeed = Mathf.Min(baseSpeed, seg.speedLimit);
-
-        // On the very first segment after spawn the car starts at the node centre.
-        // Snap it into its lane immediately so it never moves at a diagonal.
-        // On subsequent segments (arriving from a node) the car is already near
-        // centre — let MoveTowardTarget steer it naturally into the offset lane.
-        if (isFirstSegment)
-        {
-            Vector3 offset = seg.GetLaneOffsetVector(from, next);
-            transform.position = from.transform.position + offset;
-        }
-
+        // NO position teleport here. The car is already at laneTarget of
+        // the previous node which equals (from.position + offset) exactly.
         seg.RegisterCar(this);
     }
 
@@ -292,56 +269,47 @@ public class CarAgent : MonoBehaviour
 
     private void PickNewDestinationAndRoute()
     {
-        if (_allNodes == null || _allNodes.Count < 2) { Despawn(); return; }
+        // Build candidate list: endpoints that are NOT the current node.
+        var candidates = new List<RoadIntersection>();
+        var pool = (_endPoints != null && _endPoints.Count > 0) ? _endPoints : _allNodes;
+        foreach (var n in pool)
+            if (n != null && n != _currentNode) candidates.Add(n);
 
-        RoadIntersection dest = null;
-        for (int attempt = 0; attempt < 10; attempt++)
-        {
-            var candidate = _allNodes[Random.Range(0, _allNodes.Count)];
-            if (candidate != _currentNode) { dest = candidate; break; }
-        }
+        if (candidates.Count == 0) { Despawn(); return; }
 
-        if (dest == null) { Despawn(); return; }
-
-        _destination = dest;
+        _destination = candidates[Random.Range(0, candidates.Count)];
         _path = RoadGraph.FindPath(_currentNode, _destination);
         _pathIndex = 1;
 
         if (_path.Count < 2)
         {
-            StartCoroutine(RetryRouteNextFrame());
+            // No valid path — despawn cleanly rather than loop forever.
+            Debug.LogWarning($"[CarAgent] No path from {_currentNode?.intersectionID} " +
+                             $"to {_destination?.intersectionID}. Despawning.");
+            Despawn();
             return;
         }
 
         AdvanceAlongPath();
     }
 
-    private IEnumerator RetryRouteNextFrame()
-    {
-        yield return new WaitForSeconds(1f);
-        if (_active && !_isCrashed)
-            PickNewDestinationAndRoute();
-    }
-
     // ─────────────────────────────────────────
-    //  BLOCKED SEGMENT — QUEUE & REROUTE
+    //  BLOCKED SEGMENT QUEUE
     // ─────────────────────────────────────────
 
-    private IEnumerator WaitForSegmentOrReroute(RoadSegment seg, RoadIntersection next)
+    private IEnumerator WaitForSegmentOrReroute(RoadSegment seg)
     {
         _isQueued = true;
 
         while (seg.IsBlocked && _active && !_isCrashed)
         {
             yield return new WaitForSeconds(rerouteCheckInterval);
-
             if (!seg.IsBlocked) break;
 
-            // Try alternate route
-            var altPath = RoadGraph.FindPath(_currentNode, _destination);
-            if (altPath.Count >= 2)
+            var alt = RoadGraph.FindPath(_currentNode, _destination);
+            if (alt.Count >= 2)
             {
-                _path = altPath;
+                _path = alt;
                 _pathIndex = 1;
                 _isQueued = false;
                 AdvanceAlongPath();
@@ -350,12 +318,11 @@ public class CarAgent : MonoBehaviour
         }
 
         _isQueued = false;
-        if (_active && !_isCrashed)
-            AdvanceAlongPath();
+        if (_active && !_isCrashed) AdvanceAlongPath();
     }
 
     // ─────────────────────────────────────────
-    //  TILE TRIGGER  (device reactions)
+    //  TILE TRIGGER
     // ─────────────────────────────────────────
 
     private void OnTriggerEnter(Collider other)
@@ -375,7 +342,6 @@ public class CarAgent : MonoBehaviour
 
     private IEnumerator HandleTileEntry(RoadTile tile)
     {
-        // Traffic Light
         float lightWait = GetTrafficLightWait(tile);
         if (lightWait > 0f)
         {
@@ -384,11 +350,9 @@ public class CarAgent : MonoBehaviour
             _isStopped = false;
         }
 
-        // Speed Bump
         if (tile.HasDeviceAtCorner(TileCorner.Center, TrafficDeviceType.SpeedBump))
             yield return StartCoroutine(SpeedBumpRoutine());
 
-        // Stop Sign
         if (tile.HasAnyDeviceOfType(TrafficDeviceType.StopSign))
         {
             if (Random.value <= stopSignStopChance)
@@ -399,10 +363,6 @@ public class CarAgent : MonoBehaviour
             }
         }
     }
-
-    // ─────────────────────────────────────────
-    //  TRAFFIC LIGHT EDGE LOGIC
-    // ─────────────────────────────────────────
 
     private float GetTrafficLightWait(RoadTile tile)
     {
@@ -426,10 +386,6 @@ public class CarAgent : MonoBehaviour
         return best == 2 ? trafficLightWaitN : trafficLightWaitN * 2f;
     }
 
-    // ─────────────────────────────────────────
-    //  SPEED BUMP
-    // ─────────────────────────────────────────
-
     private IEnumerator SpeedBumpRoutine()
     {
         float elapsed = 0f, start = _currentSpeed;
@@ -441,7 +397,6 @@ public class CarAgent : MonoBehaviour
         }
         _currentSpeed = speedBumpSpeed;
         yield return new WaitForFixedUpdate();
-
         elapsed = 0f;
         while (elapsed < speedBumpTransitionTime)
         {
@@ -463,16 +418,15 @@ public class CarAgent : MonoBehaviour
         _isStopped = true;
         StopAllCoroutines();
 
-        if (_currentSegment != null)
-            _currentSegment.SetBlocked(true);
+        if (_currentSegment != null) _currentSegment.SetBlocked(true);
 
         if (crashVFXPrefab != null)
         {
-            GameObject vfx = Instantiate(crashVFXPrefab, transform.position, Quaternion.identity);
+            var vfx = Instantiate(crashVFXPrefab, transform.position, Quaternion.identity);
             Destroy(vfx, recoveryDuration + 2f);
         }
 
-        Animator anim = GetComponentInChildren<Animator>();
+        var anim = GetComponentInChildren<Animator>();
         if (anim != null) anim.SetTrigger("Crash");
 
         StartCoroutine(RecoverAfter(recoveryDuration));
@@ -480,18 +434,13 @@ public class CarAgent : MonoBehaviour
 
     private IEnumerator RecoverAfter(float duration)
     {
-        // Use real elapsed time so drag-pause doesn't mess up recovery timing.
         float elapsed = 0f;
         while (elapsed < duration)
         {
-            // Only advance timer when not dragging and not paused.
-            if (!CarManager.IsDragging)
-                elapsed += Time.deltaTime;
+            if (!CarManager.IsDragging) elapsed += Time.deltaTime;
             yield return null;
         }
-
-        if (_currentSegment != null)
-            _currentSegment.SetBlocked(false);
+        if (_currentSegment != null) _currentSegment.SetBlocked(false);
         Despawn();
     }
 
@@ -505,6 +454,7 @@ public class CarAgent : MonoBehaviour
         _isCrashed = false;
         _isStopped = false;
         _isQueued = false;
+        _inArrival = false;
         _processingTiles.Clear();
 
         if (_currentSegment != null)
@@ -515,6 +465,7 @@ public class CarAgent : MonoBehaviour
 
         _segmentFrom = null;
         _segmentTo = null;
+        _targetNode = null;
 
         CarManager.Instance?.ReturnCarToPool(this);
     }
