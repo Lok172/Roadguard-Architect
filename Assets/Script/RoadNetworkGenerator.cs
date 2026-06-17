@@ -205,15 +205,19 @@ public class RoadNetworkGenerator : MonoBehaviour
                 Gizmos.DrawLine(worldPos, nextWorld);
 
                 // Lane offset preview lines
+                // NOTE: sign flipped (was Cross(up, fwd)) to match RoadSegment's
+                // corrected GetLaneOffsetVector convention. Green = A→B lane,
+                // Orange = B→A lane (A = node i, B = node i+1, same as the
+                // generated RoadSegment's intersectionA/B assignment below).
                 if (defaultLaneOffset > 0f)
                 {
                     Vector3 fwd = (nextWorld - worldPos).normalized;
-                    Vector3 right = Vector3.Cross(Vector3.up, fwd).normalized * defaultLaneOffset;
+                    Vector3 right = Vector3.Cross(fwd, Vector3.up).normalized * defaultLaneOffset;
 
-                    Gizmos.color = new Color(0.2f, 1f, 0.4f, 0.4f);
+                    Gizmos.color = new Color(0.2f, 1f, 0.4f, 0.4f);   // Green = A→B lane
                     Gizmos.DrawLine(worldPos + right, nextWorld + right);
 
-                    Gizmos.color = new Color(1f, 0.6f, 0.1f, 0.4f);
+                    Gizmos.color = new Color(1f, 0.6f, 0.1f, 0.4f);   // Orange = B→A lane
                     Gizmos.DrawLine(worldPos - right, nextWorld - right);
                 }
 

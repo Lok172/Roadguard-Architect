@@ -95,7 +95,11 @@ public class RoadTile : MonoBehaviour
     [Tooltip("How far corner snap-points are inset from the tile edge along the Z axis (depth).")]
     [Min(0f)] public float cornerInsetZ = 0.5f;
 
-    public float deviceYOffset = 3f;
+    [Tooltip("Y offset for the CENTER (middle) device slot.")]
+    public float centerDeviceYOffset = 3f;
+
+    [Tooltip("Y offset for the four CORNER device slots.")]
+    public float cornerDeviceYOffset = 3f;
 
     // ── Allowed Devices ───────────────────────
     [Header("Allowed Devices")]
@@ -130,20 +134,11 @@ public class RoadTile : MonoBehaviour
     private RoadSection _section;
     public RoadSection Section => _section;
 
-    // ── Grow Effect ───────────────────────────
-    [Header("Grow Effect")]
-    public bool playGrowOnStart = true;
-    [Min(0.05f)] public float growDuration = 0.4f;
-    [Range(0f, 0.5f)] public float growOvershoot = 0.12f;
-    [Range(0.1f, 0.5f)] public float overshootFraction = 0.25f;
-
     // ── Events ────────────────────────────────
     public System.Action<RoadTile, bool> OnDevicePlaced;
     public System.Action<RoadTile> OnDeviceRemoved;
     public System.Action<RoadTile, int, int> OnContributionChanged;
 
-    private Vector3 _originalScale;
-    private bool _growDone = false;
     private TileOverlay _overlay;
     public TileOverlay Overlay => _overlay;
 
@@ -159,17 +154,11 @@ public class RoadTile : MonoBehaviour
     private void Awake()
     {
         GetComponent<BoxCollider>().isTrigger = true;
-        _originalScale = transform.localScale;
 
         _overlay = GetComponent<TileOverlay>();
         if (_overlay == null) _overlay = gameObject.AddComponent<TileOverlay>();
 
         _section = GetComponentInParent<RoadSection>();
-    }
-
-    private void OnEnable()
-    {
-        if (playGrowOnStart && !_growDone) StartCoroutine(GrowIn());
     }
 
     public void AssignSection(RoadSection s) => _section = s;
@@ -205,7 +194,7 @@ public class RoadTile : MonoBehaviour
 
         float hx = Mathf.Max(0f, size.x * 0.5f - cornerInsetX);
         float hz = Mathf.Max(0f, size.z * 0.5f - cornerInsetZ);
-        float y = deviceYOffset;
+        float y = (corner == TileCorner.Center) ? centerDeviceYOffset : cornerDeviceYOffset;
 
         return corner switch
         {
@@ -502,47 +491,6 @@ public class RoadTile : MonoBehaviour
     }
 
     public void RemoveDevice() => RemoveAllDevices();
-
-    // ─────────────────────────────────────────
-    //  GROW EFFECT
-    // ─────────────────────────────────────────
-
-    public void PlayGrow()
-    {
-        StopCoroutine(nameof(GrowIn));
-        StartCoroutine(GrowIn());
-    }
-
-    private IEnumerator GrowIn()
-    {
-        _growDone = false;
-        transform.localScale = Vector3.zero;
-
-        float growUp = growDuration * (1f - overshootFraction);
-        float elapsed = 0f;
-        while (elapsed < growUp)
-        {
-            elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / growUp);
-            float eased = 1f - Mathf.Pow(1f - t, 3f);
-            transform.localScale = _originalScale * Mathf.Lerp(0f, 1f + growOvershoot, eased);
-            yield return null;
-        }
-
-        float settle = growDuration * overshootFraction;
-        elapsed = 0f;
-        while (elapsed < settle)
-        {
-            elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / settle);
-            float eased = t < 0.5f ? 2f * t * t : 1f - Mathf.Pow(-2f * t + 2f, 2f) / 2f;
-            transform.localScale = _originalScale * Mathf.Lerp(1f + growOvershoot, 1f, eased);
-            yield return null;
-        }
-
-        transform.localScale = _originalScale;
-        _growDone = true;
-    }
 
     // ─────────────────────────────────────────
     //  GIZMOS

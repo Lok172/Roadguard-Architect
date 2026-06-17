@@ -36,6 +36,7 @@ public class CrashScene : MonoBehaviour
     [HideInInspector] public CarAgent carA;            // rear car (the one that hit)
     [HideInInspector] public CarAgent carB;            // front car (the one that got hit)
     [HideInInspector] public RoadSegment segment;
+    [HideInInspector] public List<RoadSegment> blockedSegments;  // all segments this wreck blocks
     [HideInInspector] public GameObject smokeVFXPrefab;
     [HideInInspector] public GameObject barrierFencePrefab;
 
@@ -46,9 +47,19 @@ public class CrashScene : MonoBehaviour
     [Tooltip("Seconds for the fade-out after disappearDuration expires.")]
     [Min(0.5f)] public float fadeDuration = 2f;
 
+    [Tooltip("Seconds before the fade fully completes that the smoke is stopped " +
+             "and its particles cleared. Prevents the smoke lingering after the " +
+             "cars have shrunk away. 0 = clear exactly when the cars vanish.")]
+    [Min(0f)] public float smokeFadeLead = 1f;
+
     [Header("Barrier Padding")]
-    [Tooltip("Extra clearance around the car rectangle (world units).")]
-    [Min(0f)] public float barrierPadding = 0.4f;
+    [Tooltip("Clearance between the barrier fence and the cars (world units).")]
+    [Min(0f)] public float barrierPaddingWithCar = 0.4f;
+
+    [Tooltip("Extra spacing inserted lengthwise between the two crashed cars " +
+             "so the fence does not hug them when they sit bumper-to-bumper " +
+             "(world units).")]
+    [Min(0f)] public float barrierPaddingInBetween = 0.4f;
 
     [Header("Smoke Height")]
     [Tooltip("Extra Y offset for smoke VFX above the car top.")]
@@ -104,65 +115,60 @@ public class CrashScene : MonoBehaviour
         Bounds fenceBounds = GetPrefabBounds(barrierFencePrefab);
         float fenceLength = Mathf.Max(0.1f, fenceBounds.size.x);
 
-        // ── Step C: Fence counts ──────────────────────────────────
-        // Wider car's width → front/back wall fence count.
-        float maxWidth = Mathf.Max(widthA, widthB);
-        int frontBackCount = Mathf.Max(1, Mathf.FloorToInt(maxWidth / fenceLength));
-
-        // Combined length → left/right wall fence count.
-        float totalLength = lengthA + lengthB;
-        int sideCount = Mathf.Max(1, Mathf.FloorToInt(totalLength / fenceLength));
-
-        // ── Step D: Road-aligned axes ─────────────────────────────
+        // ── Step C: Road-aligned axes ─────────────────────────────
         // Forward = from rear car (A) toward front car (B).
         Vector3 forward = (carB.transform.position - carA.transform.position).normalized;
         if (forward.sqrMagnitude < 0.001f) forward = carA.transform.forward;
         Vector3 right = Vector3.Cross(Vector3.up, forward).normalized;
 
-        // Rectangle centre is the midpoint between both cars.
+        // Rectangle centre is the midpoint between both cars, dropped to ground.
         Vector3 center = (carA.transform.position + carB.transform.position) * 0.5f;
-
-        // ── Step E: Rectangle half-extents (with padding) ─────────
-        float halfLength = (totalLength * 0.5f) + barrierPadding;
-        float halfWidth = (maxWidth * 0.5f) + barrierPadding;
-
-        float groundY = Mathf.Min(
+        center.y = Mathf.Min(
             GetWorldBounds(carA.gameObject).min.y,
             GetWorldBounds(carB.gameObject).min.y);
-        center.y = groundY;
 
-        // ── Step F: Place fences ──────────────────────────────────
+        // ── Step D: Rectangle half-extents (with padding) ─────────
+        // halfLength runs along the road (the axis separating the two cars):
+        //   • barrierPaddingWithCar  → clearance at the outer ends.
+        //   • barrierPaddingInBetween → extra lengthwise room so small cars
+        //     sitting bumper-to-bumper don't look glued together inside a
+        //     tight fence (see picture 1). Tune down for long vehicles whose
+        //     fence already shows a gap (picture 2).
+        float halfLength = (lengthA + lengthB) * 0.5f
+                           + barrierPaddingWithCar
+                           + barrierPaddingInBetween * 0.5f;
+        float halfWidth = Mathf.Max(widthA, widthB) * 0.5f + barrierPaddingWithCar;
 
-        // Left & Right walls (run along the length direction).
-        // Fences face perpendicular to the wall (face outward = ±right).
-        for (int i = 0; i < sideCount; i++)
-        {
-            float t = (sideCount == 1) ? 0f
-                : Mathf.Lerp(-halfLength, halfLength, (float)i / (sideCount - 1));
+        // ── Step E: Fence orientation ─────────────────────────────
+        // The fence's long axis is its local +X. Quaternion.LookRotation(dir)
+        // aligns local +Z to dir, which puts local +X = Cross(up, dir) — i.e.
+        // PERPENDICULAR to dir. So to make a fence lie ALONG `forward` we must
+        // LookRotation(right); to lie ALONG `right` we LookRotation(forward).
+        Quaternion alongForward = Quaternion.LookRotation(right, Vector3.up);
+        Quaternion alongRight = Quaternion.LookRotation(forward, Vector3.up);
 
-            Vector3 posLeft = center + forward * t - right * halfWidth;
-            Vector3 posRight = center + forward * t + right * halfWidth;
+        // ── Step F: Build the four walls ──────────────────────────
+        // Left & right walls run parallel to `forward`.
+        BuildWall(center - right * halfWidth, forward, halfLength * 2f, fenceLength, alongForward);
+        BuildWall(center + right * halfWidth, forward, halfLength * 2f, fenceLength, alongForward);
 
-            // Fences on left/right walls are oriented along the forward direction.
-            Quaternion wallRot = Quaternion.LookRotation(forward, Vector3.up);
-            PlaceFence(posLeft, wallRot);
-            PlaceFence(posRight, wallRot);
-        }
+        // Front & back walls run parallel to `right`.
+        BuildWall(center + forward * halfLength, right, halfWidth * 2f, fenceLength, alongRight);
+        BuildWall(center - forward * halfLength, right, halfWidth * 2f, fenceLength, alongRight);
+    }
 
-        // Front & Back walls (run along the width direction).
-        for (int i = 0; i < frontBackCount; i++)
-        {
-            float t = (frontBackCount == 1) ? 0f
-                : Mathf.Lerp(-halfWidth, halfWidth, (float)i / (frontBackCount - 1));
-
-            Vector3 posFront = center + forward * halfLength + right * t;
-            Vector3 posBack = center - forward * halfLength + right * t;
-
-            // Fences on front/back walls are oriented along the right direction.
-            Quaternion endRot = Quaternion.LookRotation(right, Vector3.up);
-            PlaceFence(posFront, endRot);
-            PlaceFence(posBack, endRot);
-        }
+    /// <summary>
+    /// Tiles fence prefabs edge-to-edge along <paramref name="axis"/>,
+    /// centred on <paramref name="wallCenter"/>, forming one continuous wall.
+    /// </summary>
+    private void BuildWall(Vector3 wallCenter, Vector3 axis, float wallLength,
+                           float fenceLength, Quaternion rot)
+    {
+        int count = Mathf.Max(1, Mathf.RoundToInt(wallLength / fenceLength));
+        float spacing = wallLength / count;
+        Vector3 startEdge = wallCenter - axis * (wallLength * 0.5f);
+        for (int i = 0; i < count; i++)
+            PlaceFence(startEdge + axis * (spacing * (i + 0.5f)), rot);
     }
 
     /// <summary>
@@ -210,49 +216,84 @@ public class CrashScene : MonoBehaviour
         // Fade out all renderers.
         yield return StartCoroutine(FadeOutAll());
 
-        // Cleanup.
-        if (segment != null) segment.SetBlocked(false);
+        // Cleanup — unblock every segment the wreck was occupying.
+        if (blockedSegments != null && blockedSegments.Count > 0)
+        {
+            foreach (var s in blockedSegments)
+                if (s != null) s.SetBlocked(false);
+        }
+        else if (segment != null)
+        {
+            segment.SetBlocked(false);
+        }
+
         if (carA != null) carA.ForceDespawn();
         if (carB != null) carB.ForceDespawn();
 
         Destroy(gameObject);
     }
 
+    /// <summary>
+    /// Shader-independent disappear: shrink the whole crash scene (smoke +
+    /// fences + both cars) down to nothing using an ease-out cubic curve.
+    /// Avoids transparency artifacts and road clipping.
+    /// </summary>
     private IEnumerator FadeOutAll()
     {
-        // Snapshot original colors.
-        var originals = new List<(Renderer r, Color c)>();
-        foreach (var r in _allRenderers)
-        {
-            if (r == null) continue;
-            foreach (var mat in r.materials)
-                originals.Add((r, mat.color));
-        }
+        // Pull both cars under this scene so they shrink along with it.
+        if (carA != null) carA.transform.SetParent(transform, worldPositionStays: true);
+        if (carB != null) carB.transform.SetParent(transform, worldPositionStays: true);
 
+        // Smoke: stop emitting straight away so no new puffs spawn during the
+        // fade, and remember its particle systems so we can clear lingering
+        // particles before the cars finish shrinking (otherwise World-space
+        // particles outlive the wreck by ~1s — see req: smoke timing).
+        ParticleSystem[] smokeSystems = _smokeInstance != null
+            ? _smokeInstance.GetComponentsInChildren<ParticleSystem>(true)
+            : new ParticleSystem[0];
+        foreach (var ps in smokeSystems)
+            ps.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+
+        // Clear the smoke this many seconds before the cars fully vanish.
+        float smokeClearAt = Mathf.Max(0f, fadeDuration - smokeFadeLead);
+        bool smokeCleared = false;
+
+        Vector3 startScale = transform.localScale;
         float elapsed = 0f;
         while (elapsed < fadeDuration)
         {
-            elapsed += Time.deltaTime;
-            float alpha = Mathf.Lerp(1f, 0f, elapsed / fadeDuration);
+            if (!CarManager.IsDragging) elapsed += Time.deltaTime;
 
-            int idx = 0;
-            foreach (var r in _allRenderers)
+            if (!smokeCleared && elapsed >= smokeClearAt)
             {
-                if (r == null) continue;
-                foreach (var mat in r.materials)
-                {
-                    if (idx < originals.Count)
-                    {
-                        Color c = originals[idx].c;
-                        c.a = alpha;
-                        mat.color = c;
-                        SetMaterialTransparent(mat);
-                    }
-                    idx++;
-                }
+                ClearSmoke(smokeSystems);
+                smokeCleared = true;
             }
+
+            float t = Mathf.Clamp01(elapsed / fadeDuration);
+            float eased = 1f - Mathf.Pow(1f - t, 3f);   // ease-out cubic
+            transform.localScale = Vector3.Lerp(startScale, Vector3.zero, eased);
             yield return null;
         }
+        transform.localScale = Vector3.zero;
+
+        // Safety: make sure the smoke is gone even if the loop exited early.
+        if (!smokeCleared) ClearSmoke(smokeSystems);
+
+        // Un-parent the cars before they get pooled (their scale is reset on reuse).
+        if (carA != null) carA.transform.SetParent(null, worldPositionStays: true);
+        if (carB != null) carB.transform.SetParent(null, worldPositionStays: true);
+    }
+
+    /// <summary>
+    /// Stops and clears all particles on the smoke instance, and disables the
+    /// object so any non-particle smoke also disappears immediately.
+    /// </summary>
+    private void ClearSmoke(ParticleSystem[] smokeSystems)
+    {
+        foreach (var ps in smokeSystems)
+            if (ps != null) ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        if (_smokeInstance != null) _smokeInstance.SetActive(false);
     }
 
     private static void SetMaterialTransparent(Material mat)

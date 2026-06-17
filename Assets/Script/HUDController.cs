@@ -47,7 +47,7 @@ public class HUDController : MonoBehaviour
 
     // ── Capital ────────────────────────────────────────────────────
     [Header("Capital")]
-    [SerializeField] private TextMeshProUGUI capitalText;   // "RM1000k"
+    [SerializeField] private TextMeshProUGUI capitalText;   // "RM1000"
 
     // Captured once in Awake — always "today" when the game launches.
     private System.DateTime _calendarStart;
@@ -109,11 +109,11 @@ public class HUDController : MonoBehaviour
     //  EVENT HANDLERS
     // ─────────────────────────────────────────
 
-    // "RM1000k"
+    // "RM1000"
     private void HandleCapital(float capital)
     {
         if (capitalText != null)
-            capitalText.text = $"RM{Mathf.RoundToInt(capital)}k";
+            capitalText.text = $"RM{Mathf.RoundToInt(capital)}";
     }
 
     // Progress bar fill + percentage label + bar colour

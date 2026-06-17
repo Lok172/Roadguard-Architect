@@ -3,17 +3,23 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // ─────────────────────────────────────────────────────────────────
-//  CAR AGENT  (v5 — crash-spawn driving mode)
+//  CAR AGENT  (v6 — junction + lane-transition + crash-stop fixes)
 //
-//  KEY CHANGES vs v4:
-//    • Added InitialiseAsCrashFront() — front car drives normally
-//      on a segment until the rear car catches it; then stops.
-//    • Added InitialiseAsCrashRear() — rear car drives toward
-//      the front car's rear bumper (the snap point). On arrival
-//      both cars stop and CarManager is notified to build the
-//      crash scene.
-//    • Crash cars are spawned by CarManager when an accident
-//      event triggers, rather than crashing existing traffic.
+//  KEY CHANGES vs v5:
+//    • Issue 3 — LANE TRANSITION: when entering a segment whose
+//      laneOffset differs from the previous one, the car smoothly
+//      interpolates its lateral position over laneTransitionDistance
+//      world-units instead of jumping.
+//    • Issue 4 — JUNCTION RESERVATION: at intersections marked
+//      isJunction the car checks whether it's turning. Turning
+//      cars must reserve the junction (one at a time); straight-
+//      through cars pass freely.
+//    • Issue 5 — CRASH STOP DIRECTION: a car that stops for a
+//      crash scene ahead maintains its original travel direction
+//      (segmentFrom→segmentTo), never flipping 180°.
+//    • Issue 6 — JUNCTION OVERLAP: before entering a segment at a
+//      junction node, the car checks that no other car is already
+//      near that lane-start position. If occupied, it waits.
 // ─────────────────────────────────────────────────────────────────
 
 public class CarAgent : MonoBehaviour
@@ -56,6 +62,34 @@ public class CarAgent : MonoBehaviour
     [Header("Blocked Segment")]
     public float rerouteCheckInterval = 2f;
 
+    // ── Random Walk ────────────────────────────
+    [Header("Random Walk")]
+    [Tooltip("Pick a random direction at every junction instead of following an " +
+             "A* route to a destination. Set per spawn by CarManager.")]
+    public bool randomWalk = false;
+
+    // ── Crash Ahead ───────────────────────────
+    [Header("Crash Ahead")]
+    [Tooltip("Gap left between this car's nose and a crash scene blocking the " +
+             "lane ahead (world units). The car waits here until the crash clears.")]
+    [Min(0f)] public float blockStopGap = 0.6f;
+
+    // ── Lane Transition (Issue 3) ─────────────
+    [Header("Lane Transition")]
+    [Tooltip("World-units over which to smoothly interpolate the lateral lane " +
+             "position when transitioning between segments with different laneOffset " +
+             "values. Creates an inclined merge path instead of an abrupt jump.")]
+    [Min(0.5f)] public float laneTransitionDistance = 3f;
+
+    // ── Junction Overlap (Issue 6) ─────────────
+    [Header("Junction Overlap")]
+    [Tooltip("Minimum distance from another car at a junction lane-start before " +
+             "this car will enter the segment. Prevents vehicles overlapping.")]
+    [Min(0.5f)] public float junctionClearance = 2.5f;
+
+    [Tooltip("How often (seconds) to re-check if the junction lane-start is clear.")]
+    [Min(0.1f)] public float junctionRetryInterval = 0.5f;
+
     // ── Runtime (read-only Inspector) ─────────
     [Header("Runtime (read-only)")]
     [SerializeField] private float _currentSpeed;
@@ -78,14 +112,25 @@ public class CarAgent : MonoBehaviour
     private Rigidbody _rb;
     private RoadIntersection _segmentFrom;
     private RoadIntersection _segmentTo;
+    private bool _hasMovedOnce;   // random-walk: true once the car has left its spawn node
 
     // ── Crash-driving state ───────────────────
-    private bool _isCrashRear;          // true if this car is the rear crash car
-    private bool _isCrashFront;         // true if this car is the front crash car
-    private CarAgent _crashPartner;     // the other car in the crash pair
-    private Vector3 _snapPoint;         // world position where impact occurs
-    private RoadSegment _crashSegment;  // the segment this crash is on
-    private float _crashRearSpeed;      // speed of the rear car chasing front
+    private bool _isCrashRear;
+    private bool _isCrashFront;
+    private CarAgent _crashPartner;
+    private Vector3 _snapPoint;
+    private RoadSegment _crashSegment;
+    private float _crashRearSpeed;
+
+    // ── Lane transition state (Issue 3) ───────
+    private bool _inLaneTransition;
+    private Vector3 _transitionWaypoint;
+    private Vector3 _prevLaneOffsetVec;   // lane offset of the PREVIOUS segment
+    private Vector3 _newLaneOffsetVec;    // lane offset of the CURRENT (new) segment
+
+    // ── Junction reservation state (Issue 4) ──
+    private RoadIntersection _reservedJunction;   // junction we currently hold
+    private RoadSegment _prevSegmentForJunction;  // incoming segment at junction (for turn detection)
 
     // ─────────────────────────────────────────
     //  INITIALISE  (normal traffic)
@@ -97,6 +142,7 @@ public class CarAgent : MonoBehaviour
     {
         _allNodes = allNodes;
         _endPoints = endPoints;
+        transform.localScale = Vector3.one;
         _currentNode = startNode;
         _currentSegment = null;
         _segmentFrom = null;
@@ -113,18 +159,18 @@ public class CarAgent : MonoBehaviour
         _path.Clear();
         _pathIndex = 1;
         _processingTiles.Clear();
-        PickNewDestinationAndRoute();
+        _hasMovedOnce = false;
+        _inLaneTransition = false;
+        ReleaseAnyJunction();
+        _prevSegmentForJunction = null;
+        if (randomWalk) StepRandomWalk(null);
+        else PickNewDestinationAndRoute();
     }
 
     // ─────────────────────────────────────────
     //  INITIALISE  (crash-front car)
     // ─────────────────────────────────────────
 
-    /// <summary>
-    /// Sets up this car as the FRONT car in a staged crash.
-    /// It drives normally on the segment at reduced speed.
-    /// The rear car will catch up and trigger the impact.
-    /// </summary>
     public void InitialiseAsCrashFront(RoadSegment seg,
                                         RoadIntersection from,
                                         RoadIntersection to,
@@ -141,7 +187,6 @@ public class CarAgent : MonoBehaviour
         _currentSpeed = speed;
         seg.RegisterCar(this);
 
-        // Face toward target.
         Vector3 dir = (to.transform.position - transform.position).normalized;
         if (dir.sqrMagnitude > 0.001f)
             transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
@@ -151,11 +196,6 @@ public class CarAgent : MonoBehaviour
     //  INITIALISE  (crash-rear car)
     // ─────────────────────────────────────────
 
-    /// <summary>
-    /// Sets up this car as the REAR car in a staged crash.
-    /// It drives toward the front car's rear bumper (snap point).
-    /// On arrival, both cars stop and CarManager is notified.
-    /// </summary>
     public void InitialiseAsCrashRear(CarAgent frontCar,
                                        RoadSegment seg,
                                        RoadIntersection from,
@@ -174,7 +214,6 @@ public class CarAgent : MonoBehaviour
         _currentSpeed = speed;
         seg.RegisterCar(this);
 
-        // Face toward front car.
         Vector3 dir = (frontCar.transform.position - transform.position).normalized;
         if (dir.sqrMagnitude > 0.001f)
             transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
@@ -182,6 +221,7 @@ public class CarAgent : MonoBehaviour
 
     private void ResetState()
     {
+        transform.localScale = Vector3.one;
         _isCrashed = false;
         _isStopped = false;
         _isQueued = false;
@@ -189,9 +229,12 @@ public class CarAgent : MonoBehaviour
         _isCrashRear = false;
         _isCrashFront = false;
         _crashPartner = null;
+        _inLaneTransition = false;
         _path.Clear();
         _pathIndex = 1;
         _processingTiles.Clear();
+        ReleaseAnyJunction();
+        _prevSegmentForJunction = null;
     }
 
     // ─────────────────────────────────────────
@@ -234,7 +277,6 @@ public class CarAgent : MonoBehaviour
     {
         if (_crashPartner == null) return;
 
-        // Snap point = front car's rear bumper position.
         _snapPoint = GetRearBumperPosition(_crashPartner);
 
         Vector3 dir = _snapPoint - GetFrontBumperPosition(this);
@@ -247,8 +289,6 @@ public class CarAgent : MonoBehaviour
 
         if (dist <= arrivalThreshold || step >= dist)
         {
-            // ── IMPACT! ──────────────────────────────────
-            // Snap rear car forward so bumpers touch.
             transform.position += dir;
             OnCrashImpact();
         }
@@ -266,7 +306,6 @@ public class CarAgent : MonoBehaviour
     {
         if (_targetNode == null) return;
 
-        // Drive normally toward the target node at reduced speed.
         Vector3 laneTarget = LaneTargetFor(_targetNode, _segmentFrom, _segmentTo, _currentSegment);
         Vector3 dir = laneTarget - transform.position;
         float dist = dir.magnitude;
@@ -278,7 +317,6 @@ public class CarAgent : MonoBehaviour
 
         if (dist <= arrivalThreshold || step >= dist)
         {
-            // Reached the end of segment — just stop and wait for rear car.
             transform.position = laneTarget;
             _isStopped = true;
         }
@@ -294,7 +332,6 @@ public class CarAgent : MonoBehaviour
 
     private void OnCrashImpact()
     {
-        // Stop both cars.
         _isCrashRear = false;
         _isCrashed = true;
         _isStopped = true;
@@ -308,10 +345,14 @@ public class CarAgent : MonoBehaviour
             _crashPartner.StopAllCoroutines();
         }
 
-        // Block the segment.
-        if (_crashSegment != null) _crashSegment.SetBlocked(true);
+        if (_crashSegment != null)
+        {
+            Vector3 wreckPos = _crashPartner != null
+                ? (transform.position + _crashPartner.transform.position) * 0.5f
+                : transform.position;
+            _crashSegment.SetBlocked(true, wreckPos);
+        }
 
-        // Notify CarManager to build the crash scene.
         CarManager.Instance?.OnCrashImpact(this, _crashPartner, _crashSegment);
     }
 
@@ -323,18 +364,50 @@ public class CarAgent : MonoBehaviour
     {
         float speed = _currentSpeed;
 
-        // Raycast from car front to avoid self-hit.
-        Bounds b = GetComponentInChildren<Renderer>()?.bounds
-                            ?? new Bounds(transform.position, Vector3.one);
-        Vector3 rayOrigin = transform.position + transform.forward * (b.extents.z + 0.1f);
-        if (Physics.Raycast(rayOrigin, transform.forward,
-                            out RaycastHit hit, followCheckDistance, carLayerMask))
+        // ── Issue 3: Lane transition — drive toward waypoint first ────
+        if (_inLaneTransition)
         {
-            if (hit.collider.GetComponent<CarAgent>() != null)
-                speed *= followSpeedMultiplier;
+            Vector3 wdir = _transitionWaypoint - transform.position;
+            float wdist = wdir.magnitude;
+
+            if (wdist <= arrivalThreshold)
+            {
+                // Transition complete — snap and continue normally.
+                transform.position = _transitionWaypoint;
+                _inLaneTransition = false;
+            }
+            else
+            {
+                // ── Stop for a crash scene even during transition ─────
+                if (TryGetBlockStopPoint(_transitionWaypoint, out Vector3 blockStop))
+                {
+                    DriveTowardBlockStop(blockStop, speed);
+                    return;
+                }
+
+                // Car-following raycast.
+                speed = ApplyCarFollowing(speed);
+
+                if (wdist > 0.01f)
+                    transform.rotation = Quaternion.LookRotation(wdir.normalized, Vector3.up);
+
+                float step = speed * Time.deltaTime;
+                transform.position += wdir.normalized * Mathf.Min(step, wdist);
+                return;
+            }
         }
 
         Vector3 laneTarget = LaneTargetFor(_targetNode, _segmentFrom, _segmentTo, _currentSegment);
+
+        // ── Issue 5: Stop for a crash scene — preserve forward direction ──
+        if (TryGetBlockStopPoint(laneTarget, out Vector3 bStop))
+        {
+            DriveTowardBlockStop(bStop, speed);
+            return;
+        }
+
+        // Car-following raycast.
+        speed = ApplyCarFollowing(speed);
 
         Vector3 dir = laneTarget - transform.position;
         float dist = dir.magnitude;
@@ -342,9 +415,9 @@ public class CarAgent : MonoBehaviour
         if (dist > 0.01f)
             transform.rotation = Quaternion.LookRotation(dir.normalized, Vector3.up);
 
-        float step = speed * Time.deltaTime;
+        float moveStep = speed * Time.deltaTime;
 
-        if (dist <= arrivalThreshold || step >= dist)
+        if (dist <= arrivalThreshold || moveStep >= dist)
         {
             transform.position = laneTarget;
             if (!_inArrival)
@@ -355,8 +428,55 @@ public class CarAgent : MonoBehaviour
         }
         else
         {
-            transform.position += dir.normalized * step;
+            transform.position += dir.normalized * moveStep;
         }
+    }
+
+    // ─────────────────────────────────────────
+    //  Issue 5 — CRASH STOP HELPER
+    //
+    //  Drives toward the block stop point while PRESERVING
+    //  the car's travel direction (segmentFrom → segmentTo).
+    //  The car never flips 180° when the crash is at its position.
+    // ─────────────────────────────────────────
+
+    private void DriveTowardBlockStop(Vector3 blockStop, float speed)
+    {
+        Vector3 bdir = blockStop - transform.position;
+        float bdist = bdir.magnitude;
+
+        // ── DIRECTION FIX: face along the segment, not toward the block point. ──
+        // This prevents the car from flipping when the crash is very close or
+        // exactly at its position. The travel direction (from → to) is the
+        // ground truth for which way the car should face.
+        if (_segmentFrom != null && _segmentTo != null)
+        {
+            Vector3 travelDir = (_segmentTo.transform.position -
+                                 _segmentFrom.transform.position).normalized;
+            if (travelDir.sqrMagnitude > 0.001f)
+                transform.rotation = Quaternion.LookRotation(travelDir, Vector3.up);
+        }
+
+        if (bdist > arrivalThreshold)
+            transform.position += bdir.normalized * Mathf.Min(speed * Time.deltaTime, bdist);
+        // else: hold here — do NOT advance
+    }
+
+    /// <summary>
+    /// Applies car-following raycast and returns the adjusted speed.
+    /// </summary>
+    private float ApplyCarFollowing(float speed)
+    {
+        Bounds b = GetComponentInChildren<Renderer>()?.bounds
+                            ?? new Bounds(transform.position, Vector3.one);
+        Vector3 rayOrigin = transform.position + transform.forward * (b.extents.z + 0.1f);
+        if (Physics.Raycast(rayOrigin, transform.forward,
+                            out RaycastHit hit, followCheckDistance, carLayerMask))
+        {
+            if (hit.collider.GetComponent<CarAgent>() != null)
+                speed *= followSpeedMultiplier;
+        }
+        return speed;
     }
 
     private static Vector3 LaneTargetFor(RoadIntersection node,
@@ -369,12 +489,55 @@ public class CarAgent : MonoBehaviour
         return node.transform.position;
     }
 
+    /// <summary>
+    /// If the current segment is blocked by a crash scene that lies AHEAD of
+    /// us (between this car and its target), returns the point to stop at —
+    /// just short of the wreck. Returns false when the segment isn't blocked,
+    /// the wreck position is unknown, or the block is behind us.
+    /// </summary>
+    private bool TryGetBlockStopPoint(Vector3 laneTarget, out Vector3 stopPoint)
+    {
+        stopPoint = default;
+        if (_currentSegment == null || !_currentSegment.IsBlocked) return false;
+        if (!_currentSegment.HasBlockPosition) return false;
+
+        // ── Issue 5 FIX: Use the segment direction for the "forward" test,
+        //    NOT the direction to the lane target. This guarantees a stable
+        //    forward reference that never flips, even if the lane target is
+        //    behind the block. ──
+        Vector3 fwd;
+        if (_segmentFrom != null && _segmentTo != null)
+            fwd = (_segmentTo.transform.position - _segmentFrom.transform.position).normalized;
+        else
+        {
+            Vector3 toTarget = laneTarget - transform.position;
+            fwd = toTarget.sqrMagnitude > 0.0001f ? toTarget.normalized : transform.forward;
+        }
+
+        Vector3 toBlock = _currentSegment.BlockPosition - transform.position;
+        float along = Vector3.Dot(toBlock, fwd);
+        if (along <= 0f) return false;   // wreck is behind us — keep going
+
+        float clearance = HalfLengthAlongForward(this) + blockStopGap;
+        stopPoint = transform.position + fwd * Mathf.Max(0f, along - clearance);
+        return true;
+    }
+
     // ─────────────────────────────────────────
     //  NODE ARRIVAL
     // ─────────────────────────────────────────
 
     private void OnReachedNode(RoadIntersection node)
     {
+        RoadIntersection arrivedFrom = _segmentFrom;
+
+        // ── Issue 3: Capture outgoing lane offset BEFORE clearing segment state,
+        //    so EnterSegment can compare it with the new segment's offset. ──
+        _prevLaneOffsetVec = Vector3.zero;
+        _prevSegmentForJunction = _currentSegment;   // Issue 4: remember incoming segment
+        if (_currentSegment != null && _segmentFrom != null && _segmentTo != null)
+            _prevLaneOffsetVec = _currentSegment.GetLaneOffsetVector(_segmentFrom, _segmentTo);
+
         if (_currentSegment != null)
         {
             _currentSegment.UnregisterCar(this);
@@ -384,15 +547,19 @@ public class CarAgent : MonoBehaviour
         }
 
         _currentNode = node;
+        _inArrival = false;
+
+        // Release any junction we held on the previous node.
+        ReleaseAnyJunction();
+
+        if (randomWalk) { StepRandomWalk(arrivedFrom); return; }
 
         if (node == _destination || _pathIndex >= _path.Count)
         {
-            _inArrival = false;
             PickNewDestinationAndRoute();
             return;
         }
 
-        _inArrival = false;
         AdvanceAlongPath();
     }
 
@@ -423,6 +590,32 @@ public class CarAgent : MonoBehaviour
             return;
         }
 
+        // ── Issue 4: Junction reservation ────────────────────────────
+        if (_currentNode.isJunction)
+        {
+            bool isTurn = _currentNode.IsTurn(_prevSegmentForJunction, seg);
+            if (isTurn)
+            {
+                if (!_currentNode.TryReserveJunction(this))
+                {
+                    // Junction is in use by another turning car — wait.
+                    StartCoroutine(WaitForJunctionReservation(_currentNode, seg, nextNode));
+                    return;
+                }
+                _reservedJunction = _currentNode;
+            }
+        }
+
+        // ── Issue 6: Junction overlap avoidance ──────────────────────
+        if (_currentNode.isJunction)
+        {
+            if (IsLaneStartOccupied(_currentNode, seg, nextNode))
+            {
+                StartCoroutine(WaitForLaneStartClear(seg, nextNode));
+                return;
+            }
+        }
+
         EnterSegment(seg, _currentNode, nextNode);
         _pathIndex++;
     }
@@ -435,6 +628,145 @@ public class CarAgent : MonoBehaviour
         _targetNode = next;
         _currentSpeed = Mathf.Min(baseSpeed, seg.speedLimit);
         seg.RegisterCar(this);
+
+        // ── Issue 3: Detect lane offset change and set up transition ──
+        _newLaneOffsetVec = seg.GetLaneOffsetVector(from, next);
+
+        if ((_prevLaneOffsetVec - _newLaneOffsetVec).sqrMagnitude > 0.01f)
+        {
+            // Offsets differ — create a smooth transition waypoint.
+            // The waypoint sits laneTransitionDistance into the new segment,
+            // at the correct new-lane offset. The car drives diagonally from
+            // its current position (still at the old offset) to this waypoint,
+            // producing the smooth inclined path.
+            float transitionDist = Mathf.Min(laneTransitionDistance, seg.Length * 0.4f);
+            float transitionT = transitionDist / Mathf.Max(0.01f, seg.Length);
+
+            // Direction-aware t: if travelling A→B, t goes 0→1; B→A, 1→0.
+            bool towardsB = (next == seg.intersectionB);
+            float sampleT = towardsB ? transitionT : (1f - transitionT);
+
+            _transitionWaypoint = seg.GetPositionAt(sampleT) + _newLaneOffsetVec;
+            _inLaneTransition = true;
+        }
+        else
+        {
+            _inLaneTransition = false;
+        }
+    }
+
+    // ─────────────────────────────────────────
+    //  Issue 4 — JUNCTION RESERVATION WAIT
+    // ─────────────────────────────────────────
+
+    private IEnumerator WaitForJunctionReservation(RoadIntersection junction,
+                                                    RoadSegment seg,
+                                                    RoadIntersection nextNode)
+    {
+        _isStopped = true;
+
+        while (_active && !_isCrashed)
+        {
+            yield return new WaitForSeconds(junctionRetryInterval);
+            if (junction.TryReserveJunction(this))
+            {
+                _reservedJunction = junction;
+                break;
+            }
+        }
+
+        _isStopped = false;
+
+        if (!_active || _isCrashed) yield break;
+
+        // Re-check that the segment is still available.
+        if (seg.IsBlocked)
+        {
+            ReleaseAnyJunction();
+            StartCoroutine(WaitForSegmentOrReroute(seg));
+            yield break;
+        }
+
+        // Issue 6: Also check overlap after reservation acquired.
+        if (junction.isJunction && IsLaneStartOccupied(junction, seg, nextNode))
+        {
+            StartCoroutine(WaitForLaneStartClear(seg, nextNode));
+            yield break;
+        }
+
+        EnterSegment(seg, _currentNode, nextNode);
+        _pathIndex++;
+    }
+
+    /// <summary>Releases the junction this car currently holds (if any).</summary>
+    private void ReleaseAnyJunction()
+    {
+        if (_reservedJunction != null)
+        {
+            _reservedJunction.ReleaseJunction(this);
+            _reservedJunction = null;
+        }
+    }
+
+    // ─────────────────────────────────────────
+    //  Issue 6 — JUNCTION OVERLAP AVOIDANCE
+    // ─────────────────────────────────────────
+
+    /// <summary>
+    /// Returns true if another car is currently near the lane-start position
+    /// on <paramref name="seg"/> when entering from <paramref name="node"/>.
+    /// </summary>
+    private bool IsLaneStartOccupied(RoadIntersection node, RoadSegment seg,
+                                      RoadIntersection nextNode)
+    {
+        Vector3 laneStart = node.transform.position + seg.GetLaneOffsetVector(node, nextNode);
+        float sqrThreshold = junctionClearance * junctionClearance;
+
+        foreach (var car in seg.CarsOnSegment)
+        {
+            if (car == null || car == this) continue;
+            if ((car.transform.position - laneStart).sqrMagnitude < sqrThreshold)
+                return true;
+        }
+
+        // Also check cars on other segments connected to this node.
+        foreach (var otherSeg in node.ConnectedSegments)
+        {
+            if (otherSeg == null || otherSeg == seg) continue;
+            foreach (var car in otherSeg.CarsOnSegment)
+            {
+                if (car == null || car == this) continue;
+                if ((car.transform.position - laneStart).sqrMagnitude < sqrThreshold)
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    private IEnumerator WaitForLaneStartClear(RoadSegment seg, RoadIntersection nextNode)
+    {
+        _isStopped = true;
+
+        while (_active && !_isCrashed)
+        {
+            yield return new WaitForSeconds(junctionRetryInterval);
+            if (!IsLaneStartOccupied(_currentNode, seg, nextNode))
+                break;
+        }
+
+        _isStopped = false;
+
+        if (!_active || _isCrashed) yield break;
+
+        if (seg.IsBlocked)
+        {
+            ReleaseAnyJunction();
+            StartCoroutine(WaitForSegmentOrReroute(seg));
+            yield break;
+        }
+
+        EnterSegment(seg, _currentNode, nextNode);
+        _pathIndex++;
     }
 
     // ─────────────────────────────────────────
@@ -463,6 +795,102 @@ public class CarAgent : MonoBehaviour
         }
 
         AdvanceAlongPath();
+    }
+
+    // ─────────────────────────────────────────
+    //  RANDOM WALK  (random turns at every junction)
+    // ─────────────────────────────────────────
+
+    private void StepRandomWalk(RoadIntersection arrivedFrom)
+    {
+        bool isEndpoint = _endPoints != null && _endPoints.Count > 0
+                          && _endPoints.Contains(_currentNode);
+        if (isEndpoint && _hasMovedOnce) { Despawn(); return; }
+
+        var segs = new List<RoadSegment>();
+        var tos = new List<RoadIntersection>();
+        foreach (var seg in _currentNode.ConnectedSegments)
+        {
+            if (seg == null || seg.IsBlocked) continue;
+            var other = seg.Other(_currentNode);
+            if (other == null || other == arrivedFrom) continue;
+            segs.Add(seg); tos.Add(other);
+        }
+
+        if (segs.Count == 0 && arrivedFrom != null)
+        {
+            var back = _currentNode.SegmentTo(arrivedFrom);
+            if (back != null && !back.IsBlocked) { segs.Add(back); tos.Add(arrivedFrom); }
+        }
+
+        if (segs.Count == 0) { StartCoroutine(RetryRandomWalk()); return; }
+
+        int pick = Random.Range(0, segs.Count);
+
+        // ── Issue 4: Junction check for random walk too ──────────────
+        if (_currentNode.isJunction)
+        {
+            bool isTurn = _currentNode.IsTurn(_prevSegmentForJunction, segs[pick]);
+            if (isTurn && !_currentNode.TryReserveJunction(this))
+            {
+                StartCoroutine(WaitForJunctionThenRandomWalk(_currentNode, arrivedFrom));
+                return;
+            }
+            if (isTurn) _reservedJunction = _currentNode;
+
+            // Issue 6: overlap check.
+            if (IsLaneStartOccupied(_currentNode, segs[pick], tos[pick]))
+            {
+                StartCoroutine(WaitForLaneStartClearRandomWalk(segs[pick], tos[pick], arrivedFrom));
+                return;
+            }
+        }
+
+        _hasMovedOnce = true;
+        EnterSegment(segs[pick], _currentNode, tos[pick]);
+    }
+
+    private IEnumerator WaitForJunctionThenRandomWalk(RoadIntersection junction,
+                                                       RoadIntersection arrivedFrom)
+    {
+        _isStopped = true;
+        while (_active && !_isCrashed)
+        {
+            yield return new WaitForSeconds(junctionRetryInterval);
+            if (junction.TryReserveJunction(this))
+            {
+                _reservedJunction = junction;
+                break;
+            }
+        }
+        _isStopped = false;
+        if (_active && !_isCrashed) StepRandomWalk(arrivedFrom);
+    }
+
+    private IEnumerator WaitForLaneStartClearRandomWalk(RoadSegment seg,
+                                                         RoadIntersection nextNode,
+                                                         RoadIntersection arrivedFrom)
+    {
+        _isStopped = true;
+        while (_active && !_isCrashed)
+        {
+            yield return new WaitForSeconds(junctionRetryInterval);
+            if (!IsLaneStartOccupied(_currentNode, seg, nextNode)) break;
+        }
+        _isStopped = false;
+        if (_active && !_isCrashed)
+        {
+            _hasMovedOnce = true;
+            EnterSegment(seg, _currentNode, nextNode);
+        }
+    }
+
+    private IEnumerator RetryRandomWalk()
+    {
+        _isQueued = true;
+        yield return new WaitForSeconds(rerouteCheckInterval);
+        _isQueued = false;
+        if (_active && !_isCrashed) StepRandomWalk(null);
     }
 
     // ─────────────────────────────────────────
@@ -583,11 +1011,6 @@ public class CarAgent : MonoBehaviour
     //  CRASH  (legacy solo-crash path)
     // ─────────────────────────────────────────
 
-    /// <summary>
-    /// Marks this car as crashed and stops it in place.
-    /// If managedByCrashScene is true, CrashScene handles VFX/barriers/recovery
-    /// so this method only stops the car and blocks the segment.
-    /// </summary>
     public void SetCrashed(GameObject crashVFXPrefab, float recoveryDuration,
                            bool managedByCrashScene = false)
     {
@@ -644,7 +1067,10 @@ public class CarAgent : MonoBehaviour
         _isCrashRear = false;
         _isCrashFront = false;
         _crashPartner = null;
+        _inLaneTransition = false;
         _processingTiles.Clear();
+        ReleaseAnyJunction();
+        _prevSegmentForJunction = null;
 
         if (_currentSegment != null)
         {
@@ -663,22 +1089,28 @@ public class CarAgent : MonoBehaviour
     //  BUMPER POSITION HELPERS
     // ─────────────────────────────────────────
 
-    /// <summary>Returns the world position of this car's front bumper.</summary>
     private static Vector3 GetFrontBumperPosition(CarAgent car)
+        => car.transform.position + car.transform.forward * HalfLengthAlongForward(car);
+
+    private static Vector3 GetRearBumperPosition(CarAgent car)
+        => car.transform.position - car.transform.forward * HalfLengthAlongForward(car);
+
+    private static float HalfLengthAlongForward(CarAgent car)
     {
-        Renderer r = car.GetComponentInChildren<Renderer>();
-        if (r != null)
-            return car.transform.position + car.transform.forward * r.bounds.extents.z;
-        return car.transform.position + car.transform.forward * 1f;
+        Bounds b = GetWorldBounds(car.gameObject);
+        Vector3 f = car.transform.forward;
+        return 0.5f * (Mathf.Abs(f.x) * b.size.x + Mathf.Abs(f.z) * b.size.z);
     }
 
-    /// <summary>Returns the world position of this car's rear bumper.</summary>
-    private static Vector3 GetRearBumperPosition(CarAgent car)
+    public float NoseToTailLength() => 2f * HalfLengthAlongForward(this);
+
+    private static Bounds GetWorldBounds(GameObject go)
     {
-        Renderer r = car.GetComponentInChildren<Renderer>();
-        if (r != null)
-            return car.transform.position - car.transform.forward * r.bounds.extents.z;
-        return car.transform.position - car.transform.forward * 1f;
+        Renderer[] rs = go.GetComponentsInChildren<Renderer>();
+        if (rs.Length == 0) return new Bounds(go.transform.position, Vector3.one);
+        Bounds b = rs[0].bounds;
+        for (int i = 1; i < rs.Length; i++) b.Encapsulate(rs[i].bounds);
+        return b;
     }
 
     // ─────────────────────────────────────────
@@ -691,8 +1123,5 @@ public class CarAgent : MonoBehaviour
     public RoadIntersection SegmentTo => _segmentTo;
     public bool IsCrashCar => _isCrashRear || _isCrashFront;
 
-    /// <summary>
-    /// Public despawn entry-point used by CrashScene after cleanup.
-    /// </summary>
     public void ForceDespawn() => Despawn();
 }

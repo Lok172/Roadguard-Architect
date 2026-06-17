@@ -16,9 +16,9 @@ using UnityEngine;
 //    laneOffset defines how far left/right (in world units) each
 //    car is displaced from the segment centre-line depending on
 //    direction of travel.  Positive = right-hand traffic.
-//    A→B travellers are offset +laneOffset (right of AB direction).
-//    B→A travellers are offset -laneOffset (left of AB direction,
-//    which is the right side when facing from B to A).
+//    A→B travellers are offset +laneOffset (right of AB direction,
+//    drawn GREEN). B→A travellers are offset -laneOffset (right of
+//    BA direction, drawn ORANGE).
 // ─────────────────────────────────────────────────────────────────
 
 public class RoadSegment : MonoBehaviour
@@ -71,6 +71,13 @@ public class RoadSegment : MonoBehaviour
     [Header("Block State (runtime)")]
     [SerializeField] private bool _isBlocked;
     public bool IsBlocked => _isBlocked;
+
+    // World position of whatever is blocking the segment (e.g. a crash scene).
+    // Lets cars already on the segment know where to stop.
+    private Vector3 _blockPosition;
+    private bool _hasBlockPosition;
+    public bool HasBlockPosition => _isBlocked && _hasBlockPosition;
+    public Vector3 BlockPosition => _blockPosition;
 
     // ── Runtime tracking ──────────────────────
     private readonly List<CarAgent> _carsOnSegment = new List<CarAgent>();
@@ -176,7 +183,9 @@ public class RoadSegment : MonoBehaviour
 
         Vector3 forward = (to.transform.position - from.transform.position).normalized;
         // Right of travel direction (keep cars on the road, not floating up).
-        Vector3 right = Vector3.Cross(Vector3.up, forward).normalized;
+        // NOTE: sign flipped (was Cross(up, forward)) so A→B traffic now lands on
+        // the correct physical side — this was inverted relative to the B→A lane.
+        Vector3 right = Vector3.Cross(forward, Vector3.up).normalized;
         return right * laneOffset;
     }
 
@@ -330,7 +339,30 @@ public class RoadSegment : MonoBehaviour
 
     public void SetBlocked(bool blocked)
     {
+        SetBlockedInternal(blocked, transform.position, hasPosition: false);
+    }
+
+    /// <summary>
+    /// Block the segment and record WHERE the blockage is (e.g. a crash scene
+    /// centre), so cars already on the segment can stop in front of it.
+    /// </summary>
+    public void SetBlocked(bool blocked, Vector3 worldPosition)
+    {
+        SetBlockedInternal(blocked, worldPosition, hasPosition: true);
+    }
+
+    private void SetBlockedInternal(bool blocked, Vector3 worldPosition, bool hasPosition)
+    {
         _isBlocked = blocked;
+        if (blocked)
+        {
+            _blockPosition = worldPosition;
+            _hasBlockPosition = hasPosition;
+        }
+        else
+        {
+            _hasBlockPosition = false;
+        }
         Debug.Log($"[RoadSegment] {segmentID}: blocked={blocked}");
     }
 
@@ -373,16 +405,18 @@ public class RoadSegment : MonoBehaviour
         Gizmos.DrawLine(intersectionA.transform.position, intersectionB.transform.position);
 
         // Draw lane offset lines when offset is non-zero
+        // NOTE: sign flipped (was Cross(up, ab)) to match GetLaneOffsetVector's
+        // corrected A→B / B→A convention. Green = A→B lane, Orange = B→A lane.
         if (laneOffset > 0f)
         {
             Vector3 ab = intersectionB.transform.position - intersectionA.transform.position;
-            Vector3 right = Vector3.Cross(Vector3.up, ab.normalized).normalized * laneOffset;
+            Vector3 right = Vector3.Cross(ab.normalized, Vector3.up).normalized * laneOffset;
 
-            Gizmos.color = new Color(0.2f, 1f, 0.4f, 0.5f);
+            Gizmos.color = new Color(0.2f, 1f, 0.4f, 0.5f);   // Green = A→B lane
             Gizmos.DrawLine(intersectionA.transform.position + right,
                             intersectionB.transform.position + right);
 
-            Gizmos.color = new Color(1f, 0.6f, 0.1f, 0.5f);
+            Gizmos.color = new Color(1f, 0.6f, 0.1f, 0.5f);   // Orange = B→A lane
             Gizmos.DrawLine(intersectionA.transform.position - right,
                             intersectionB.transform.position - right);
         }

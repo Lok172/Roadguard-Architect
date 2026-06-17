@@ -489,6 +489,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6653753586033991794, guid: dee19dac054d7c242b9eab50bf23c61d, type: 3}
+      propertyPath: m_text
+      value: Accident Rate
+      objectReference: {fileID: 0}
     - target: {fileID: 7725933503742320819, guid: dee19dac054d7c242b9eab50bf23c61d, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -766,6 +770,10 @@ PrefabInstance:
     - target: {fileID: 6455454732428507275, guid: dee19dac054d7c242b9eab50bf23c61d, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6653753586033991794, guid: dee19dac054d7c242b9eab50bf23c61d, type: 3}
+      propertyPath: m_text
+      value: Accident Rate
       objectReference: {fileID: 0}
     - target: {fileID: 7725933503742320819, guid: dee19dac054d7c242b9eab50bf23c61d, type: 3}
       propertyPath: m_AnchorMax.y
@@ -1306,6 +1314,12 @@ PrefabInstance:
     - target: {fileID: 6455454732428507275, guid: dee19dac054d7c242b9eab50bf23c61d, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6653753586033991794, guid: dee19dac054d7c242b9eab50bf23c61d, type: 3}
+      propertyPath: m_text
+      value: 'Accident Rate
+
+'
       objectReference: {fileID: 0}
     - target: {fileID: 7725933503742320819, guid: dee19dac054d7c242b9eab50bf23c61d, type: 3}
       propertyPath: m_AnchorMax.y
