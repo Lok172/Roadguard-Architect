@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 5acaee3ab6d4b1e42ac3450d9776e9a1
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 315612
+  packageName: Simple 2D Pathfinder
+  packageVersion: 1.0
+  assetPath: Assets/Kwaaktje/Pathfinder2D/Tiles/Wall10_HEX.asset
+  uploadId: 745449

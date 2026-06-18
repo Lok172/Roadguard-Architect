@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 96c42ab2af091724481b8c6fd680da7e
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 315612
+  packageName: Simple 2D Pathfinder
+  packageVersion: 1.0
+  assetPath: Assets/Kwaaktje/Pathfinder2D/Tiles/Wall8.asset
+  uploadId: 745449

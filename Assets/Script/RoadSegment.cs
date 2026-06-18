@@ -67,17 +67,26 @@ public class RoadSegment : MonoBehaviour
              "Set to 0 to disable lane splitting.")]
     [Min(0f)] public float laneOffset = 0.5f;
 
-    // ── Block / Accident State ────────────────
+    // ── Block / Accident State (DIRECTIONAL) ──
+    //  A segment carries two opposing lanes:
+    //    • A→B (green)  = travel toward intersectionB.
+    //    • B→A (orange) = travel toward intersectionA.
+    //  Each lane is blocked INDEPENDENTLY so a crash in one lane never
+    //  stops the opposite-direction traffic (see Req 2 / Req 4).
+    //  Reference counts allow several sources (a crash wreck + queued
+    //  cars propagating the jam backward) to block the same lane without
+    //  one clearing another's block prematurely.
     [Header("Block State (runtime)")]
-    [SerializeField] private bool _isBlocked;
-    public bool IsBlocked => _isBlocked;
+    [SerializeField] private int _blockAB;   // refcount: lane toward B (A→B / green) blocked
+    [SerializeField] private int _blockBA;   // refcount: lane toward A (B→A / orange) blocked
 
-    // World position of whatever is blocking the segment (e.g. a crash scene).
-    // Lets cars already on the segment know where to stop.
-    private Vector3 _blockPosition;
-    private bool _hasBlockPosition;
-    public bool HasBlockPosition => _isBlocked && _hasBlockPosition;
-    public Vector3 BlockPosition => _blockPosition;
+    // World position of whatever blocks each lane (e.g. a crash scene),
+    // so cars already on the segment know where to stop.
+    private Vector3 _blockPosAB; private bool _hasPosAB;
+    private Vector3 _blockPosBA; private bool _hasPosBA;
+
+    /// <summary>True if EITHER lane is blocked. Use IsBlockedToward for per-lane checks.</summary>
+    public bool IsBlocked => _blockAB > 0 || _blockBA > 0;
 
     // ── Runtime tracking ──────────────────────
     private readonly List<CarAgent> _carsOnSegment = new List<CarAgent>();
@@ -334,36 +343,81 @@ public class RoadSegment : MonoBehaviour
     }
 
     // ─────────────────────────────────────────
-    //  BLOCKING
+    //  BLOCKING  (DIRECTIONAL / per-lane)
     // ─────────────────────────────────────────
 
-    public void SetBlocked(bool blocked)
+    /// <summary>
+    /// Is the lane heading toward <paramref name="to"/> blocked?
+    /// (to == intersectionB → A→B/green lane; to == intersectionA → B→A/orange lane.)
+    /// </summary>
+    public bool IsBlockedToward(RoadIntersection to)
     {
-        SetBlockedInternal(blocked, transform.position, hasPosition: false);
+        if (to == intersectionB) return _blockAB > 0;
+        if (to == intersectionA) return _blockBA > 0;
+        return false;
+    }
+
+    /// <summary>True if the lane toward <paramref name="to"/> has a known block position.</summary>
+    public bool HasBlockPositionToward(RoadIntersection to)
+    {
+        if (to == intersectionB) return _blockAB > 0 && _hasPosAB;
+        if (to == intersectionA) return _blockBA > 0 && _hasPosBA;
+        return false;
+    }
+
+    /// <summary>World position of the block on the lane toward <paramref name="to"/>.</summary>
+    public Vector3 BlockPositionToward(RoadIntersection to)
+    {
+        if (to == intersectionB) return _blockPosAB;
+        if (to == intersectionA) return _blockPosBA;
+        return transform.position;
     }
 
     /// <summary>
-    /// Block the segment and record WHERE the blockage is (e.g. a crash scene
-    /// centre), so cars already on the segment can stop in front of it.
+    /// Block / unblock the single lane that travels toward <paramref name="to"/>.
+    /// Reference-counted: each true must be balanced by a matching false.
     /// </summary>
-    public void SetBlocked(bool blocked, Vector3 worldPosition)
+    public void SetBlockedToward(RoadIntersection to, bool blocked,
+                                 Vector3 worldPosition, bool hasPosition = true)
     {
-        SetBlockedInternal(blocked, worldPosition, hasPosition: true);
-    }
+        bool ab;
+        if (to == intersectionB) ab = true;
+        else if (to == intersectionA) ab = false;
+        else { Debug.LogWarning($"[RoadSegment] {segmentID}: SetBlockedToward node not an endpoint."); return; }
 
-    private void SetBlockedInternal(bool blocked, Vector3 worldPosition, bool hasPosition)
-    {
-        _isBlocked = blocked;
-        if (blocked)
+        if (ab)
         {
-            _blockPosition = worldPosition;
-            _hasBlockPosition = hasPosition;
+            if (blocked) { _blockAB++; _blockPosAB = worldPosition; _hasPosAB = hasPosition; }
+            else { _blockAB = Mathf.Max(0, _blockAB - 1); if (_blockAB == 0) _hasPosAB = false; }
         }
         else
         {
-            _hasBlockPosition = false;
+            if (blocked) { _blockBA++; _blockPosBA = worldPosition; _hasPosBA = hasPosition; }
+            else { _blockBA = Mathf.Max(0, _blockBA - 1); if (_blockBA == 0) _hasPosBA = false; }
         }
-        Debug.Log($"[RoadSegment] {segmentID}: blocked={blocked}");
+
+        Debug.Log($"[RoadSegment] {segmentID}: lane→{(to != null ? to.intersectionID : "?")} " +
+                  $"blocked={blocked} (AB={_blockAB}, BA={_blockBA})");
+    }
+
+    /// <summary>Convenience overload without a stop position.</summary>
+    public void SetBlockedToward(RoadIntersection to, bool blocked)
+        => SetBlockedToward(to, blocked, transform.position, hasPosition: false);
+
+    // ── Legacy whole-segment blocking (both lanes) ────────────────────
+    //  Kept for the legacy solo-crash path and watchdog cleanup. Blocks
+    //  or unblocks BOTH lanes at once; routes through the refcounted
+    //  directional API so accounting stays consistent.
+    public void SetBlocked(bool blocked)
+    {
+        SetBlockedToward(intersectionB, blocked, transform.position, hasPosition: false);
+        SetBlockedToward(intersectionA, blocked, transform.position, hasPosition: false);
+    }
+
+    public void SetBlocked(bool blocked, Vector3 worldPosition)
+    {
+        SetBlockedToward(intersectionB, blocked, worldPosition, hasPosition: true);
+        SetBlockedToward(intersectionA, blocked, worldPosition, hasPosition: true);
     }
 
     // ─────────────────────────────────────────
@@ -398,7 +452,7 @@ public class RoadSegment : MonoBehaviour
     {
         if (intersectionA == null || intersectionB == null) return;
 
-        Gizmos.color = _isBlocked
+        Gizmos.color = IsBlocked
             ? new Color(1f, 0.1f, 0.1f, 0.9f)
             : new Color(0.3f, 0.8f, 1f, 0.7f);
 
@@ -425,7 +479,7 @@ public class RoadSegment : MonoBehaviour
         UnityEditor.Handles.Label(
             mid + Vector3.up * 0.5f,
             $"{segmentID}\nCars:{_carsOnSegment.Count}  Risk:{CalculateRisk(speedLimit):F2}" +
-            (_isBlocked ? " [BLOCKED]" : "")
+            (IsBlocked ? " [BLOCKED]" : "")
         );
     }
 #endif

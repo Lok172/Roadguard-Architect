@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 882908ef366ca564ca107924c13c4131
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 315612
+  packageName: Simple 2D Pathfinder
+  packageVersion: 1.0
+  assetPath: Assets/Kwaaktje/Pathfinder2D/README.md
+  uploadId: 745449

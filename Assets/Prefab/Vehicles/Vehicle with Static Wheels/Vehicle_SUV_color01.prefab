@@ -131,8 +131,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4a6fe283fc4c212418b26f3c58c2a09c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CarAgent
-  baseSpeed: 282.8
-  arrivalThreshold: 0.3
+  baseSpeed: 10
+  arrivalThreshold: 0.5
   followCheckDistance: 11.03
   followSpeedMultiplier: 0.764
   carLayerMask:
@@ -143,9 +143,9 @@ MonoBehaviour:
   speedBumpTransitionTime: 0.5
   stopSignStopChance: 0.5
   stopSignDuration: 2
-  rerouteCheckInterval: 2
-  randomWalk: 0
+  blockedCheckInterval: 2
   blockStopGap: 0.6
+  laneTransitionDistance: 3
   _currentSpeed: 0
   _isCrashed: 0
   _isStopped: 0

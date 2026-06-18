@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: dd05bdfa4e304884ca5bfd8499662925
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 315612
+  packageName: Simple 2D Pathfinder
+  packageVersion: 1.0
+  assetPath: Assets/Kwaaktje/Pathfinder2D/Scripts/ExampleGameManager.cs
+  uploadId: 745449

@@ -8,7 +8,8 @@ using UnityEngine;
 //  Used by CarAgent (per car) and CarManager (rerouting).
 //
 //  Heuristic: straight-line (Euclidean) distance.
-//  Edge cost : segment length (ignores blocked segments).
+//  Edge cost : segment length. A segment is skipped only when the
+//              lane in the direction of travel is blocked (per-lane).
 // ─────────────────────────────────────────────────────────────────
 
 public static class RoadGraph
@@ -55,15 +56,17 @@ public static class RoadGraph
                 if (closedSet.Contains(neighbour)) continue;
 
                 RoadSegment seg = current.SegmentTo(neighbour);
-                if (seg == null || seg.IsBlocked) continue;
+                // Directional: only the lane we'd travel (current → neighbour)
+                // matters. A block on the opposite lane leaves this edge usable.
+                if (seg == null || seg.IsBlockedToward(neighbour)) continue;
 
                 float tentativeG = GetOrInfinity(gScore, current) + seg.Length;
 
                 if (tentativeG < GetOrInfinity(gScore, neighbour))
                 {
                     cameFrom[neighbour] = current;
-                    gScore[neighbour]   = tentativeG;
-                    fScore[neighbour]   = tentativeG + Heuristic(neighbour, goal);
+                    gScore[neighbour] = tentativeG;
+                    fScore[neighbour] = tentativeG + Heuristic(neighbour, goal);
                     openSet.Add(neighbour);
                 }
             }

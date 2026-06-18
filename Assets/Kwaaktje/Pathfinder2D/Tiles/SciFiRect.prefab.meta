@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 8e648e9cb1108da46ae1127f64d593f3
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 315612
+  packageName: Simple 2D Pathfinder
+  packageVersion: 1.0
+  assetPath: Assets/Kwaaktje/Pathfinder2D/Tiles/SciFiRect.prefab
+  uploadId: 745449

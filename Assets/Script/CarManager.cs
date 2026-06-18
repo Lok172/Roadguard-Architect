@@ -4,12 +4,19 @@ using UnityEngine;
 using UnityEngine.Serialization;
 
 // ─────────────────────────────────────────────────────────────────
-//  CAR MANAGER  (v6 — junction-aware crash system)
+//  CAR MANAGER  (v8 — staggered spawn + directional/empty crashes)
 //
-//  CHANGES vs v5:
-//    • Issue 4c: Segments that touch a junction intersection are
-//      excluded from crash spawning (IsSegmentUsable now also
-//      checks TouchesJunction). No crash scenes at junctions.
+//  CHANGES vs v7:
+//    • SpawnInitialBatch now seeds ONE car per spawn point (Req 7);
+//      MaintainPopulationLoop ramps up to maxActiveCars one at a time.
+//    • Staged crashes only form on an EMPTY segment (CarCount == 0).
+//      If the preferred segment is occupied the search walks outward;
+//      if none is free the crash is cancelled (Req 5).
+//    • Crash blocking is DIRECTIONAL and DOWNSTREAM-only: the wreck
+//      blocks its own lane along the travel direction, never the
+//      segment behind it and never the opposite lane (Req 2).
+//    • Junction random-pick removed (CarAgent follows its predefined
+//      A* path through junctions).
 // ─────────────────────────────────────────────────────────────────
 
 public class CarManager : MonoBehaviour
@@ -47,14 +54,11 @@ public class CarManager : MonoBehaviour
     [Tooltip("Full graph node list (auto-filled if autoCollectIntersections is true).")]
     public List<RoadIntersection> intersections = new List<RoadIntersection>();
 
-    [Tooltip("Cars ignore A* routing and pick a random direction at every junction, " +
-             "instead of pathing to a random destination.")]
-    public bool randomTurnsAtJunctions = false;
-
     // ── Endpoints ─────────────────────────────
     [Header("Spawn / Despawn Endpoints")]
     [Tooltip("Cars spawn FROM and despawn AT these intersections.\n" +
-             "Leave empty to use all intersections (random anywhere).")]
+             "Each car picks a random endpoint as its goal.\n" +
+             "Leave empty to use all intersections.")]
     public List<RoadIntersection> endpointIntersections = new List<RoadIntersection>();
 
     // ── Adaptive Risk Eval ────────────────────
@@ -122,19 +126,21 @@ public class CarManager : MonoBehaviour
     [Tooltip("How far away from a moving vehicle the crash scene is staged " +
              "(world units). The distance is quantised to whole road segments: " +
              "the crash spawns ceil(CrashClearanceDistance / segmentLength) " +
-             "segments AHEAD of or BEHIND the vehicle, at that segment's centre. " +
-             "Example: distance 50, segment length 30 → ceil(50/30)=2 segments " +
-             "away. Only used when a moving vehicle is present to measure from.")]
+             "segments AHEAD of or BEHIND the vehicle, at that segment's centre.")]
     [Min(0f)] public float crashClearanceDistance = 50f;
 
     [Header("Crash Blocking")]
-    [Tooltip("Also block one extra segment past each END of the wreck footprint " +
-             "(the ±1 buffer). Wreck on segment 03 → additionally blocks the " +
-             "segment before and the segment after it.")]
+    [Tooltip("Also block one extra segment past the DOWNSTREAM end of the wreck " +
+             "footprint (in the blocked lane's travel direction).")]
     public bool blockBufferSegments = true;
 
+    [Tooltip("When the preferred crash segment is occupied, how many extra " +
+             "segments outward to search for an empty one before cancelling " +
+             "the crash (Req 5).")]
+    [Min(0)] public int crashSearchExtraSegments = 6;
+
     [Tooltip("Max seconds a staged crash may take to reach impact before it is " +
-             "force-cleaned (stops stuck crash cars leaking the active cap).")]
+             "force-cleaned.")]
     [Min(1f)] public float crashImpactTimeout = 15f;
 
     // ── Internal Pool ─────────────────────────
@@ -178,7 +184,7 @@ public class CarManager : MonoBehaviour
         _roadTiles.AddRange(FindObjectsOfType<RoadTile>());
 
         BuildPool();
-        FillToMax();
+        SpawnInitialBatch();             // one car per spawn point (Req 7)
         StartCoroutine(RiskEvalLoop());
         StartCoroutine(MaintainPopulationLoop());
     }
@@ -264,39 +270,81 @@ public class CarManager : MonoBehaviour
         return n;
     }
 
-    private void FillToMax()
+    /// <summary>
+    /// Seeds the network with ONE car per distinct spawn point (Req 7),
+    /// capped at maxActiveCars. The remaining population is ramped up
+    /// gradually by MaintainPopulationLoop.
+    /// </summary>
+    private void SpawnInitialBatch()
     {
-        int n = maxActiveCars - ActiveTrafficCount();
-        for (int i = 0; i < n; i++) SpawnOne();
+        var endpoints = (endpointIntersections != null && endpointIntersections.Count > 0)
+                         ? endpointIntersections : intersections;
+
+        int spawned = 0;
+        foreach (var start in endpoints)
+        {
+            if (start == null) continue;
+            if (ActiveTrafficCount() >= maxActiveCars) break;
+            SpawnFrom(start, endpoints);
+            spawned++;
+        }
+
+        Debug.Log($"[CarManager] Initial batch: one car per spawn point — {spawned} cars.");
     }
 
+    /// <summary>Spawns a single car from a RANDOM spawn point (used for ramp-up).</summary>
     private void SpawnOne()
     {
         if (intersections.Count < 2) return;
 
+        var endpoints = (endpointIntersections != null && endpointIntersections.Count > 0)
+                         ? endpointIntersections : intersections;
+        if (endpoints.Count == 0) return;
+
+        var start = endpoints[Random.Range(0, endpoints.Count)];
+        SpawnFrom(start, endpoints);
+    }
+
+    /// <summary>Spawns a single car from a SPECIFIC spawn point toward a random goal.</summary>
+    private void SpawnFrom(RoadIntersection start, List<RoadIntersection> endpoints)
+    {
+        if (start == null || endpoints == null || endpoints.Count == 0) return;
+
         var agent = CheckoutAgent();
         if (agent == null) return;
 
-        var endpoints = (endpointIntersections != null && endpointIntersections.Count > 0)
-                         ? endpointIntersections : intersections;
-        var start = endpoints[Random.Range(0, endpoints.Count)];
+        // ── Pick a goal (different from start) ────────────────────
+        var goalCandidates = new List<RoadIntersection>();
+        foreach (var ep in endpoints)
+            if (ep != null && ep != start) goalCandidates.Add(ep);
+
+        if (goalCandidates.Count == 0)
+        {
+            // Can't find a different goal — return agent to pool.
+            ReturnCarToPool(agent);
+            return;
+        }
+
+        var goal = goalCandidates[Random.Range(0, goalCandidates.Count)];
 
         PlaceAtLaneStart(agent, start);
 
         agent.gameObject.SetActive(true);
-        agent.randomWalk = randomTurnsAtJunctions;
-        agent.Initialise(start, intersections, endpoints);
+        agent.Initialise(start, intersections, endpoints, goal);
 
         _active.Add(agent);
+
+        Debug.Log($"SPAWN: {start.intersectionID} → goal {goal.intersectionID}");
     }
 
     private void PlaceAtLaneStart(CarAgent agent, RoadIntersection startNode)
     {
         foreach (var seg in startNode.ConnectedSegments)
         {
-            if (seg == null || seg.IsBlocked) continue;
+            if (seg == null) continue;
             var other = seg.Other(startNode);
             if (other == null) continue;
+            if (seg.IsBlockedToward(other)) continue;   // outgoing lane blocked — try another
             var offset = seg.GetLaneOffsetVector(startNode, other);
             agent.transform.position = startNode.transform.position + offset;
             return;
@@ -312,6 +360,10 @@ public class CarManager : MonoBehaviour
             _pool[idx].Enqueue(agent);
     }
 
+    /// <summary>
+    /// Periodically checks whether the active count has dropped below
+    /// maxActiveCars and spawns one replacement after respawnDelay.
+    /// </summary>
     private IEnumerator MaintainPopulationLoop()
     {
         var wait = new WaitForSeconds(Mathf.Max(0.25f, respawnDelay));
@@ -324,7 +376,7 @@ public class CarManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────
-    //  ACCIDENT SYSTEM  (v6 — junction-aware)
+    //  ACCIDENT SYSTEM
     // ─────────────────────────────────────────
 
     private IEnumerator RiskEvalLoop()
@@ -383,22 +435,19 @@ public class CarManager : MonoBehaviour
         CarAgent reference = FindReferenceCarOnSegment(riskSeg);
         if (reference != null && reference.SegmentFrom != null && reference.SegmentTo != null)
         {
-            float segLen = Mathf.Max(0.01f, riskSeg.Length);
-            int segmentsAway = Mathf.CeilToInt(crashClearanceDistance / segLen);
-
-            bool ahead = Random.value > 0.5f;
-            crashSeg = ResolveCrashSegment(riskSeg, reference, segmentsAway, ahead, out from, out to);
-
-            if (!IsSegmentUsable(crashSeg))
-                crashSeg = ResolveCrashSegment(riskSeg, reference, segmentsAway, !ahead, out from, out to);
-
-            if (!IsSegmentUsable(crashSeg)) return;
-
-            if (!TryGetTileSpawnPosition(crashSeg, from, to, 0.5f, out frontPos))
+            // Req 5: find the nearest EMPTY (CarCount == 0) usable segment,
+            // searching outward; cancel the crash if none is available.
+            if (!TryFindEmptyCrashSegment(riskSeg, reference, out crashSeg, out from, out to))
                 return;
+
+            frontPos = GetCrashSpawnPosition(
+                crashSeg,
+                from,
+                to);
         }
         else
         {
+            // No reference car: the risk segment itself must be empty + usable.
             crashSeg = riskSeg;
             if (!IsSegmentUsable(crashSeg)) return;
             bool towardsB = (Random.value > 0.5f);
@@ -442,6 +491,7 @@ public class CarManager : MonoBehaviour
         StartCoroutine(CrashWatchdog(crashSeg, carA, carB));
 
         Debug.Log($"[CarManager] Crash pair spawned: rear={carA.name}, front={carB.name} on {crashSeg.segmentID}");
+
     }
 
     private IEnumerator CrashWatchdog(RoadSegment crashSeg, CarAgent carA, CarAgent carB)
@@ -473,6 +523,42 @@ public class CarManager : MonoBehaviour
         return WalkSegments(startSeg, dirFrom, dirTo, segmentsAway, out from, out to);
     }
 
+    /// <summary>
+    /// Req 5: starting at the preferred clearance distance and walking
+    /// outward (both directions), returns the first segment that is usable
+    /// AND empty (CarCount == 0). Returns false if none is available within
+    /// the search range — the caller then cancels the crash.
+    /// </summary>
+    private bool TryFindEmptyCrashSegment(RoadSegment riskSeg, CarAgent reference,
+                                          out RoadSegment crashSeg,
+                                          out RoadIntersection from, out RoadIntersection to)
+    {
+        crashSeg = null; from = null; to = null;
+
+        float segLen = Mathf.Max(0.01f, riskSeg.Length);
+        int startAway = Mathf.Max(1, Mathf.CeilToInt(crashClearanceDistance / segLen));
+        int maxAway = startAway + Mathf.Max(0, crashSearchExtraSegments);
+
+        bool preferAhead = Random.value > 0.5f;
+
+        for (int away = startAway; away <= maxAway; away++)
+        {
+            // Try the preferred direction first, then the other, at this distance.
+            for (int d = 0; d < 2; d++)
+            {
+                bool ahead = (d == 0) ? preferAhead : !preferAhead;
+                var seg = ResolveCrashSegment(riskSeg, reference, away, ahead,
+                                              out var f, out var t);
+                if (seg != null && seg.CarCount == 0 && IsSegmentUsable(seg))
+                {
+                    crashSeg = seg; from = f; to = t;
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private bool TouchesEndpoint(RoadSegment seg)
     {
         if (seg == null || endpointIntersections == null || endpointIntersections.Count == 0)
@@ -481,7 +567,6 @@ public class CarManager : MonoBehaviour
             || endpointIntersections.Contains(seg.intersectionB);
     }
 
-    // ── Issue 4c: NEW — check whether a segment touches a junction ──
     private bool TouchesJunction(RoadSegment seg)
     {
         if (seg == null) return false;
@@ -491,14 +576,16 @@ public class CarManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Returns true if the segment is safe for a staged crash.
-    /// Issue 4c: now also excludes segments that touch a junction intersection.
+    /// Returns true if the segment is safe for a staged crash: not blocked,
+    /// not already crashing, has both endpoints, touches no endpoint/junction,
+    /// and is EMPTY (CarCount == 0, Req 5).
     /// </summary>
     private bool IsSegmentUsable(RoadSegment seg)
         => seg != null && !seg.IsBlocked && !_crashInProgress.Contains(seg)
            && seg.intersectionA != null && seg.intersectionB != null
            && !TouchesEndpoint(seg)
-           && !TouchesJunction(seg);      // ← Issue 4c: no crash at junctions
+           && !TouchesJunction(seg)
+           && seg.CarCount == 0;
 
     private RoadSegment WalkSegments(RoadSegment startSeg,
                                      RoadIntersection from, RoadIntersection to,
@@ -567,6 +654,22 @@ public class CarManager : MonoBehaviour
         pos = seg.GetPositionAt(bestT) + seg.GetLaneOffsetVector(from, to);
         return true;
     }
+    private Vector3 GetCrashSpawnPosition(
+    RoadSegment seg,
+    RoadIntersection from,
+    RoadIntersection to)
+    {
+        Vector3 start = from.transform.position;
+        Vector3 end = to.transform.position;
+
+        float t = 0.6f;
+
+        Vector3 center =
+            Vector3.Lerp(start, end, t);
+
+        return center +
+               seg.GetLaneOffsetVector(from, to);
+    }
 
     private bool PointIsOnAnyTile(Vector3 worldPoint)
     {
@@ -614,21 +717,33 @@ public class CarManager : MonoBehaviour
         _active.Remove(carA);
         _active.Remove(carB);
 
-        List<RoadSegment> blocked = ComputeBlockedSegments(carA, carB, seg);
-        Vector3 wreckPos = (carA.transform.position + carB.transform.position) * 0.5f;
-        foreach (var s in blocked)
-            if (s != null) s.SetBlocked(true, wreckPos);
+        // Req 2: block only the crashed lane, downstream along its travel
+        // direction (never the segment behind, never the opposite lane).
+        ComputeBlockedLanes(carA, carB, seg, out var blockedSegs, out var blockedTos);
 
-        SpawnCrashScene(carA, carB, seg, blocked);
+        Vector3 wreckPos = (carA.transform.position + carB.transform.position) * 0.5f;
+        for (int i = 0; i < blockedSegs.Count; i++)
+            if (blockedSegs[i] != null)
+                blockedSegs[i].SetBlockedToward(blockedTos[i], true, wreckPos, hasPosition: true);
+
+        SpawnCrashScene(carA, carB, seg, blockedSegs, blockedTos);
 
         Debug.Log($"[CarManager] Crash impact on '{seg?.segmentID}' — scene built, " +
-                  $"{blocked.Count} segment(s) blocked.");
+                  $"{blockedSegs.Count} lane segment(s) blocked downstream.");
     }
 
-    private List<RoadSegment> ComputeBlockedSegments(CarAgent carA, CarAgent carB, RoadSegment seg)
+    /// <summary>
+    /// Req 2: computes the segments to block for a wreck and, for each, the
+    /// node that identifies the blocked lane (the travel direction). Walks
+    /// ONLY downstream (the direction the crashing cars were heading); the
+    /// segment behind the wreck and the opposite lane stay open.
+    /// </summary>
+    private void ComputeBlockedLanes(CarAgent carA, CarAgent carB, RoadSegment seg,
+                                     out List<RoadSegment> segs, out List<RoadIntersection> tos)
     {
-        var blocked = new List<RoadSegment>();
-        if (seg == null) return blocked;
+        segs = new List<RoadSegment>();
+        tos = new List<RoadIntersection>();
+        if (seg == null) return;
 
         RoadIntersection from = carA.SegmentFrom != null ? carA.SegmentFrom : seg.intersectionA;
         RoadIntersection to = carA.SegmentTo != null ? carA.SegmentTo : seg.intersectionB;
@@ -637,38 +752,39 @@ public class CarManager : MonoBehaviour
         float segLen = Mathf.Max(0.01f, seg.Length);
         int occupiedCount = Mathf.Max(1, Mathf.CeilToInt(totalCarLength / segLen));
 
-        var occupied = new List<RoadSegment> { seg };
-        RoadSegment frontSeg = seg, backSeg = seg;
-        RoadIntersection frontNode = to, backNode = from;
+        // Crash segment, blocked in the travel direction (toward `to`).
+        segs.Add(seg);
+        tos.Add(to);
 
-        while (occupied.Count < occupiedCount)
+        // Extend the wreck footprint DOWNSTREAM only.
+        RoadSegment frontSeg = seg;
+        RoadIntersection frontNode = to;
+        while (segs.Count < occupiedCount)
         {
             RoadSegment next = PickContinuingSegment(frontSeg, frontNode);
-            if (next == null || occupied.Contains(next)) break;
-            occupied.Add(next);
-            frontNode = next.Other(frontNode);
+            if (next == null || segs.Contains(next)) break;
+            RoadIntersection nextTo = next.Other(frontNode);
+            if (nextTo == null) break;
+            segs.Add(next);
+            tos.Add(nextTo);
+            frontNode = nextTo;
             frontSeg = next;
         }
-        while (occupied.Count < occupiedCount)
-        {
-            RoadSegment prev = PickContinuingSegment(backSeg, backNode);
-            if (prev == null || occupied.Contains(prev)) break;
-            occupied.Add(prev);
-            backNode = prev.Other(backNode);
-            backSeg = prev;
-        }
 
-        blocked.AddRange(occupied);
-
+        // Optional one-segment downstream buffer.
         if (blockBufferSegments)
         {
             RoadSegment bufferFront = PickContinuingSegment(frontSeg, frontNode);
-            RoadSegment bufferBack = PickContinuingSegment(backSeg, backNode);
-            if (bufferFront != null && !blocked.Contains(bufferFront)) blocked.Add(bufferFront);
-            if (bufferBack != null && !blocked.Contains(bufferBack)) blocked.Add(bufferBack);
+            if (bufferFront != null && !segs.Contains(bufferFront))
+            {
+                RoadIntersection bufferTo = bufferFront.Other(frontNode);
+                if (bufferTo != null)
+                {
+                    segs.Add(bufferFront);
+                    tos.Add(bufferTo);
+                }
+            }
         }
-
-        return blocked;
     }
 
     // ─────────────────────────────────────────
@@ -676,7 +792,8 @@ public class CarManager : MonoBehaviour
     // ─────────────────────────────────────────
 
     private void SpawnCrashScene(CarAgent carA, CarAgent carB, RoadSegment seg,
-                                 List<RoadSegment> blockedSegments)
+                                 List<RoadSegment> blockedSegments,
+                                 List<RoadIntersection> blockedTowards)
     {
         Vector3 midpoint = (carA.transform.position + carB.transform.position) * 0.5f;
 
@@ -688,6 +805,7 @@ public class CarManager : MonoBehaviour
         scene.carB = carB;
         scene.segment = seg;
         scene.blockedSegments = blockedSegments;
+        scene.blockedTowards = blockedTowards;
         scene.smokeVFXPrefab = smokeVFXPrefab;
         scene.barrierFencePrefab = barrierFencePrefab;
         scene.disappearDuration = crashDisappearDuration;

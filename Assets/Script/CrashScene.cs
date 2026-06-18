@@ -37,6 +37,7 @@ public class CrashScene : MonoBehaviour
     [HideInInspector] public CarAgent carB;            // front car (the one that got hit)
     [HideInInspector] public RoadSegment segment;
     [HideInInspector] public List<RoadSegment> blockedSegments;  // all segments this wreck blocks
+    [HideInInspector] public List<RoadIntersection> blockedTowards; // per-segment blocked lane (travel dir)
     [HideInInspector] public GameObject smokeVFXPrefab;
     [HideInInspector] public GameObject barrierFencePrefab;
 
@@ -216,11 +217,18 @@ public class CrashScene : MonoBehaviour
         // Fade out all renderers.
         yield return StartCoroutine(FadeOutAll());
 
-        // Cleanup — unblock every segment the wreck was occupying.
+        // Cleanup — unblock the SAME lane that was blocked on each segment.
         if (blockedSegments != null && blockedSegments.Count > 0)
         {
-            foreach (var s in blockedSegments)
-                if (s != null) s.SetBlocked(false);
+            for (int i = 0; i < blockedSegments.Count; i++)
+            {
+                var s = blockedSegments[i];
+                if (s == null) continue;
+                if (blockedTowards != null && i < blockedTowards.Count && blockedTowards[i] != null)
+                    s.SetBlockedToward(blockedTowards[i], false);
+                else
+                    s.SetBlocked(false);   // legacy fallback: clear both lanes
+            }
         }
         else if (segment != null)
         {

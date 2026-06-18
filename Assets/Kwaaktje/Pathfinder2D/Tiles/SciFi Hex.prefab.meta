@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: b07fbc613c801b547a95f01e5577b76b
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 315612
+  packageName: Simple 2D Pathfinder
+  packageVersion: 1.0
+  assetPath: Assets/Kwaaktje/Pathfinder2D/Tiles/SciFi Hex.prefab
+  uploadId: 745449

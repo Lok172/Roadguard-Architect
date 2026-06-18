@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 19b787fca9edbaa4b8c42802a322a214
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 315612
+  packageName: Simple 2D Pathfinder
+  packageVersion: 1.0
+  assetPath: Assets/Kwaaktje/Pathfinder2D/Tiles/Hero.prefab
+  uploadId: 745449

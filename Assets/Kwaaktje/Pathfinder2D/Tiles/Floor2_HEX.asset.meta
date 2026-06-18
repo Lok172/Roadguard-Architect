@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 854a20ac44c0e4a43aa93bd68722d221
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 315612
+  packageName: Simple 2D Pathfinder
+  packageVersion: 1.0
+  assetPath: Assets/Kwaaktje/Pathfinder2D/Tiles/Floor2_HEX.asset
+  uploadId: 745449

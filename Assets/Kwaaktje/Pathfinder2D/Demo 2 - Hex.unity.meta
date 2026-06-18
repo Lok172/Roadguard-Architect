@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 91f1b844811dbb441a96b2f5366fe50b
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 315612
+  packageName: Simple 2D Pathfinder
+  packageVersion: 1.0
+  assetPath: Assets/Kwaaktje/Pathfinder2D/Demo 2 - Hex.unity
+  uploadId: 745449
