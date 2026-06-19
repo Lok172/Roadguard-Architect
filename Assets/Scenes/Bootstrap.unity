@@ -355,10 +355,77 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2146797291
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2146797293}
+  - component: {fileID: 2146797292}
+  m_Layer: 0
+  m_Name: MusicManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2146797292
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2146797291}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8856db8ff2359274d9632acac2b4ca4c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MusicManager
+  bgmEntries:
+  - clip: {fileID: 8300000, guid: 209f4ddc3a746a64fb3185b432f51675, type: 3}
+    sceneNames:
+    - MainMenu
+    - LevelSelect
+    - Settings
+  - clip: {fileID: 8300000, guid: 528e80c8fd7bf0b4d925a26acbbed277, type: 3}
+    sceneNames:
+    - LvUI & Manager
+    - LV1
+  buttonSoundEntries:
+  - clip: {fileID: 8300000, guid: 7bfdd3b285aa72f478a5d364f61667fb, type: 3}
+    sceneNames:
+    - Environment
+  sliderClip: {fileID: 8300000, guid: 8ab1589089c332a40b0b72c1c3b34d19, type: 3}
+  sliderSceneNames:
+  - Settings
+  - LvUI & Manager
+  masterSlider: {fileID: 0}
+  musicSlider: {fileID: 0}
+  sfxSlider: {fileID: 0}
+  crossFadeDuration: 0.5
+--- !u!4 &2146797293
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2146797291}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1.28357, y: 0, z: 198.43295}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
+  - {fileID: 2146797293}
   - {fileID: 801832301}
   - {fileID: 1730907750}
   - {fileID: 1404589075}

@@ -90,9 +90,16 @@ public class RoadSection : MonoBehaviour
     /// </summary>
     public float TickDay(float accidentGain, float reductionPerCorrectDevice, float happinessPerRate)
     {
+        Debug.Log(
+    $"[{name}] Correct={CountCorrectDevices()} " +
+    $"Before={_sectionAccidentRate}"
+);
         _sectionAccidentRate += accidentGain;
         _sectionAccidentRate -= reductionPerCorrectDevice * CountCorrectDevices();
         _sectionAccidentRate = Mathf.Max(0f, _sectionAccidentRate);
+        Debug.Log(
+    $"[{name}] After={_sectionAccidentRate}"
+);
 
         return -_sectionAccidentRate * happinessPerRate;
     }

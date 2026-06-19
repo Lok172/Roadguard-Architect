@@ -2271,14 +2271,15 @@ MonoBehaviour:
   secondsPerDay: 2
   totalDays: 90
   safetyThreshold: 3
-  safetyMultiplier: 1.5
-  baseTaxPerDay: 100
+  safetyMultiplier: 2
+  baseTaxPerDay: 250
+  baselineDecayPerDay: 1
   lowAccidentThreshold: 3
   lowAccidentStreakRequired: 5
   lowAccidentBonusInterval: 3
   lowAccidentBonusMin: 3
   lowAccidentBonusMax: 7
-  devMode: 1
+  devMode: 0
   devHappiness: 100
   devMoney: 99999
   devTotalDays: 1000

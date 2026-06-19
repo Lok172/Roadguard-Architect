@@ -4,19 +4,17 @@ using UnityEngine;
 using UnityEngine.Serialization;
 
 // ─────────────────────────────────────────────────────────────────
-//  CAR MANAGER  (v8 — staggered spawn + directional/empty crashes)
+//  CAR MANAGER  (v10 — crash eligibility pool)
 //
-//  CHANGES vs v7:
-//    • SpawnInitialBatch now seeds ONE car per spawn point (Req 7);
-//      MaintainPopulationLoop ramps up to maxActiveCars one at a time.
-//    • Staged crashes only form on an EMPTY segment (CarCount == 0).
-//      If the preferred segment is occupied the search walks outward;
-//      if none is free the crash is cancelled (Req 5).
-//    • Crash blocking is DIRECTIONAL and DOWNSTREAM-only: the wreck
-//      blocks its own lane along the travel direction, never the
-//      segment behind it and never the opposite lane (Req 2).
-//    • Junction random-pick removed (CarAgent follows its predefined
-//      A* path through junctions).
+//  CHANGES vs v9:
+//    • Crash eligibility pool (Req 4 revised): generateCrash no
+//      longer force-spawns a crash every evaluation cycle. Instead,
+//      segments with generateCrash == true form an eligibility pool.
+//      Crashes are risk-based and only spawn on pool members. The
+//      flag stays on (not auto-cleared). If no segments are in the
+//      pool, the system falls back to evaluating any segment that
+//      has active traffic (original behaviour).
+//    • Tile-to-segment linking and staged crash spawning retained.
 // ─────────────────────────────────────────────────────────────────
 
 public class CarManager : MonoBehaviour
@@ -143,6 +141,12 @@ public class CarManager : MonoBehaviour
              "force-cleaned.")]
     [Min(1f)] public float crashImpactTimeout = 15f;
 
+    // ── Tile Linking (Req 5) ──────────────────
+    [Header("Tile Linking")]
+    [Tooltip("Maximum lateral distance (world units) from a segment centre-line " +
+             "for a tile to be considered part of that segment.")]
+    [Min(0.5f)] public float tileLinkMaxDistance = 3f;
+
     // ── Internal Pool ─────────────────────────
     private readonly Dictionary<int, Queue<CarAgent>> _pool =
         new Dictionary<int, Queue<CarAgent>>();
@@ -154,6 +158,9 @@ public class CarManager : MonoBehaviour
     private readonly List<float> _recentAccidents = new List<float>();
 
     private readonly List<RoadTile> _roadTiles = new List<RoadTile>();
+
+    // All segments in the scene (for generateCrash scanning + tile linking)
+    private readonly List<RoadSegment> _allSegments = new List<RoadSegment>();
 
     // ─────────────────────────────────────────
     //  LIFECYCLE
@@ -183,6 +190,11 @@ public class CarManager : MonoBehaviour
         _roadTiles.Clear();
         _roadTiles.AddRange(FindObjectsOfType<RoadTile>());
 
+        // ── Collect all segments and link tiles (Req 5) ──────────
+        _allSegments.Clear();
+        _allSegments.AddRange(FindObjectsOfType<RoadSegment>());
+        LinkTilesToSegments();
+
         BuildPool();
         SpawnInitialBatch();             // one car per spawn point (Req 7)
         StartCoroutine(RiskEvalLoop());
@@ -195,6 +207,27 @@ public class CarManager : MonoBehaviour
     {
         if (Instance == this) Instance = null;
         _cameraIsDragging = false;
+    }
+
+    // ─────────────────────────────────────────
+    //  TILE-TO-SEGMENT LINKING  (Req 5)
+    //
+    //  For each RoadSegment, scans all RoadTiles in the scene and
+    //  links those whose centre projects onto the segment within
+    //  tileLinkMaxDistance.  This creates the missing segment↔tile
+    //  relationship that CarAgent needs for device-aware stopping.
+    // ─────────────────────────────────────────
+
+    private void LinkTilesToSegments()
+    {
+        int totalLinked = 0;
+        foreach (var seg in _allSegments)
+        {
+            if (seg == null) continue;
+            seg.CollectNearbyTiles(tileLinkMaxDistance);
+            totalLinked += seg.LinkedTiles.Count;
+        }
+        Debug.Log($"[CarManager] Linked {totalLinked} tile(s) across {_allSegments.Count} segment(s).");
     }
 
     // ─────────────────────────────────────────
@@ -320,7 +353,6 @@ public class CarManager : MonoBehaviour
 
         if (goalCandidates.Count == 0)
         {
-            // Can't find a different goal — return agent to pool.
             ReturnCarToPool(agent);
             return;
         }
@@ -344,7 +376,7 @@ public class CarManager : MonoBehaviour
             if (seg == null) continue;
             var other = seg.Other(startNode);
             if (other == null) continue;
-            if (seg.IsBlockedToward(other)) continue;   // outgoing lane blocked — try another
+            if (seg.IsBlockedToward(other)) continue;
             var offset = seg.GetLaneOffsetVector(startNode, other);
             agent.transform.position = startNode.transform.position + offset;
             return;
@@ -401,22 +433,66 @@ public class CarManager : MonoBehaviour
     {
         var evaluatedSegments = new HashSet<RoadSegment>();
 
-        var snapshot = new List<CarAgent>(_active);
-        foreach (var agent in snapshot)
+        // ── Build the crash-eligible pool (segments with generateCrash ticked) ──
+        var crashPool = new List<RoadSegment>();
+        foreach (var seg in _allSegments)
         {
-            if (agent == null || agent.IsCrashCar) continue;
-            var seg = agent.CurrentSegment;
-            if (seg == null || seg.IsBlocked) continue;
-            if (evaluatedSegments.Contains(seg)) continue;
-            if (_crashInProgress.Contains(seg)) continue;
-            evaluatedSegments.Add(seg);
+            if (seg == null || !seg.generateCrash) continue;
+            crashPool.Add(seg);
+        }
 
-            float risk = seg.CalculateRisk(Mathf.Min(agent.baseSpeed, seg.speedLimit));
-            if (Random.value >= risk) continue;
+        // ── Risk-based evaluation — only on crash-eligible segments ──
+        //  If the pool is non-empty, restrict crash generation to those
+        //  segments. If the pool is empty, fall back to normal evaluation
+        //  on any segment that has an active car.
+        if (crashPool.Count > 0)
+        {
+            foreach (var seg in crashPool)
+            {
+                if (seg == null || seg.IsBlocked) continue;
+                if (evaluatedSegments.Contains(seg)) continue;
+                if (_crashInProgress.Contains(seg)) continue;
+                evaluatedSegments.Add(seg);
 
-            SpawnStagedCrash(seg);
+                // Use any car's speed for risk calc, or the segment's own speed limit.
+                float carSpeed = seg.speedLimit;
+                foreach (var car in seg.CarsOnSegment)
+                {
+                    if (car != null && !car.IsCrashCar)
+                    {
+                        carSpeed = Mathf.Min(car.baseSpeed, seg.speedLimit);
+                        break;
+                    }
+                }
 
-            Debug.Log($"[CarManager] Staged crash spawned on '{seg.segmentID}' (risk={risk:F2})");
+                float risk = seg.CalculateRisk(carSpeed);
+                if (Random.value >= risk) continue;
+
+                SpawnStagedCrash(seg);
+
+                Debug.Log($"[CarManager] Crash spawned on pool segment '{seg.segmentID}' (risk={risk:F2})");
+            }
+        }
+        else
+        {
+            // No crash pool — fall back to evaluating any segment with traffic.
+            var snapshot = new List<CarAgent>(_active);
+            foreach (var agent in snapshot)
+            {
+                if (agent == null || agent.IsCrashCar) continue;
+                var seg = agent.CurrentSegment;
+                if (seg == null || seg.IsBlocked) continue;
+                if (evaluatedSegments.Contains(seg)) continue;
+                if (_crashInProgress.Contains(seg)) continue;
+                evaluatedSegments.Add(seg);
+
+                float risk = seg.CalculateRisk(Mathf.Min(agent.baseSpeed, seg.speedLimit));
+                if (Random.value >= risk) continue;
+
+                SpawnStagedCrash(seg);
+
+                Debug.Log($"[CarManager] Staged crash spawned on '{seg.segmentID}' (risk={risk:F2})");
+            }
         }
     }
 
@@ -454,8 +530,10 @@ public class CarManager : MonoBehaviour
             from = towardsB ? riskSeg.intersectionA : riskSeg.intersectionB;
             to = towardsB ? riskSeg.intersectionB : riskSeg.intersectionA;
             float fallbackT = towardsB ? crashFrontT : (1f - crashFrontT);
-            if (!TryGetTileSpawnPosition(crashSeg, from, to, fallbackT, out frontPos))
-                return;
+            frontPos = GetCrashSpawnPosition(
+                crashSeg,
+                from,
+                to);
         }
 
         _crashInProgress.Add(crashSeg);
@@ -543,7 +621,6 @@ public class CarManager : MonoBehaviour
 
         for (int away = startAway; away <= maxAway; away++)
         {
-            // Try the preferred direction first, then the other, at this distance.
             for (int d = 0; d < 2; d++)
             {
                 bool ahead = (d == 0) ? preferAhead : !preferAhead;

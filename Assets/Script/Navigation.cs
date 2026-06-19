@@ -1,12 +1,22 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 
+//  ClickProxy — lightweight click forwarder added at runtime by Navigation.
+//  GetCurrentAction() lets MusicManager / LevelAudioManager wrap the existing
+//  action without losing the original navigation callback.
+
 public class ClickProxy : MonoBehaviour, IPointerClickHandler
 {
     private System.Action onClickAction;
+
     public void Setup(System.Action action) => onClickAction = action;
+
+    /// <summary>Returns the action currently stored in this proxy (may be null).</summary>
+    public System.Action GetCurrentAction() => onClickAction;
+
     public void OnPointerClick(PointerEventData eventData) => onClickAction?.Invoke();
 }
+
 public class Navigation : MonoBehaviour, IPointerClickHandler
 {
     [System.Serializable]
@@ -15,7 +25,7 @@ public class Navigation : MonoBehaviour, IPointerClickHandler
         [Tooltip("The GameObject you want to click (Can be an Image, Button, Sprite, or 3D Object)")]
         public GameObject clickableObject;
 
-        [SceneName] 
+        [SceneName]
         public string sceneName;
     }
 
@@ -35,7 +45,7 @@ public class Navigation : MonoBehaviour, IPointerClickHandler
         foreach (NavigationData data in navigationTargets)
         {
             if (data.clickableObject != null && data.clickableObject != gameObject)
-            { 
+            {
                 ClickProxy proxy = data.clickableObject.GetComponent<ClickProxy>();
                 if (proxy == null) proxy = data.clickableObject.AddComponent<ClickProxy>();
 
@@ -65,4 +75,3 @@ public class Navigation : MonoBehaviour, IPointerClickHandler
         }
     }
 }
-

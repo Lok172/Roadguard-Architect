@@ -49,6 +49,11 @@ public class GameManager : MonoBehaviour
     public float safetyMultiplier = 1.5f;
     public float baseTaxPerDay = 50f;
 
+    [Header("Baseline Accident Decay")]
+    [Tooltip("How much the baseline accident rate decreases each in-game day. " +
+             "Allows the accident rate to eventually reach 0.")]
+    [Min(0f)] public float baselineDecayPerDay = 1f;
+
     [Header("Low Accident Streak Bonus")]
     [Tooltip("Accident rate must stay strictly below this for the streak to count.")]
     public int lowAccidentThreshold = 3;
@@ -159,7 +164,7 @@ public class GameManager : MonoBehaviour
         StartCoroutine(DayTickRoutine());
 
         Debug.Log($"[GameManager] Level {level} started. Capital=RM{_capital} " +
-                  $"BaselineAccident={_baselineAccidentRate}" +
+                  $"BaselineAccident={_baselineAccidentRate} DecayPerDay={baselineDecayPerDay}" +
                   (devMode ? " [DEV MODE]" : ""));
     }
 
@@ -330,10 +335,17 @@ public class GameManager : MonoBehaviour
                     ModifyHappiness(sectionDelta);
             }
 
-            // 2) Update city aggregate rate.
+            // 2) Decay baseline accident rate toward zero.
+            if (baselineDecayPerDay > 0f && _baselineAccidentRate > 0)
+            {
+                _baselineAccidentRate -= Mathf.CeilToInt(baselineDecayPerDay);
+                _baselineAccidentRate = Mathf.Max(0, _baselineAccidentRate);
+            }
+
+            // 3) Update city aggregate rate.
             RecomputeCityAccidentRate();
 
-            // 3) Low-accident streak bonus.
+            // 4) Low-accident streak bonus.
             if (_accidentRate < lowAccidentThreshold)
             {
                 _consecutiveLowAccidentDays++;
@@ -355,7 +367,7 @@ public class GameManager : MonoBehaviour
                 _consecutiveLowAccidentDays = 0;
             }
 
-            // 4) Tax revenue.
+            // 5) Tax revenue.
             float tax = CalculateDailyTaxRevenue();
             ModifyCapital(tax);
 

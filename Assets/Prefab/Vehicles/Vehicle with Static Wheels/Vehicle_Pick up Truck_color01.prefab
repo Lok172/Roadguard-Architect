@@ -141,15 +141,18 @@ MonoBehaviour:
   trafficLightWaitN: 3
   speedBumpSpeed: 2
   speedBumpTransitionTime: 0.5
-  stopSignStopChance: 0.5
+  stopSignStopChance: 0.6
   stopSignDuration: 2
   blockedCheckInterval: 2
-  blockStopGap: 0.6
+  blockStopGap: 2
   laneTransitionDistance: 3
+  waitDuration: 2
+  turnAngleThreshold: 30
   _currentSpeed: 0
   _isCrashed: 0
   _isStopped: 0
   _isQueued: 0
+  _isTurning: 0
   _currentNode: {fileID: 0}
   _targetNode: {fileID: 0}
   _destination: {fileID: 0}

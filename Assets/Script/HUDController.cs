@@ -134,6 +134,7 @@ public class HUDController : MonoBehaviour
     {
         if (accidentText != null)
             accidentText.text = rate.ToString();
+        Debug.Log($"Accident rate updated: {rate}") ;
     }
 
     // "Day 58/90"  +  "28/5/2026" (today + days elapsed)

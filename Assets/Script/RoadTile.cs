@@ -7,7 +7,7 @@ using UnityEngine;
 // ─────────────────────────────────────────────────────────────────
 
 public enum TileType { Straight, Curve, TJunction, Intersection, Residential }
-public enum ZoneType { Residential, Commercial, Industrial, Highway }
+public enum ZoneType { Residential, TJunction, Crossroad }
 public enum TrafficDeviceType { None, StopSign, TrafficLight, SpeedBump }
 public enum PlacementResult { Success, AlreadyOccupied, DeviceNotAllowed, InsufficientFunds, PoorPlacement }
 
@@ -29,7 +29,7 @@ public static class DeviceData
     public struct DeviceStats
     {
         public float costRM;
-        public int accidentReduction;       // legacy (per-day system handles it)
+        public int accidentReduction;       // used by RoadSegment.RefreshDeviceReduction() for risk calc
         public float happinessDeltaGood;
         public float happinessDeltaPoor;
         public bool unsuitableInResidential;
@@ -141,11 +141,6 @@ public class RoadTile : MonoBehaviour
 
     private TileOverlay _overlay;
     public TileOverlay Overlay => _overlay;
-
-    // ── Legacy compile-compat ──
-    [HideInInspector] public int baseAccidentContribution = 0;
-    [HideInInspector] public int currentAccidentContribution = 0;
-    [HideInInspector] public Transform deviceSnapPoint;
 
     // ─────────────────────────────────────────
     //  UNITY LIFECYCLE

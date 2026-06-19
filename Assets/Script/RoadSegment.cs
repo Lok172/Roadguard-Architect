@@ -2,7 +2,22 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // ─────────────────────────────────────────────────────────────────
-//  ROAD SEGMENT
+//  ROAD SEGMENT  (v3 — generateCrash as eligibility pool)
+//
+//  NEW in v3:
+//    • generateCrash   (Req 4 revised): tick in Inspector to add
+//      this segment to the crash-eligible pool. Crashes only spawn
+//      on pool members during risk evaluation. The flag is NOT
+//      auto-cleared after a crash — it stays ticked until the user
+//      manually un-ticks it.
+//
+//  Retained from v2:    • isTurning        (Req 2): per-lane flag set by a turning car
+//      so that straight-going cars yield.
+//    • Linked tiles     (Req 5): ordered list of RoadTiles that sit
+//      on this segment. Populated at runtime by CarManager via
+//      CollectNearbyTiles(). Used by CarAgent to detect devices
+//      ahead and calculate a stop position one tile before the
+//      device tile, per travel direction.
 //
 //  Represents an undirected edge between two RoadIntersections.
 //  Attach to a GameObject placed between two intersections.
@@ -66,6 +81,53 @@ public class RoadSegment : MonoBehaviour
              "cars travelling B→A are displaced to their right as well (-offset in AB space). " +
              "Set to 0 to disable lane splitting.")]
     [Min(0f)] public float laneOffset = 0.5f;
+
+    // ── Segment Length Override ─────────────────
+    [Header("Segment Length Override")]
+    [Tooltip("When > 0, overrides the auto-calculated distance between " +
+             "intersections A and B. Affects lane-transition smoothness " +
+             "(longer = smoother turns), A* path cost, and risk calculations. " +
+             "Leave at 0 to use the real geometric distance.")]
+    [Min(0f)] public float overrideLength = 0f;
+
+    // ── Crash Generation (Req 4 — eligibility pool) ──
+    [Header("Crash Generation")]
+    [Tooltip("Tick this to add the segment to the crash-eligible pool. " +
+             "Crashes are generated probabilistically (risk-based) only on " +
+             "segments in this pool. The flag stays on — it is NOT auto-cleared " +
+             "after a crash spawns. Un-tick to remove from the pool.")]
+    public bool generateCrash = false;
+
+    // ── Turn Status (Req 2) ───────────────────
+    //  Per-lane flag set by a car that is currently turning into this
+    //  segment.  Straight-going cars check this before entering and
+    //  yield for WaitDuration if true.
+    [Header("Turn Status (runtime)")]
+    [SerializeField] private bool _isTurningAB = false;
+    [SerializeField] private bool _isTurningBA = false;
+
+    /// <summary>Is a car currently turning into the lane toward <paramref name="to"/>?</summary>
+    public bool GetIsTurning(RoadIntersection to)
+    {
+        if (to == intersectionB) return _isTurningAB;
+        if (to == intersectionA) return _isTurningBA;
+        return false;
+    }
+
+    /// <summary>Set/clear the turning flag for the lane toward <paramref name="to"/>.</summary>
+    public void SetIsTurning(RoadIntersection to, bool value)
+    {
+        if (to == intersectionB) _isTurningAB = value;
+        else if (to == intersectionA) _isTurningBA = value;
+    }
+
+    // ── Linked Tiles (Req 5) ──────────────────
+    //  RoadTiles that sit on this segment, ordered by their t-value
+    //  (normalised position along A→B).  Populated at runtime by
+    //  CarManager.LinkTilesToSegments() calling CollectNearbyTiles().
+    [Header("Linked Tiles (auto-populated at runtime)")]
+    [SerializeField] private List<RoadTile> _linkedTiles = new List<RoadTile>();
+    public IReadOnlyList<RoadTile> LinkedTiles => _linkedTiles;
 
     // ── Block / Accident State (DIRECTIONAL) ──
     //  A segment carries two opposing lanes:
@@ -170,11 +232,19 @@ public class RoadSegment : MonoBehaviour
 
     private void RecalcLength()
     {
-        if (intersectionA != null && intersectionB != null)
+        if (overrideLength > 0f)
+        {
+            _length = overrideLength;
+        }
+        else if (intersectionA != null && intersectionB != null)
+        {
             _length = Vector3.Distance(intersectionA.transform.position,
                                        intersectionB.transform.position);
+        }
         else
+        {
             _length = 1f;
+        }
     }
 
     // ─────────────────────────────────────────
@@ -325,21 +395,177 @@ public class RoadSegment : MonoBehaviour
     // ─────────────────────────────────────────
 
     /// <summary>
-    /// Re-sums device risk reduction from all child RoadTiles.
+    /// Re-sums device risk reduction from all child RoadTiles AND linked tiles.
     /// Call this whenever a device is placed or removed on any child tile.
     /// </summary>
     public void RefreshDeviceReduction()
     {
         _deviceRiskReduction = 0f;
+
+        // Original: child tiles
         foreach (var tile in GetComponentsInChildren<RoadTile>())
         {
             foreach (var slot in tile.Slots)
             {
                 var stats = DeviceData.Get(slot.deviceType);
-                // accidentReduction maps to risk reduction (normalise to [0..1] range).
                 _deviceRiskReduction += stats.accidentReduction * 0.01f;
             }
         }
+
+        // NEW: also count linked tiles (Req 5) that aren't already children
+        foreach (var tile in _linkedTiles)
+        {
+            if (tile == null) continue;
+            // Skip if tile is already a child (avoid double-counting)
+            if (tile.transform.IsChildOf(transform)) continue;
+            foreach (var slot in tile.Slots)
+            {
+                var stats = DeviceData.Get(slot.deviceType);
+                _deviceRiskReduction += stats.accidentReduction * 0.01f;
+            }
+        }
+    }
+
+    // ─────────────────────────────────────────
+    //  LINKED TILES  (Req 5)
+    //
+    //  RoadTiles are spatially linked to their nearest segment at
+    //  runtime.  Tiles are ordered by their normalised t-value
+    //  along A→B so that CarAgent can walk the list in travel
+    //  direction and find devices ahead.
+    // ─────────────────────────────────────────
+
+    /// <summary>
+    /// Register a tile with this segment.  Tiles are kept sorted by
+    /// their A→B t-value.
+    /// </summary>
+    public void RegisterLinkedTile(RoadTile tile)
+    {
+        if (tile == null || _linkedTiles.Contains(tile)) return;
+        _linkedTiles.Add(tile);
+        SortTilesByT();
+    }
+
+    public void UnregisterLinkedTile(RoadTile tile)
+    {
+        _linkedTiles.Remove(tile);
+    }
+
+    private void SortTilesByT()
+    {
+        if (intersectionA == null || intersectionB == null) return;
+        _linkedTiles.Sort((a, b) =>
+            GetTAtPosition(a.transform.position)
+                .CompareTo(GetTAtPosition(b.transform.position)));
+    }
+
+    /// <summary>
+    /// Scans ALL RoadTiles in the scene and links those whose centre
+    /// projects onto this segment within <paramref name="maxLateralDist"/>
+    /// world units.  Called once at startup by CarManager.
+    /// </summary>
+    public void CollectNearbyTiles(float maxLateralDist = 3f)
+    {
+        _linkedTiles.Clear();
+        if (intersectionA == null || intersectionB == null) return;
+
+        foreach (var tile in Object.FindObjectsOfType<RoadTile>())
+        {
+            if (tile == null) continue;
+            float t = GetTAtPosition(tile.transform.position);
+            // Must be within the segment span (exclude endpoints)
+            if (t < 0.005f || t > 0.995f) continue;
+
+            Vector3 projected = GetPositionAt(t);
+            Vector3 diff = tile.transform.position - projected;
+            diff.y = 0f; // ignore height difference
+            if (diff.magnitude <= maxLateralDist)
+                _linkedTiles.Add(tile);
+        }
+        SortTilesByT();
+
+        if (_linkedTiles.Count > 0)
+            Debug.Log($"[RoadSegment] {segmentID}: linked {_linkedTiles.Count} tile(s).");
+    }
+
+    /// <summary>
+    /// For a car travelling from→to, finds the first tile with a traffic
+    /// device AHEAD in the travel direction and returns the stop position
+    /// (the centre of the tile immediately BEFORE the device tile, offset
+    /// into the correct lane).
+    ///
+    /// Returns true if a device was found, with out-params set:
+    ///   stopPos     — world position where the car should stop
+    ///   deviceType  — what kind of device was found
+    ///   deviceTile  — the tile holding the device (for debug / wait logic)
+    /// </summary>
+    public bool TryGetDeviceStopInfo(
+        RoadIntersection from,
+        RoadIntersection to,
+        out Vector3 stopPos,
+        out TrafficDeviceType deviceType,
+        out RoadTile deviceTile)
+    {
+        stopPos = Vector3.zero;
+        deviceType = TrafficDeviceType.None;
+        deviceTile = null;
+
+        if (_linkedTiles.Count == 0 || from == null || to == null) return false;
+
+        bool travelAtoB = (from == intersectionA && to == intersectionB);
+        bool travelBtoA = (from == intersectionB && to == intersectionA);
+        if (!travelAtoB && !travelBtoA) return false;
+
+        // Build a travel-order list (A→B is already sorted ascending t)
+        List<RoadTile> ordered;
+        if (travelAtoB)
+        {
+            ordered = new List<RoadTile>(_linkedTiles);
+        }
+        else
+        {
+            ordered = new List<RoadTile>(_linkedTiles);
+            ordered.Reverse();
+        }
+
+        // Walk tiles in travel order and find the first with a placed device
+        for (int i = 0; i < ordered.Count; i++)
+        {
+            RoadTile tile = ordered[i];
+            if (tile == null || tile.PlacedCount == 0) continue;
+
+            // Determine which device type is on this tile
+            TrafficDeviceType foundType = TrafficDeviceType.None;
+            foreach (var slot in tile.Slots)
+            {
+                if (slot.deviceType != TrafficDeviceType.None)
+                {
+                    foundType = slot.deviceType;
+                    break;
+                }
+            }
+            if (foundType == TrafficDeviceType.None) continue;
+
+            deviceType = foundType;
+            deviceTile = tile;
+
+            // Stop position = centre of the tile BEFORE this one in travel order
+            Vector3 laneOffset = GetLaneOffsetVector(from, to);
+            if (i > 0)
+            {
+                RoadTile stopTile = ordered[i - 1];
+                stopPos = stopTile.transform.position + laneOffset;
+            }
+            else
+            {
+                // Device is on the very first tile — stop at entry point
+                stopPos = from.transform.position + laneOffset;
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     // ─────────────────────────────────────────
@@ -476,10 +702,18 @@ public class RoadSegment : MonoBehaviour
         }
 
         Vector3 mid = (intersectionA.transform.position + intersectionB.transform.position) * 0.5f;
+
+        string extra = "";
+        if (generateCrash) extra += " [CRASH POOL]";
+        if (_isTurningAB) extra += " [TURN→B]";
+        if (_isTurningBA) extra += " [TURN→A]";
+        if (_linkedTiles.Count > 0) extra += $" Tiles:{_linkedTiles.Count}";
+        if (overrideLength > 0f) extra += $" OvrLen:{overrideLength:F1}";
+
         UnityEditor.Handles.Label(
             mid + Vector3.up * 0.5f,
             $"{segmentID}\nCars:{_carsOnSegment.Count}  Risk:{CalculateRisk(speedLimit):F2}" +
-            (IsBlocked ? " [BLOCKED]" : "")
+            (IsBlocked ? " [BLOCKED]" : "") + extra
         );
     }
 #endif

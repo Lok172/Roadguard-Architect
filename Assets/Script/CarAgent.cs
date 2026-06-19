@@ -3,22 +3,23 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // ─────────────────────────────────────────────────────────────────
-//  CAR AGENT  (v8 — predefined path + directional crash stops)
+//  CAR AGENT  (v9 — turn/straight yield + device-aware stopping)
 //
-//  KEY CHANGES vs v7:
-//    • Predefined path: the A* route is computed ONCE at spawn and
-//      followed verbatim. No real-time A* during the journey.
-//    • Junction: a car at an isJunction node no longer picks a random
-//      direction — it continues along its predefined path like any
-//      other node.
-//    • Directional crash stop: a car only stops for a crash that
-//      blocks ITS OWN lane (the direction it is travelling). The
-//      opposite lane keeps flowing. A car stops either while on a
-//      blocked segment (in front of the wreck) or at the intersection
-//      when the next segment in its lane is blocked.
-//    • Jam propagation: when a car stops to wait, it blocks the lane
-//      of the segment it just came from, so the queue grows backward;
-//      it releases that block once it moves on.
+//  KEY CHANGES vs v8:
+//    • Turn / straight yield (Req 1–3):
+//        – Turning car: if nextSeg.CarCount == 0, waits waitDuration
+//          seconds before entering; sets seg.isTurning while turning.
+//        – Straight car: if nextSeg.isTurning, waits waitDuration.
+//        – Both share the same waitDuration field (default 2s).
+//    • Device-aware stopping (Req 5):
+//        – On entering a segment, queries seg.TryGetDeviceStopInfo()
+//          for traffic devices on linked tiles ahead.
+//        – Stops one tile BEFORE the device tile (in travel direction).
+//        – Handles TrafficLight (stop + wait), SpeedBump (slow down),
+//          StopSign (chance-based stop) via segment-level detection
+//          instead of relying on OnTriggerEnter tile colliders.
+//        – The car-following raycast naturally queues cars behind
+//          a stopped vehicle.
 // ─────────────────────────────────────────────────────────────────
 
 public class CarAgent : MonoBehaviour
@@ -74,12 +75,24 @@ public class CarAgent : MonoBehaviour
              "values. Creates an inclined merge path instead of an abrupt jump.")]
     [Min(0.5f)] public float laneTransitionDistance = 3f;
 
+    // ── Turn / Straight Wait (Req 1–3) ────────
+    [Header("Turn / Straight Wait")]
+    [Tooltip("Seconds to wait when a turning car finds an empty segment (Req 1) " +
+             "or when a straight-going car yields to a turning car (Req 2). " +
+             "Shared between both behaviours (Req 3).")]
+    [Min(0f)] public float waitDuration = 2f;
+
+    [Tooltip("Angle (degrees) between incoming and outgoing direction above which " +
+             "the manoeuvre counts as a turn. Below this threshold = going straight.")]
+    [Range(5f, 90f)] public float turnAngleThreshold = 30f;
+
     // ── Runtime (read-only Inspector) ─────────
     [Header("Runtime (read-only)")]
     [SerializeField] private float _currentSpeed;
     [SerializeField] private bool _isCrashed;
     [SerializeField] private bool _isStopped;
     [SerializeField] private bool _isQueued;
+    [SerializeField] private bool _isTurning;          // NEW: currently executing a turn
     [SerializeField] private RoadIntersection _currentNode;
     [SerializeField] private RoadIntersection _targetNode;
     [SerializeField] private RoadIntersection _destination;
@@ -112,14 +125,21 @@ public class CarAgent : MonoBehaviour
     private Vector3 _newLaneOffsetVec;
 
     // ── Jam / backward-block state (Req 3) ────
-    // The segment this car most recently finished travelling (its
-    // approach to the node it is currently stopped at).
     private RoadSegment _arrivalSegment;
     private RoadIntersection _arrivalFrom;
-    // The lane this car has blocked while waiting (so the jam grows
-    // backward). Released when the car moves on or despawns.
     private RoadSegment _jamBlockSeg;
     private RoadIntersection _jamBlockToward;
+
+    // ── Device stop state (Req 5) ─────────────
+    //  When a device is detected on a tile ahead, the car drives to
+    //  a stop position one tile before the device, then waits.
+    private bool _hasDeviceStop;
+    private Vector3 _deviceStopPos;
+    private TrafficDeviceType _deviceStopType;
+
+    // ── Turn-flag cleanup ─────────────────────
+    private RoadSegment _turningOnSeg;
+    private RoadIntersection _turningToward;
 
     // ─────────────────────────────────────────
     //  INITIALISE  (normal traffic)
@@ -145,6 +165,7 @@ public class CarAgent : MonoBehaviour
         _isCrashed = false;
         _isStopped = false;
         _isQueued = false;
+        _isTurning = false;
         _inArrival = false;
         _isCrashRear = false;
         _isCrashFront = false;
@@ -159,6 +180,9 @@ public class CarAgent : MonoBehaviour
         _jamBlockToward = null;
         _arrivalSegment = null;
         _arrivalFrom = null;
+        _hasDeviceStop = false;
+        _turningOnSeg = null;
+        _turningToward = null;
 
         _destination = goal;
         _path = RoadGraph.FindPath(_currentNode, _destination);
@@ -233,6 +257,7 @@ public class CarAgent : MonoBehaviour
         _isCrashed = false;
         _isStopped = false;
         _isQueued = false;
+        _isTurning = false;
         _inArrival = false;
         _isCrashRear = false;
         _isCrashFront = false;
@@ -245,6 +270,9 @@ public class CarAgent : MonoBehaviour
         _path.Clear();
         _pathIndex = 1;
         _processingTiles.Clear();
+        _hasDeviceStop = false;
+        _turningOnSeg = null;
+        _turningToward = null;
     }
 
     // ─────────────────────────────────────────
@@ -346,6 +374,7 @@ public class CarAgent : MonoBehaviour
         _isCrashed = true;
         _isStopped = true;
         ReleaseJamBlock();
+        ReleaseTurnFlag();
         StopAllCoroutines();
 
         if (_crashPartner != null)
@@ -354,12 +383,10 @@ public class CarAgent : MonoBehaviour
             _crashPartner._isCrashed = true;
             _crashPartner._isStopped = true;
             _crashPartner.ReleaseJamBlock();
+            _crashPartner.ReleaseTurnFlag();
             _crashPartner.StopAllCoroutines();
         }
 
-        // Segment blocking is owned entirely by CarManager.OnCrashImpact,
-        // which blocks the correct lane(s) directionally (Req 2). Doing it
-        // here too would double-block and leak the opposite lane.
         CarManager.Instance?.OnCrashImpact(this, _crashPartner, _crashSegment);
     }
 
@@ -403,6 +430,32 @@ public class CarAgent : MonoBehaviour
 
         Vector3 laneTarget = LaneTargetFor(_targetNode, _segmentFrom, _segmentTo, _currentSegment);
 
+        // ── Device stop (Req 5) — stop one tile before a traffic device ──
+        if (_hasDeviceStop)
+        {
+            Vector3 toStop = _deviceStopPos - transform.position;
+            float dDist = toStop.magnitude;
+
+            if (dDist <= arrivalThreshold)
+            {
+                // Arrived at device stop position — execute the device effect
+                transform.position = _deviceStopPos;
+                _hasDeviceStop = false;
+                StartCoroutine(DeviceStopRoutine(_deviceStopType));
+                return;
+            }
+
+            // Drive toward device stop, apply car following
+            speed = ApplyCarFollowing(speed);
+
+            if (toStop.sqrMagnitude > 0.01f)
+                transform.rotation = Quaternion.LookRotation(toStop.normalized, Vector3.up);
+
+            float dStep = speed * Time.deltaTime;
+            transform.position += toStop.normalized * Mathf.Min(dStep, dDist);
+            return;
+        }
+
         // ── Stop for a crash scene — preserve forward direction ──
         if (TryGetBlockStopPoint(laneTarget, out Vector3 bStop))
         {
@@ -433,6 +486,41 @@ public class CarAgent : MonoBehaviour
         else
         {
             transform.position += dir.normalized * moveStep;
+        }
+    }
+
+    // ─────────────────────────────────────────
+    //  DEVICE STOP ROUTINE (Req 5)
+    //
+    //  Executes the appropriate wait/slowdown for the device type,
+    //  then resumes normal movement.
+    // ─────────────────────────────────────────
+
+    private IEnumerator DeviceStopRoutine(TrafficDeviceType deviceType)
+    {
+        switch (deviceType)
+        {
+            case TrafficDeviceType.TrafficLight:
+                Debug.Log($"{name}: stopping for TrafficLight (segment-level), wait={trafficLightWaitN}s");
+                _isStopped = true;
+                yield return new WaitForSeconds(trafficLightWaitN);
+                _isStopped = false;
+                break;
+
+            case TrafficDeviceType.SpeedBump:
+                Debug.Log($"{name}: slowing for SpeedBump (segment-level)");
+                yield return StartCoroutine(SpeedBumpRoutine());
+                break;
+
+            case TrafficDeviceType.StopSign:
+                if (Random.value <= stopSignStopChance)
+                {
+                    Debug.Log($"{name}: stopping for StopSign (segment-level), wait={stopSignDuration}s");
+                    _isStopped = true;
+                    yield return new WaitForSeconds(stopSignDuration);
+                    _isStopped = false;
+                }
+                break;
         }
     }
 
@@ -544,6 +632,10 @@ public class CarAgent : MonoBehaviour
 
         _currentNode = node;
         _inArrival = false;
+        _hasDeviceStop = false; // clear any leftover device stop
+
+        // Clear the turning flag if we had one
+        ReleaseTurnFlag();
 
         // ── Reached destination → despawn ────────────────────────
         if (node == _destination)
@@ -553,11 +645,8 @@ public class CarAgent : MonoBehaviour
         }
 
         // ── Follow the predefined A* path (junctions included) ────
-        //  Req 1: no real-time A*. A junction node is treated like any
-        //  other node — the car simply takes the next hop on its path.
         if (_pathIndex >= _path.Count)
         {
-            // Path exhausted without reaching destination — despawn.
             Debug.LogWarning($"[CarAgent] {name}: path exhausted before reaching " +
                              $"{_destination?.intersectionID}. Despawning.");
             Despawn();
@@ -569,6 +658,8 @@ public class CarAgent : MonoBehaviour
 
     // ─────────────────────────────────────────
     //  PATH ADVANCE
+    //
+    //  Now includes turn/straight yield logic (Req 1–3).
     // ─────────────────────────────────────────
 
     private void AdvanceAlongPath()
@@ -590,39 +681,187 @@ public class CarAgent : MonoBehaviour
         }
 
         // ── Lane blocked in OUR direction → stop and wait ────────
-        //  Req 4: stop at the intersection only when the next segment is
-        //  blocked in the lane we are about to travel. A block on the
-        //  opposite lane does not stop us. No rerouting (Req 1).
         if (seg.IsBlockedToward(nextNode))
         {
             Debug.Log($"{name}: lane→{nextNode.intersectionID} on {seg.segmentID} blocked — stopping.");
-            AcquireJamBlock();   // Req 3: extend the jam backward
+            AcquireJamBlock();
             StartCoroutine(WaitForSegmentUnblock(seg, nextNode));
             return;
         }
 
-        EnterSegment(seg, _currentNode, nextNode);
-        _pathIndex++;
+        // ── Turn / Straight yield (Req 1–3) ─────────────────────
+        bool isTurning = IsTurningAtNode(_currentNode, nextNode);
+
+        if (isTurning)
+        {
+            // Req 1: turning car checks seg.CarCount before entering.
+            // If the segment is empty, wait waitDuration to yield / check.
+            if (seg.CarCount == 0)
+            {
+                Debug.Log($"{name}: turning into empty {seg.segmentID} — waiting {waitDuration}s");
+                StartCoroutine(TurnWaitThenEnter(seg, _currentNode, nextNode));
+                return;
+            }
+            else
+            {
+                // Segment has cars, enter immediately but set isTurning flag
+                AcquireTurnFlag(seg, nextNode);
+                EnterSegment(seg, _currentNode, nextNode);
+                _pathIndex++;
+            }
+        }
+        else
+        {
+            // Req 2: straight-going car checks seg.isTurning.
+            // If another car is currently turning onto this segment, wait.
+            if (seg.GetIsTurning(nextNode))
+            {
+                Debug.Log($"{name}: going straight but {seg.segmentID} has a turning car — waiting {waitDuration}s");
+                StartCoroutine(StraightWaitThenEnter(seg, _currentNode, nextNode));
+                return;
+            }
+
+            EnterSegment(seg, _currentNode, nextNode);
+            _pathIndex++;
+        }
+
         Debug.Log(
-    $"{name} moving from {_currentNode?.intersectionID} " +
-    $"to {_targetNode?.intersectionID}");
+            $"{name} moving from {_currentNode?.intersectionID} " +
+            $"to {_targetNode?.intersectionID}" +
+            (isTurning ? " [TURN]" : " [STRAIGHT]"));
+    }
+
+    // ─────────────────────────────────────────
+    //  TURN DETECTION  (Req 1)
+    //
+    //  Compares the incoming travel direction to the outgoing
+    //  direction.  Angle above turnAngleThreshold ⇒ turn.
+    // ─────────────────────────────────────────
+
+    private bool IsTurningAtNode(RoadIntersection current, RoadIntersection next)
+    {
+        // First hop — no incoming direction yet, treat as straight.
+        if (_arrivalSegment == null || _arrivalFrom == null) return false;
+
+        Vector3 inDir = (current.transform.position - _arrivalFrom.transform.position).normalized;
+        Vector3 outDir = (next.transform.position - current.transform.position).normalized;
+
+        if (inDir.sqrMagnitude < 0.001f || outDir.sqrMagnitude < 0.001f)
+            return false;
+
+        float angle = Vector3.Angle(inDir, outDir);
+        return angle > turnAngleThreshold;
+    }
+
+    // ─────────────────────────────────────────
+    //  TURN / STRAIGHT WAIT COROUTINES  (Req 1–3)
+    // ─────────────────────────────────────────
+
+    /// <summary>
+    /// Req 1: A turning car waits waitDuration when the segment is empty,
+    /// then sets isTurning and enters.
+    /// </summary>
+    private IEnumerator TurnWaitThenEnter(RoadSegment seg, RoadIntersection current, RoadIntersection next)
+    {
+        _isStopped = true;
+        yield return new WaitForSeconds(waitDuration);
+        _isStopped = false;
+
+        if (!_active || _isCrashed) yield break;
+
+        // Re-check: segment might have been blocked during our wait
+        if (seg.IsBlockedToward(next))
+        {
+            AcquireJamBlock();
+            StartCoroutine(WaitForSegmentUnblock(seg, next));
+            yield break;
+        }
+
+        AcquireTurnFlag(seg, next);
+        EnterSegment(seg, current, next);
+        _pathIndex++;
+
+        Debug.Log($"{name}: turn-wait done, entering {seg.segmentID} [TURN]");
+    }
+
+    /// <summary>
+    /// Req 2: A straight-going car yields while isTurning is set.
+    /// </summary>
+    private IEnumerator StraightWaitThenEnter(RoadSegment seg, RoadIntersection current, RoadIntersection next)
+    {
+        _isStopped = true;
+        yield return new WaitForSeconds(waitDuration);
+        _isStopped = false;
+
+        if (!_active || _isCrashed) yield break;
+
+        // Re-check: segment might still have a turning car or got blocked
+        if (seg.IsBlockedToward(next))
+        {
+            AcquireJamBlock();
+            StartCoroutine(WaitForSegmentUnblock(seg, next));
+            yield break;
+        }
+
+        // If still turning, wait again
+        if (seg.GetIsTurning(next))
+        {
+            StartCoroutine(StraightWaitThenEnter(seg, current, next));
+            yield break;
+        }
+
+        EnterSegment(seg, current, next);
+        _pathIndex++;
+
+        Debug.Log($"{name}: straight-wait done, entering {seg.segmentID} [STRAIGHT]");
+    }
+
+    // ─────────────────────────────────────────
+    //  TURN FLAG MANAGEMENT  (Req 2)
+    // ─────────────────────────────────────────
+
+    private void AcquireTurnFlag(RoadSegment seg, RoadIntersection toward)
+    {
+        _isTurning = true;
+        _turningOnSeg = seg;
+        _turningToward = toward;
+        seg.SetIsTurning(toward, true);
+
+        // Auto-clear after waitDuration so the flag doesn't stay forever
+        StartCoroutine(ClearTurnFlagAfterDelay(seg, toward));
+    }
+
+    private void ReleaseTurnFlag()
+    {
+        if (_turningOnSeg != null && _turningToward != null)
+        {
+            _turningOnSeg.SetIsTurning(_turningToward, false);
+        }
+        _isTurning = false;
+        _turningOnSeg = null;
+        _turningToward = null;
+    }
+
+    private IEnumerator ClearTurnFlagAfterDelay(RoadSegment seg, RoadIntersection toward)
+    {
+        yield return new WaitForSeconds(waitDuration);
+
+        // Only clear if this car still owns the flag
+        if (_turningOnSeg == seg && _turningToward == toward)
+            ReleaseTurnFlag();
     }
 
     // ─────────────────────────────────────────
     //  JAM BLOCK  (Req 3 — backward propagation)
-    //
-    //  When this car stops to wait for a crash-blocked lane ahead, it
-    //  blocks the lane of the segment it just came from, so cars behind
-    //  it queue up too. The block is released when the car moves on.
     // ─────────────────────────────────────────
 
     private void AcquireJamBlock()
     {
-        if (_jamBlockSeg != null) return;                 // already holding one
+        if (_jamBlockSeg != null) return;
         if (_arrivalSegment == null || _currentNode == null) return;
 
         _jamBlockSeg = _arrivalSegment;
-        _jamBlockToward = _currentNode;                   // travelled _arrivalFrom → _currentNode
+        _jamBlockToward = _currentNode;
         _jamBlockSeg.SetBlockedToward(_jamBlockToward, true,
                                       _currentNode.transform.position, hasPosition: true);
     }
@@ -662,14 +901,26 @@ public class CarAgent : MonoBehaviour
         {
             _inLaneTransition = false;
         }
+
+        // ── Device detection (Req 5) ─────────────────────────────
+        //  Query the segment's linked tiles for any traffic device
+        //  ahead of us.  If found, set a stop position so the car
+        //  drives to one tile before the device and executes the
+        //  device effect (traffic light wait, speed bump, stop sign).
+        _hasDeviceStop = false;
+        if (seg.TryGetDeviceStopInfo(from, next,
+                out Vector3 dStopPos, out TrafficDeviceType dType, out RoadTile dTile))
+        {
+            _hasDeviceStop = true;
+            _deviceStopPos = dStopPos;
+            _deviceStopType = dType;
+            Debug.Log($"{name}: device {dType} detected on {seg.segmentID} " +
+                      $"(tile {dTile?.tileID}), will stop one tile before.");
+        }
     }
 
     // ─────────────────────────────────────────
     //  BLOCKED SEGMENT — STOP & WAIT
-    //
-    //  The car stops in place until the blocked segment is
-    //  cleared, then resumes along the same A* path.
-    //  No rerouting is performed.
     // ─────────────────────────────────────────
 
     private IEnumerator WaitForSegmentUnblock(RoadSegment seg, RoadIntersection towardNode)
@@ -692,7 +943,12 @@ public class CarAgent : MonoBehaviour
     }
 
     // ─────────────────────────────────────────
-    //  TILE TRIGGER
+    //  TILE TRIGGER  (legacy — kept for backward compatibility)
+    //
+    //  NOTE: In v9, device effects are primarily handled via
+    //  segment-level tile linking (Req 5).  These triggers still
+    //  fire if colliders overlap, but the segment-level system
+    //  provides the reliable path.
     // ─────────────────────────────────────────
 
     private void OnTriggerEnter(Collider other)
@@ -712,7 +968,12 @@ public class CarAgent : MonoBehaviour
 
     private IEnumerator HandleTileEntry(RoadTile tile)
     {
+        Debug.Log($"ENTER TILE: {tile.name}");
+
         float lightWait = GetTrafficLightWait(tile);
+
+        Debug.Log($"TrafficLightWait={lightWait}");
+
         if (lightWait > 0f)
         {
             _isStopped = true;
@@ -753,7 +1014,13 @@ public class CarAgent : MonoBehaviour
         }
 
         if (best == 0) return 0f;
+        Debug.Log(
+    $"NW={tile.HasDeviceAtCorner(TileCorner.NorthWest, TrafficDeviceType.TrafficLight)} " +
+    $"NE={tile.HasDeviceAtCorner(TileCorner.NorthEast, TrafficDeviceType.TrafficLight)} " +
+    $"SW={tile.HasDeviceAtCorner(TileCorner.SouthWest, TrafficDeviceType.TrafficLight)} " +
+    $"SE={tile.HasDeviceAtCorner(TileCorner.SouthEast, TrafficDeviceType.TrafficLight)}");
         return best == 2 ? trafficLightWaitN : trafficLightWaitN * 2f;
+
     }
 
     private IEnumerator SpeedBumpRoutine()
@@ -788,6 +1055,7 @@ public class CarAgent : MonoBehaviour
         _isCrashed = true;
         _isStopped = true;
         ReleaseJamBlock();
+        ReleaseTurnFlag();
         StopAllCoroutines();
 
         if (_currentSegment != null) _currentSegment.SetBlocked(true);
@@ -834,14 +1102,17 @@ public class CarAgent : MonoBehaviour
         _isCrashed = false;
         _isStopped = false;
         _isQueued = false;
+        _isTurning = false;
         _inArrival = false;
         _isCrashRear = false;
         _isCrashFront = false;
         _crashPartner = null;
         _inLaneTransition = false;
         _processingTiles.Clear();
+        _hasDeviceStop = false;
 
-        ReleaseJamBlock();          // never leave a lane blocked behind us
+        ReleaseJamBlock();
+        ReleaseTurnFlag();
         _arrivalSegment = null;
         _arrivalFrom = null;
 
