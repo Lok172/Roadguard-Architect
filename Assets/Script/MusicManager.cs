@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -84,6 +85,16 @@ public class MusicManager : MonoBehaviour
     [Tooltip("Slider that controls SFX volume.")]
     [SerializeField] private Slider sfxSlider;
 
+    [Header("Volume Percentage Labels")]
+    [Tooltip("Text that shows the Master volume as a percentage, e.g. '75%'.")]
+    [SerializeField] private TextMeshProUGUI masterPercentText;
+
+    [Tooltip("Text that shows the Music volume as a percentage, e.g. '75%'.")]
+    [SerializeField] private TextMeshProUGUI musicPercentText;
+
+    [Tooltip("Text that shows the SFX volume as a percentage, e.g. '75%'.")]
+    [SerializeField] private TextMeshProUGUI sfxPercentText;
+
     [Header("BGM Transition")]
     [SerializeField] private float crossFadeDuration = 0.5f;
 
@@ -96,18 +107,18 @@ public class MusicManager : MonoBehaviour
     private AudioSource _sliderSource;
 
     private float _masterVolume = 1f;
-    private float _musicVolume  = 1f;
-    private float _sfxVolume    = 1f;
+    private float _musicVolume = 1f;
+    private float _sfxVolume = 1f;
 
-    private string _currentScene  = null;
+    private string _currentScene = null;
     private AudioClip _currentBGM = null;
 
     private Coroutine _fadeCoroutine;
 
     // PlayerPrefs keys
     private const string PREF_MASTER = "Vol_Master";
-    private const string PREF_MUSIC  = "Vol_Music";
-    private const string PREF_SFX    = "Vol_SFX";
+    private const string PREF_MUSIC = "Vol_Music";
+    private const string PREF_SFX = "Vol_SFX";
 
     // =========================================================================
     //  Unity lifecycle
@@ -117,13 +128,12 @@ public class MusicManager : MonoBehaviour
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
-        DontDestroyOnLoad(gameObject);
 
         CreateAudioSources();
         LoadVolumes();
     }
 
-    private void OnEnable()  => StartCoroutine(PollPageManager());
+    private void OnEnable() => StartCoroutine(PollPageManager());
     private void OnDisable() => StopAllCoroutines();
 
     // =========================================================================
@@ -132,6 +142,14 @@ public class MusicManager : MonoBehaviour
 
     private IEnumerator PollPageManager()
     {
+        // FIX (Issue 5): skip the very first frame so that GameManager.Start()
+        // and LevelAudioManager deferred coroutines have already run before we
+        // detect the initial scene and kick off a BGM crossfade.  Without this
+        // skip, PollPageManager fired on frame 0, started CrossFadeBGM, which
+        // reset _sfxSource state mid-init — causing the game-start SFX to play
+        // into an uninitialised AudioSource and then silently disappear.
+        yield return null;
+
         while (true)
         {
             PageManager pm = Object.FindFirstObjectByType<PageManager>();
@@ -283,8 +301,24 @@ public class MusicManager : MonoBehaviour
             {
                 string n = s.gameObject.name.ToLower();
                 if (masterSlider == null && n.Contains("master")) masterSlider = s;
-                if (musicSlider  == null && n.Contains("music"))  musicSlider  = s;
-                if (sfxSlider    == null && n.Contains("sfx"))    sfxSlider    = s;
+                if (musicSlider == null && n.Contains("music")) musicSlider = s;
+                if (sfxSlider == null && n.Contains("sfx")) sfxSlider = s;
+            }
+        }
+
+        // Try to find percentage labels in scene if inspector references are empty
+        if (masterPercentText == null || musicPercentText == null || sfxPercentText == null)
+        {
+            TextMeshProUGUI[] allText = Object.FindObjectsByType<TextMeshProUGUI>(FindObjectsSortMode.None);
+            foreach (TextMeshProUGUI t in allText)
+            {
+                string n = t.gameObject.name.ToLower();
+                bool looksLikePercent = n.Contains("percent") || n.Contains("%") || n.Contains("value") || n.Contains("pct");
+                if (!looksLikePercent) continue;
+
+                if (masterPercentText == null && n.Contains("master")) masterPercentText = t;
+                if (musicPercentText == null && n.Contains("music")) musicPercentText = t;
+                if (sfxPercentText == null && n.Contains("sfx")) sfxPercentText = t;
             }
         }
 
@@ -306,6 +340,11 @@ public class MusicManager : MonoBehaviour
             sfxSlider.onValueChanged.RemoveAllListeners();
             sfxSlider.onValueChanged.AddListener(SetSFXVolume);
         }
+
+        // Initialise the percentage labels to match the loaded volumes.
+        UpdatePercentLabel(masterPercentText, _masterVolume);
+        UpdatePercentLabel(musicPercentText, _musicVolume);
+        UpdatePercentLabel(sfxPercentText, _sfxVolume);
     }
 
     // =========================================================================
@@ -318,6 +357,7 @@ public class MusicManager : MonoBehaviour
         _masterVolume = Mathf.Clamp01(value);
         ApplyVolumes();
         PlayerPrefs.SetFloat(PREF_MASTER, _masterVolume);
+        UpdatePercentLabel(masterPercentText, _masterVolume);
     }
 
     /// <summary>Music volume (0–1). Only scales BGM.</summary>
@@ -326,6 +366,7 @@ public class MusicManager : MonoBehaviour
         _musicVolume = Mathf.Clamp01(value);
         ApplyVolumes();
         PlayerPrefs.SetFloat(PREF_MUSIC, _musicVolume);
+        UpdatePercentLabel(musicPercentText, _musicVolume);
     }
 
     /// <summary>SFX volume (0–1). Scales button / slider / level sounds.</summary>
@@ -334,12 +375,13 @@ public class MusicManager : MonoBehaviour
         _sfxVolume = Mathf.Clamp01(value);
         ApplyVolumes();
         PlayerPrefs.SetFloat(PREF_SFX, _sfxVolume);
+        UpdatePercentLabel(sfxPercentText, _sfxVolume);
     }
 
     // ── Convenience getters ──────────────────────────────────────────────────
     public float MasterVolume => _masterVolume;
-    public float MusicVolume  => _musicVolume;
-    public float SFXVolume    => _sfxVolume;
+    public float MusicVolume => _musicVolume;
+    public float SFXVolume => _sfxVolume;
 
     // =========================================================================
     //  Play helpers (public so LevelAudioManager can reuse SFX source)
@@ -364,15 +406,138 @@ public class MusicManager : MonoBehaviour
             _sliderSource.PlayOneShot(sliderClip, _masterVolume * _sfxVolume);
     }
 
+    /// <summary>
+    /// Mutes or unmutes the Slider AudioSource without changing its volume value.
+    /// Called by LevelAudioManager.SetSFXPaused when the game is paused.
+    ///
+    /// NOTE: _sfxSource is intentionally NOT muted here because it is also used
+    /// by HookPausePanel to play button-click sounds while the pause panel is
+    /// open. Muting it would silence every button inside the pause panel.
+    /// LevelAudioManager already mutes its own dedicated _loopSource (the car
+    /// driving ambient) independently, so level SFX loops are still silenced.
+    /// </summary>
+    public void SetSFXMuted(bool muted)
+    {
+        // _sfxSource is kept unmuted so pause-panel button clicks still play.
+        _sliderSource.mute = muted;
+    }
+
+    /// <summary>
+    /// FIX (Req 4): Called by PauseMenuController when the pause panel opens.
+    /// Wires every Button and volume Slider inside the panel so that:
+    ///   • Buttons play the button click sound.
+    ///   • Sliders named "master", "music", or "sfx" drive the matching volume
+    ///     AND update their paired percentage TextMeshPro label.
+    ///
+    /// Uses Time.unscaledDeltaTime-safe AudioSource.PlayOneShot so sounds work
+    /// even though Time.timeScale is 0 while the panel is visible.
+    /// </summary>
+    public void HookPausePanel(GameObject panel)
+    {
+        if (panel == null) return;
+
+        // ── Buttons — click sound ────────────────────────────────────────────
+        foreach (Button btn in panel.GetComponentsInChildren<Button>(true))
+        {
+            // Capture to avoid closure capturing the loop variable.
+            Button captured = btn;
+            // Remove then add to prevent stacking on repeated opens.
+            captured.onClick.RemoveListener(OnPausePanelButtonClick);
+            captured.onClick.AddListener(OnPausePanelButtonClick);
+        }
+
+        // ── Volume Sliders — drive volume + label ────────────────────────────
+        foreach (Slider slider in panel.GetComponentsInChildren<Slider>(true))
+        {
+            string n = slider.gameObject.name.ToLower();
+
+            if (n.Contains("master"))
+            {
+                slider.value = _masterVolume;
+                slider.onValueChanged.RemoveAllListeners();
+                slider.onValueChanged.AddListener(SetMasterVolume);
+                // Pair label
+                TextMeshProUGUI lbl = FindSiblingLabel(slider);
+                if (lbl != null) UpdatePercentLabel(lbl, _masterVolume);
+                Slider masterRef = slider; TextMeshProUGUI masterLbl = lbl;
+                slider.onValueChanged.AddListener(v => UpdatePercentLabel(masterLbl, v));
+            }
+            else if (n.Contains("music"))
+            {
+                slider.value = _musicVolume;
+                slider.onValueChanged.RemoveAllListeners();
+                slider.onValueChanged.AddListener(SetMusicVolume);
+                TextMeshProUGUI lbl = FindSiblingLabel(slider);
+                if (lbl != null) UpdatePercentLabel(lbl, _musicVolume);
+                slider.onValueChanged.AddListener(v => UpdatePercentLabel(lbl, v));
+            }
+            else if (n.Contains("sfx"))
+            {
+                slider.value = _sfxVolume;
+                slider.onValueChanged.RemoveAllListeners();
+                slider.onValueChanged.AddListener(SetSFXVolume);
+                TextMeshProUGUI lbl = FindSiblingLabel(slider);
+                if (lbl != null) UpdatePercentLabel(lbl, _sfxVolume);
+                slider.onValueChanged.AddListener(v => UpdatePercentLabel(lbl, v));
+            }
+        }
+    }
+
+    // Called via RemoveListener/AddListener — needs a stable method reference.
+    private void OnPausePanelButtonClick()
+    {
+        // Try to find a clip that matches the current scene first.
+        // If none match (e.g. the level scene isn't in any ButtonSoundEntry list),
+        // fall back to the very first available clip so pause-panel buttons always
+        // make a sound regardless of which scene is active.
+        AudioClip clip = null;
+        AudioClip firstAvailable = null;
+
+        foreach (ButtonSoundEntry entry in buttonSoundEntries)
+        {
+            if (entry.clip == null) continue;
+            if (firstAvailable == null) firstAvailable = entry.clip;
+            if (_currentScene != null && entry.sceneNames.Contains(_currentScene))
+            {
+                clip = entry.clip;
+                break;
+            }
+        }
+
+        // Use scene-matched clip, or the universal fallback.
+        PlayButtonSound(clip != null ? clip : firstAvailable);
+    }
+
+    /// <summary>
+    /// Looks for a TextMeshProUGUI sibling (or child of the slider's parent)
+    /// whose name contains "percent", "%", "value", or "pct" to use as the label.
+    /// </summary>
+    private TextMeshProUGUI FindSiblingLabel(Slider slider)
+    {
+        if (slider.transform.parent == null) return null;
+        foreach (TextMeshProUGUI t in slider.transform.parent.GetComponentsInChildren<TextMeshProUGUI>(true))
+        {
+            string n = t.gameObject.name.ToLower();
+            if (n.Contains("percent") || n.Contains("%") || n.Contains("value") || n.Contains("pct"))
+                return t;
+        }
+        return null;
+    }
+
     // =========================================================================
     //  Internal helpers
     // =========================================================================
 
     private void CreateAudioSources()
     {
-        _bgmSource    = CreateSource("BGM",    loop: true,  volume: 1f);
-        _sfxSource    = CreateSource("SFX",    loop: false, volume: 1f);
+        _bgmSource = CreateSource("BGM", loop: true, volume: 1f);
+        _sfxSource = CreateSource("SFX", loop: false, volume: 1f);
         _sliderSource = CreateSource("Slider", loop: false, volume: 1f);
+
+        // SFX must play even when Time.timeScale = 0 (pause panel open).
+        // ignoreListenerPause keeps the AudioListener active for these sources.
+        _sfxSource.ignoreListenerPause = true;
+        _sliderSource.ignoreListenerPause = true;
     }
 
     private AudioSource CreateSource(string label, bool loop, float volume)
@@ -381,7 +546,7 @@ public class MusicManager : MonoBehaviour
         go.transform.SetParent(transform);
         AudioSource src = go.AddComponent<AudioSource>();
         src.playOnAwake = false;
-        src.loop   = loop;
+        src.loop = loop;
         src.volume = volume;
         return src;
     }
@@ -392,15 +557,22 @@ public class MusicManager : MonoBehaviour
         if (_fadeCoroutine == null)
             _bgmSource.volume = _masterVolume * _musicVolume;
 
-        _sfxSource.volume    = _masterVolume * _sfxVolume;
+        _sfxSource.volume = _masterVolume * _sfxVolume;
         _sliderSource.volume = _masterVolume * _sfxVolume;
     }
 
     private void LoadVolumes()
     {
         _masterVolume = PlayerPrefs.GetFloat(PREF_MASTER, 1f);
-        _musicVolume  = PlayerPrefs.GetFloat(PREF_MUSIC,  1f);
-        _sfxVolume    = PlayerPrefs.GetFloat(PREF_SFX,    1f);
+        _musicVolume = PlayerPrefs.GetFloat(PREF_MUSIC, 1f);
+        _sfxVolume = PlayerPrefs.GetFloat(PREF_SFX, 1f);
         ApplyVolumes();
+    }
+
+    /// <summary>Writes "75%" style text into a percentage label. Safe to call with a null label.</summary>
+    private void UpdatePercentLabel(TextMeshProUGUI label, float volume01)
+    {
+        if (label == null) return;
+        label.text = $"{Mathf.RoundToInt(volume01 * 100f)}%";
     }
 }

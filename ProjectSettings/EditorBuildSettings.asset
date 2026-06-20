@@ -24,11 +24,20 @@ EditorBuildSettings:
     path: Assets/Scenes/LV1.unity
     guid: 9f32036a93978c64eba15fd73f098302
   - enabled: 1
+    path: Assets/Scenes/LV2.unity
+    guid: 7e1eb8cc54f121746a88353fbaafb1f0
+  - enabled: 1
     path: Assets/Scenes/Settings.unity
     guid: f414819320df9ff4995e31bb6794b4cb
   - enabled: 1
     path: Assets/Scenes/LvUI & Manager.unity
     guid: d9efee38d8bfdc645a1c4a86ef4de419
+  - enabled: 1
+    path: Assets/Scenes/User Select.unity
+    guid: 66474061896067f47b2e3ae06cb19654
+  - enabled: 1
+    path: Assets/Scenes/LevelResult.unity
+    guid: 2acbc7da3a4f8294993a3106c430acb6
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

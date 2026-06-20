@@ -29,7 +29,7 @@ public static class DeviceData
     public struct DeviceStats
     {
         public float costRM;
-        public int accidentReduction;       // used by RoadSegment.RefreshDeviceReduction() for risk calc
+        public int accidentReduction;
         public float happinessDeltaGood;
         public float happinessDeltaPoor;
         public bool unsuitableInResidential;
@@ -63,6 +63,15 @@ public class PlacedSlot
 
 // ─────────────────────────────────────────────────────────────────
 //  ROAD TILE
+//
+//  CHANGES (this version):
+//    • Req 3 — TrafficLight limit on End tiles raised from 1 → 2.
+//    • Req 4 — StopSign limit on End tiles raised from 2 → 4,
+//      and IsSlotCorrect now accepts ALL four corners (not just the
+//      far-end pair) for stop signs, so every corner placement is
+//      scored as correct.
+//    • maxDevices default raised to 5 to accommodate 4 corner devices
+//      + 1 center device without hitting the hard cap.
 // ─────────────────────────────────────────────────────────────────
 
 [RequireComponent(typeof(BoxCollider))]
@@ -84,8 +93,9 @@ public class RoadTile : MonoBehaviour
 
     // ── Multi-Device ──────────────────────────
     [Header("Multi-Device")]
-    [Tooltip("Hard cap on devices for this tile (corners + center).")]
-    [Range(1, 4)] public int maxDevices = 4;
+    [Tooltip("Hard cap on devices for this tile (corners + center).\n" +
+             "Raised to 5 to allow 4 stop-sign corners + 1 center device.")]
+    [Range(1, 5)] public int maxDevices = 5;
 
     // ── Geometry ──────────────────────────────
     [Header("Corner Layout")]
@@ -197,8 +207,8 @@ public class RoadTile : MonoBehaviour
             TileCorner.NorthEast => new Vector3(center.x + hx, y, center.z + hz),
             TileCorner.SouthEast => new Vector3(center.x + hx, y, center.z - hz),
             TileCorner.SouthWest => new Vector3(center.x - hx, y, center.z - hz),
-            TileCorner.Center => new Vector3(center.x, y, center.z),
-            _ => new Vector3(center.x, y, center.z),
+            TileCorner.Center    => new Vector3(center.x,      y, center.z),
+            _                    => new Vector3(center.x,      y, center.z),
         };
     }
 
@@ -210,22 +220,29 @@ public class RoadTile : MonoBehaviour
         BoxCollider col = GetComponent<BoxCollider>();
         Vector3 c = col != null ? col.center : Vector3.zero;
 
-        bool east = (local.x - c.x) >= 0f;
+        bool east  = (local.x - c.x) >= 0f;
         bool north = (local.z - c.z) >= 0f;
 
         if (north && !east) return TileCorner.NorthWest;
-        if (north && east) return TileCorner.NorthEast;
+        if (north &&  east) return TileCorner.NorthEast;
         if (!north && east) return TileCorner.SouthEast;
         return TileCorner.SouthWest;
     }
 
+    // ─────────────────────────────────────────
+    //  CORRECTNESS TABLE
+    //
+    //  Req 3: End + TrafficLight limit raised from 1 → 2.
+    //  Req 4: End + StopSign limit raised from 2 → 4.
+    // ─────────────────────────────────────────
+
     /// <summary>The "correct" count cap per (segment, device) pair.</summary>
     public int GetCorrectCountLimit(TrafficDeviceType d) => (segmentType, d) switch
     {
-        (TileSegmentType.Middle, TrafficDeviceType.SpeedBump) => 1,
-        (TileSegmentType.End, TrafficDeviceType.StopSign) => 2,
-        (TileSegmentType.End, TrafficDeviceType.SpeedBump) => 1,
-        (TileSegmentType.End, TrafficDeviceType.TrafficLight) => 1,
+        (TileSegmentType.Middle,       TrafficDeviceType.SpeedBump)    => 1,
+        (TileSegmentType.End,          TrafficDeviceType.StopSign)     => 4,   // REQ 4: was 2
+        (TileSegmentType.End,          TrafficDeviceType.SpeedBump)    => 1,
+        (TileSegmentType.End,          TrafficDeviceType.TrafficLight) => 2,   // REQ 3: was 1
         (TileSegmentType.Intersection, TrafficDeviceType.TrafficLight) => 4,
         _ => 0
     };
@@ -233,12 +250,20 @@ public class RoadTile : MonoBehaviour
     /// <summary>
     /// True if this slot is a CORRECT placement: right type, right corner,
     /// and within the count limit.
+    ///
+    /// REQ 4 change: StopSign on End tiles is correct at ANY of the four
+    /// corners (not just the far-end pair), because all four corners are now
+    /// valid and the limit is 4.
+    ///
+    /// REQ 3 change: TrafficLight on End tiles accepts the two far-end corners
+    /// as before, but now up to 2 can be placed (one per far-end corner).
     /// </summary>
     public bool IsSlotCorrect(PlacedSlot slot)
     {
         int limit = GetCorrectCountLimit(slot.deviceType);
         if (limit <= 0) return false;
 
+        // Determine this slot's order-index among all slots of the same type.
         int orderIdx = 0;
         bool found = false;
         for (int i = 0; i < _slots.Count; i++)
@@ -256,15 +281,30 @@ public class RoadTile : MonoBehaviour
 
             case TrafficDeviceType.StopSign:
                 if (segmentType != TileSegmentType.End) return false;
-                return IsAtFarEnd(slot.corner);
+                // REQ 4: any of the four corners is correct on an End tile.
+                return slot.corner == TileCorner.NorthWest
+                    || slot.corner == TileCorner.NorthEast
+                    || slot.corner == TileCorner.SouthEast
+                    || slot.corner == TileCorner.SouthWest;
 
             case TrafficDeviceType.TrafficLight:
                 if (segmentType == TileSegmentType.End)
-                    return IsAtFarEnd(slot.corner);
+                {
+                    // REQ 3: up to 2, each must be at a far-end corner and unique.
+                    if (!IsAtFarEnd(slot.corner)) return false;
+                    // Ensure no earlier light is at the same corner.
+                    foreach (var earlier in _slots)
+                    {
+                        if (earlier == slot) break;
+                        if (earlier.deviceType == TrafficDeviceType.TrafficLight
+                            && earlier.corner == slot.corner)
+                            return false;
+                    }
+                    return true;
+                }
 
                 if (segmentType == TileSegmentType.Intersection)
                 {
-                    // Must be at a UNIQUE corner vs all earlier lights.
                     foreach (var earlier in _slots)
                     {
                         if (earlier == slot) break;
@@ -294,14 +334,9 @@ public class RoadTile : MonoBehaviour
     }
 
     // ─────────────────────────────────────────
-    //  CORNER DEVICE QUERIES  (used by CarAgent for traffic-device reactions)
+    //  CORNER DEVICE QUERIES
     // ─────────────────────────────────────────
 
-    /// <summary>
-    /// Returns true if the given corner has a device of exactly <paramref name="type"/> placed on it.
-    /// Used by CarAgent to check individual corners for traffic-light edge logic
-    /// and for speed-bump center-slot detection.
-    /// </summary>
     public bool HasDeviceAtCorner(TileCorner corner, TrafficDeviceType type)
     {
         foreach (var s in _slots)
@@ -309,10 +344,6 @@ public class RoadTile : MonoBehaviour
         return false;
     }
 
-    /// <summary>
-    /// Returns true if ANY slot on this tile has a device of <paramref name="type"/>,
-    /// regardless of corner. Used by CarAgent for stop-sign reaction.
-    /// </summary>
     public bool HasAnyDeviceOfType(TrafficDeviceType type)
     {
         foreach (var s in _slots)
@@ -321,16 +352,11 @@ public class RoadTile : MonoBehaviour
     }
 
     // ─────────────────────────────────────────
-    //  OVERLAY  (v3 — updated state names)
+    //  OVERLAY
     // ─────────────────────────────────────────
 
-    /// <summary>
-    /// Determines which overlay state this tile should show for a
-    /// given active device type.
-    /// </summary>
     public OverlayState GetOverlayState(TrafficDeviceType device)
     {
-        // No device selected → show availability status.
         if (device == TrafficDeviceType.None)
             return isOccupied ? OverlayState.Occupied : OverlayState.Available;
 
@@ -351,9 +377,9 @@ public class RoadTile : MonoBehaviour
         }
 
         if (GetCorrectCountLimit(device) <= 0)
-            return OverlayState.NotSuitable;       // was PoorPlacement
+            return OverlayState.NotSuitable;
 
-        return OverlayState.Suitable;               // was Valid
+        return OverlayState.Suitable;
     }
 
     public void RefreshOverlay(TrafficDeviceType activeDevice = TrafficDeviceType.None)
@@ -370,23 +396,19 @@ public class RoadTile : MonoBehaviour
     {
         if (device == TrafficDeviceType.SpeedBump)
         {
-            // SpeedBump occupies the CENTER slot only — never count-capped by corner limit.
             if (corner != TileCorner.Center) return PlacementResult.DeviceNotAllowed;
             if (IsCornerOccupied(TileCorner.Center)) return PlacementResult.AlreadyOccupied;
-            // Still respect a hard overall cap (e.g. if maxDevices == 1 on a tiny tile).
-            // Count cap only applies when ALL slots including center would be exceeded.
-            // Corner slots are separate, so only block if center is already taken (handled above).
         }
         else
         {
-            // Corner devices: block if no more CORNER slots are available.
             int cornerCount = 0;
             foreach (var s in _slots)
                 if (s.corner != TileCorner.Center) cornerCount++;
-            int maxCorners = maxDevices; // maxDevices governs corner cap for non-bump devices
+            int maxCorners = maxDevices;
             if (cornerCount >= maxCorners) return PlacementResult.AlreadyOccupied;
 
-            if (corner == TileCorner.Center || corner == TileCorner.None) return PlacementResult.DeviceNotAllowed;
+            if (corner == TileCorner.Center || corner == TileCorner.None)
+                return PlacementResult.DeviceNotAllowed;
             if (IsCornerOccupied(corner)) return PlacementResult.AlreadyOccupied;
         }
 
@@ -396,18 +418,27 @@ public class RoadTile : MonoBehaviour
         if (playerCapital < DeviceData.GetCost(device))
             return PlacementResult.InsufficientFunds;
 
+        // ── REQ 3 / REQ 4 capacity guard ────────────────────────────────────
+        // If the correct-count limit is already reached for this device type,
+        // treat any additional placement as AlreadyOccupied (plays "Failed"
+        // sound) rather than PoorPlacement, because the tile is genuinely full
+        // for that device category.
+        int limit = GetCorrectCountLimit(device);
+        if (limit > 0)
+        {
+            int existingOfType = 0;
+            foreach (var s in _slots)
+                if (s.deviceType == device) existingOfType++;
+            if (existingOfType >= limit)
+                return PlacementResult.AlreadyOccupied;
+        }
+
         if (GetCorrectCountLimit(device) <= 0)
             return PlacementResult.PoorPlacement;
 
         return PlacementResult.Success;
     }
 
-    /// <summary>
-    /// Place a device at a specific corner.
-    /// The caller (PlacementManager) creates the GameObject and handles its
-    /// visual setup (sprite, scale, billboard).  This method only parents,
-    /// positions, and records the slot.
-    /// </summary>
     public PlacementResult PlaceDevice(
         TrafficDeviceType device,
         TileCorner corner,
@@ -427,19 +458,17 @@ public class RoadTile : MonoBehaviour
 
         PlacedSlot slot = new PlacedSlot
         {
-            corner = corner,
-            deviceType = device,
+            corner       = corner,
+            deviceType   = device,
             deviceObject = deviceObject
         };
         _slots.Add(slot);
 
-        // Parent & position — scale / rotation left to the creator.
         deviceObject.transform.SetParent(transform, worldPositionStays: false);
         deviceObject.transform.localPosition = GetCornerLocalPosition(corner);
 
         costSpent = DeviceData.GetCost(device);
 
-        // Section threshold
         if (_section != null)
         {
             float thresholdPenalty = _section.CheckOverThresholdPenalty();
@@ -499,10 +528,10 @@ public class RoadTile : MonoBehaviour
 
         Color baseColor = segmentType switch
         {
-            TileSegmentType.Middle => new Color(0.6f, 0.6f, 0.6f, 0.20f),
-            TileSegmentType.End => new Color(0.2f, 0.6f, 1.0f, 0.25f),
+            TileSegmentType.Middle       => new Color(0.6f, 0.6f, 0.6f, 0.20f),
+            TileSegmentType.End          => new Color(0.2f, 0.6f, 1.0f, 0.25f),
             TileSegmentType.Intersection => new Color(1.0f, 0.6f, 0.2f, 0.25f),
-            _ => new Color(0.5f, 0.5f, 0.5f, 0.20f)
+            _                            => new Color(0.5f, 0.5f, 0.5f, 0.20f)
         };
 
         Gizmos.matrix = transform.localToWorldMatrix;
@@ -513,12 +542,14 @@ public class RoadTile : MonoBehaviour
         Gizmos.DrawWireCube(col.center, col.size);
 
         TileCorner[] all = { TileCorner.NorthWest, TileCorner.NorthEast,
-                             TileCorner.SouthEast, TileCorner.SouthWest };
+                             TileCorner.SouthEast,  TileCorner.SouthWest };
         foreach (var c in all)
         {
+            // REQ 4: all corners are valid for stop signs, so show them all
+            // as green dots (not just far-end) to match the new correctness rule.
             Gizmos.color = IsAtFarEnd(c)
                 ? new Color(0f, 1f, 0f, 0.9f)
-                : new Color(1f, 0.2f, 0.2f, 0.6f);
+                : new Color(0f, 0.8f, 0.4f, 0.7f);   // was red — now teal to reflect allowed
             Gizmos.DrawSphere(GetCornerLocalPosition(c), 0.15f);
         }
 

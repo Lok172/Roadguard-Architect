@@ -146,6 +146,10 @@ public class GameManager : MonoBehaviour
     {
         StopAllCoroutines();
 
+        // Always resume normal time when a level (re)starts — guards against a
+        // previous Game Over / Victory leaving the game frozen.
+        Time.timeScale = 1f;
+
         LevelConfig cfg = GetLevelConfig(level);
 
         _capital = cfg.startCapitalRM;
@@ -386,7 +390,10 @@ public class GameManager : MonoBehaviour
             _gameRunning = false;
             StopAllCoroutines();
             Debug.Log("[GameManager] VICTORY — Accident rate = 0!");
+            LevelProgress.MarkLevelCleared(currentLevel);
+            LevelAudioManager.Instance?.PlayWinGame();
             OnVictory?.Invoke();
+            Time.timeScale = 0f;   // freeze cars, day tick, crash spawning — everything stops
         }
     }
 
@@ -396,7 +403,9 @@ public class GameManager : MonoBehaviour
         _gameRunning = false;
         StopAllCoroutines();
         Debug.Log("[GameManager] GAME OVER");
+        LevelAudioManager.Instance?.PlayGameOver();
         OnGameOver?.Invoke();
+        Time.timeScale = 0f;   // freeze cars, day tick, crash spawning — everything stops
     }
 
     // ─────────────────────────────────────────

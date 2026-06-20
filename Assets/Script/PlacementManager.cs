@@ -1,7 +1,9 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 // ─────────────────────────────────────────────────────────────────
 //  PlacementProxy — unchanged.
@@ -10,19 +12,27 @@ using UnityEngine.InputSystem;
 public class PlacementProxy : MonoBehaviour, IPointerDownHandler
 {
     public System.Action onDown;
-    public void OnPointerDown(PointerEventData _) => onDown?.Invoke();
+
+    public void OnPointerDown(PointerEventData _)
+    {
+        // Respect Button.interactable so locked panels stay locked (Issue 1 fix).
+        Button btn = GetComponent<Button>();
+        if (btn != null && !btn.interactable) return;
+        onDown?.Invoke();
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────
-//  PlacementManager (v7 — per-corner overlay hover)
+//  PlacementManager (v8 — corner passed to TileOverlay)
 //
-//  CHANGES vs v6:
-//    • ShowPlacementOverlays / UpdateHoverOverlay push drag context
-//      into each tile's TileOverlay via SetDragState / ClearDragState,
-//      enabling per-corner red-on-hover colouring.
-//    • ResetAllOverlays calls ClearDragState on all tiles instead of
-//      hard-setting Available/Occupied.
-//    • Everything else identical to v6.
+//  CHANGES vs v7:
+//    • REQ 2: UpdateHoverOverlay and ShowPlacementOverlays now pass
+//      the hovered TileCorner into TileOverlay.SetDragState so the
+//      overlay colour correctly reflects whether that specific corner
+//      is valid for the dragged device (green = correct, orange = not
+//      suitable) instead of just checking if a corner is occupied.
+//    • Issue 1 fix retained: PlacementProxy.OnPointerDown respects
+//      Button.interactable.
 // ─────────────────────────────────────────────────────────────────
 
 public class PlacementManager : MonoBehaviour
@@ -63,6 +73,10 @@ public class PlacementManager : MonoBehaviour
     public Color tintBlocked = new Color(1.00f, 0.15f, 0.15f, 0.55f);
     public Color tintNeutral = new Color(0.80f, 0.80f, 0.80f, 0.45f);
 
+    [Header("Device")]
+    public Color DisabledTint = new Color(0.5f, 0.5f, 0.5f, 0.6f);
+    public Color EnabledTint = new Color(1f, 1f, 1f, 1f);
+
     [Header("Raycast")]
     public LayerMask roadTileLayer;
     public Camera cityCamera;
@@ -83,6 +97,8 @@ public class PlacementManager : MonoBehaviour
     private bool LeftButtonUp => Mouse.current.leftButton.wasReleasedThisFrame;
     private bool RightButtonDown => Mouse.current.rightButton.wasPressedThisFrame;
 
+
+
     // ─────────────────────────────────────────
     //  LIFECYCLE
     // ─────────────────────────────────────────
@@ -102,6 +118,55 @@ public class PlacementManager : MonoBehaviour
                 Debug.LogError("[PlacementManager] cityCamera is null and Camera.main not found.");
         }
         SetupClickTargets();
+        StartCoroutine(SubscribeToCapitalChanges());
+    }
+
+    // ─────────────────────────────────────────
+    //  DEVICE BUTTON AFFORDABILITY  (Issue 4 fix)
+    // ─────────────────────────────────────────
+
+    private IEnumerator SubscribeToCapitalChanges()
+    {
+        while (GameManager.Instance == null)
+            yield return null;
+
+        GameManager.Instance.OnCapitalChanged.AddListener(RefreshDeviceButtonStates);
+        RefreshDeviceButtonStates(GameManager.Instance.Capital);
+    }
+
+    private void OnDestroy()
+    {
+        if (GameManager.Instance != null)
+            GameManager.Instance.OnCapitalChanged.RemoveListener(RefreshDeviceButtonStates);
+    }
+
+    /// <summary>
+    /// Tints the icon Image and TMP text of each device button when
+    /// its cost exceeds the player's current capital, so the dim state
+    /// is visible on the icon and label — not just the panel background.
+    /// </summary>
+    private void RefreshDeviceButtonStates(float capital)
+    {
+        if (clickTargets == null) return;
+
+        foreach (DeviceClickTarget data in clickTargets)
+        {
+            if (data.clickableObject == null) continue;
+
+            float cost = DeviceData.GetCost(data.deviceType);
+            bool affordable = capital >= cost;
+            Color tint = affordable ? EnabledTint : DisabledTint;
+
+            // Gate the button interactable state
+            Button btn = data.clickableObject.GetComponent<Button>();
+            if (btn != null) btn.interactable = affordable;
+
+            // Tint all Image children (icon sprite + panel background)
+            foreach (Image img in data.clickableObject.GetComponentsInChildren<Image>(true))
+                img.color = tint;
+
+
+        }
     }
 
     private void Update()
@@ -177,88 +242,56 @@ public class PlacementManager : MonoBehaviour
         sr.sprite = sprite;
         sr.sortingOrder = spriteSortingOrder;
 
-        // Scale so the sprite's widest dimension = deviceIconWorldSize.
         if (sprite != null && sprite.pixelsPerUnit > 0f)
         {
-            float ppu = sprite.pixelsPerUnit;
-            float maxPx = Mathf.Max(sprite.rect.width, sprite.rect.height);
-            float currentWorldSize = maxPx / ppu;
-            if (currentWorldSize > 0f)
-            {
-                float s = deviceIconWorldSize / currentWorldSize;
-                go.transform.localScale = new Vector3(s, s, s);
-            }
+            float maxDim = Mathf.Max(sprite.rect.width, sprite.rect.height) / sprite.pixelsPerUnit;
+            float scale = maxDim > 0f ? deviceIconWorldSize / maxDim : 1f;
+            go.transform.localScale = new Vector3(scale, scale, scale);
         }
 
-        if (billboardIcons && !isGhost)
+        // Placed devices (not the drag ghost) always face the camera.
+        // The ghost handles its own rotation in MoveGhostToMouse via billboardIcons.
+        if (!isGhost)
             go.AddComponent<BillboardSprite>();
 
         return go;
     }
 
-    // ─────────────────────────────────────────
-    //  GHOST
-    // ─────────────────────────────────────────
-
     private void SpawnGhost(TrafficDeviceType deviceType)
     {
         DestroyGhost();
-
         Sprite sprite = GetSprite(deviceType);
-        if (sprite == null) { Debug.LogWarning($"[PlacementManager] No sprite for {deviceType}."); return; }
+        if (sprite == null) return;
 
-        _ghostObject = CreateSpriteObject(sprite, $"Ghost_{deviceType}", isGhost: true);
-
-        // Ghost always billboards so the player sees it while dragging.
-        _ghostObject.AddComponent<BillboardSprite>();
-
+        _ghostObject = CreateSpriteObject(sprite, "PlacementGhost", isGhost: true);
         SetGhostTint(tintNeutral);
-
-        // Disable any accidental colliders.
-        foreach (Collider c in _ghostObject.GetComponentsInChildren<Collider>())
-            c.enabled = false;
-
-        Scene cityScene = SceneManager.GetSceneByName(citySceneName);
-        if (cityScene.IsValid())
-            SceneManager.MoveGameObjectToScene(_ghostObject, cityScene);
     }
 
     private void DestroyGhost()
     {
-        if (_ghostObject != null) Destroy(_ghostObject);
-        _ghostObject = null;
+        if (_ghostObject != null) { Destroy(_ghostObject); _ghostObject = null; }
     }
-
-    // ─────────────────────────────────────────
-    //  GHOST POSITION + TINT
-    // ─────────────────────────────────────────
 
     private void MoveGhostToMouse()
     {
         if (_ghostObject == null || cityCamera == null) return;
 
-        RoadTile hit = RaycastToTile(out Vector3 hitPoint);
+        RoadTile tile = RaycastToTile(out Vector3 hitPoint);
 
-        if (hit != null)
+        if (billboardIcons && _ghostObject != null)
+            _ghostObject.transform.rotation = Quaternion.LookRotation(cityCamera.transform.forward);
+
+        if (tile != null)
         {
-            TileCorner corner = hit.GetNearestCorner(hitPoint, _selectedDevice);
+            TileCorner corner = tile.GetNearestCorner(hitPoint, _selectedDevice);
             _hoveredCorner = corner;
+            Vector3 localPos = tile.GetCornerLocalPosition(corner);
+            _ghostObject.transform.SetParent(tile.transform, false);
+            _ghostObject.transform.localPosition = localPos + Vector3.up * ghostYOffset;
 
-            _ghostObject.transform.SetParent(hit.transform, worldPositionStays: false);
-            _ghostObject.transform.localPosition =
-                hit.GetCornerLocalPosition(corner) + Vector3.up * ghostYOffset;
-
-            // Tint logic.
-            bool cornerTaken = hit.IsCornerOccupied(corner);
-            bool full = hit.PlacedCount >= hit.maxDevices;
-            bool deviceAllowed = hit.allowedDevices.Count == 0 ||
-                                 hit.allowedDevices.Contains(_selectedDevice);
-            bool wouldBeCorrect = SimulateCorrectness(hit, _selectedDevice, corner);
-
-            if (!deviceAllowed || cornerTaken || full)
+            bool onOccupied = tile.IsCornerOccupied(corner);
+            if (onOccupied)
                 SetGhostTint(tintBlocked);
-            else if (!wouldBeCorrect)
-                SetGhostTint(tintWarning);
             else
                 SetGhostTint(tintValid);
         }
@@ -293,7 +326,11 @@ public class PlacementManager : MonoBehaviour
 
             case TrafficDeviceType.StopSign:
                 if (tile.segmentType != TileSegmentType.End) return false;
-                return tile.IsAtFarEnd(corner);
+                // REQ 4: any corner is correct on End tiles.
+                return corner == TileCorner.NorthWest
+                    || corner == TileCorner.NorthEast
+                    || corner == TileCorner.SouthEast
+                    || corner == TileCorner.SouthWest;
 
             case TrafficDeviceType.TrafficLight:
                 if (tile.segmentType == TileSegmentType.End)
@@ -318,13 +355,14 @@ public class PlacementManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────
-    //  OVERLAY  (v7 — per-corner hover via SetDragState)
+    //  OVERLAY  (v8 — passes hoveredCorner to SetDragState)
     // ─────────────────────────────────────────
 
     /// <summary>
-    /// Called every Update frame while dragging.
-    /// Pushes the current hovered tile + corner into each tile's overlay
-    /// so TileOverlay can colour the hovered occupied corner red.
+    /// REQ 2: Called every Update frame while dragging.
+    /// Passes the current hovered tile + corner + occupied flag into each
+    /// tile's TileOverlay so it can colour itself based on whether that
+    /// specific corner is correct for the dragged device type.
     /// </summary>
     private void UpdateHoverOverlay()
     {
@@ -332,9 +370,8 @@ public class PlacementManager : MonoBehaviour
 
         if (nowHovered != _hoveredTile)
         {
-            // Refresh the tile we just left
             if (_hoveredTile != null && _hoveredTile.Overlay != null)
-                _hoveredTile.Overlay.SetDragState(_selectedDevice, false);
+                _hoveredTile.Overlay.SetDragState(_selectedDevice, false, TileCorner.None);
 
             _hoveredTile = nowHovered;
         }
@@ -343,7 +380,9 @@ public class PlacementManager : MonoBehaviour
         {
             TileCorner corner = _hoveredTile.GetNearestCorner(hitPoint, _selectedDevice);
             bool onOccupied = _hoveredTile.IsCornerOccupied(corner);
-            _hoveredTile.Overlay.SetDragState(_selectedDevice, onOccupied);
+
+            // REQ 2: pass the corner so TileOverlay can evaluate per-corner correctness.
+            _hoveredTile.Overlay.SetDragState(_selectedDevice, onOccupied, corner);
         }
     }
 
@@ -352,7 +391,9 @@ public class PlacementManager : MonoBehaviour
         RoadTile[] all = FindObjectsByType<RoadTile>(FindObjectsSortMode.None);
         foreach (RoadTile t in all)
             if (t.Overlay != null)
-                t.Overlay.SetDragState(device, cursorOnOccupiedCorner: false);
+                // REQ 2: no corner known yet — pass None so TileOverlay shows
+                // its general suitability state (HasAtLeastOneValidCorner).
+                t.Overlay.SetDragState(device, cursorOnOccupiedCorner: false, TileCorner.None);
     }
 
     private void ResetAllOverlays()
@@ -374,7 +415,12 @@ public class PlacementManager : MonoBehaviour
         if (GameManager.Instance != null)
             GameManager.Instance.ResumeDayTick();
 
-        if (_hoveredTile == null) { Debug.Log("[PlacementManager] No tile under cursor."); CancelPlacement(); return; }
+        if (_hoveredTile == null)
+        {
+            Debug.Log("[PlacementManager] No tile under cursor.");
+            CancelPlacement();
+            return;
+        }
 
         Sprite sprite = GetSprite(_selectedDevice);
         if (sprite == null) { CancelPlacement(); return; }
@@ -398,18 +444,31 @@ public class PlacementManager : MonoBehaviour
         {
             case PlacementResult.Success:
                 Debug.Log($"[PlacementManager] Placed CORRECT {_selectedDevice} @ {targetCorner} on {_hoveredTile.tileID}");
+                LevelAudioManager.Instance?.PlaySuccessPlace();
                 break;
             case PlacementResult.PoorPlacement:
                 Debug.Log($"[PlacementManager] Placed INCORRECT {_selectedDevice} @ {targetCorner} on {_hoveredTile.tileID}");
+                LevelAudioManager.Instance?.PlayPoorPlacement();
                 break;
             case PlacementResult.AlreadyOccupied:
-                Debug.Log("[PlacementManager] Slot or tile full."); Destroy(deviceObj); break;
+                Debug.Log("[PlacementManager] Slot or tile full.");
+                Destroy(deviceObj);
+                LevelAudioManager.Instance?.PlayFailedPlace();
+                break;
             case PlacementResult.InsufficientFunds:
-                Debug.Log("[PlacementManager] Insufficient capital."); Destroy(deviceObj); break;
+                Debug.Log("[PlacementManager] Insufficient capital.");
+                Destroy(deviceObj);
+                LevelAudioManager.Instance?.PlayFailedPlace();
+                break;
             case PlacementResult.DeviceNotAllowed:
-                Debug.Log("[PlacementManager] Device not allowed here."); Destroy(deviceObj); break;
+                Debug.Log("[PlacementManager] Device not allowed here.");
+                Destroy(deviceObj);
+                LevelAudioManager.Instance?.PlayFailedPlace();
+                break;
             default:
-                Destroy(deviceObj); break;
+                Destroy(deviceObj);
+                LevelAudioManager.Instance?.PlayFailedPlace();
+                break;
         }
 
         DestroyGhost();

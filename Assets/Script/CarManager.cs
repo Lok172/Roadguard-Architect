@@ -791,6 +791,8 @@ public class CarManager : MonoBehaviour
 
         _recentAccidents.Add(Time.time);
 
+        LevelAudioManager.Instance?.PlayCarAccident();
+
         _active.Remove(carA);
         _active.Remove(carB);
 

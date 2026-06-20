@@ -236,6 +236,24 @@ MonoBehaviour:
     dragZoomThreshold: 50
     targetZoom: 30
     zoomVelocity: 0.0005
+  - sceneName: LV2
+    startPosition: {x: 265, y: 50, z: 140}
+    startRotation: {x: 57, y: -90, z: 0}
+    cameraMode: 2
+    movementSpeed: 0
+    zoomMultiplier: 50
+    minZoom: 18
+    maxZoom: 56
+    initialZoom: 1
+    autoTransitionOnStart: 1
+    transitionDuration: 2
+    postTransitionHold: 2
+    zoomSmoothTime: 0.25
+    positionSmoothTime: 0.2
+    dragSensitivity: 0.3
+    dragZoomThreshold: 50
+    targetZoom: 30
+    zoomVelocity: 0.0005
   cameraDisplay: {fileID: 0}
 --- !u!4 &801832301
 Transform:
@@ -340,6 +358,10 @@ MonoBehaviour:
     additionalScenes:
     - City
     - LvUI & Manager
+  - uiSceneName: LV2
+    additionalScenes:
+    - City
+    - LvUI & Manager
 --- !u!4 &1730907750
 Transform:
   m_ObjectHideFlags: 0
@@ -394,10 +416,16 @@ MonoBehaviour:
     sceneNames:
     - LvUI & Manager
     - LV1
+    - LV2
   buttonSoundEntries:
   - clip: {fileID: 8300000, guid: 7bfdd3b285aa72f478a5d364f61667fb, type: 3}
     sceneNames:
-    - Environment
+    - MainMenu
+    - Settings
+    - LV1
+    - LV2
+    - LvUI & Manager
+    - LevelSelect
   sliderClip: {fileID: 8300000, guid: 8ab1589089c332a40b0b72c1c3b34d19, type: 3}
   sliderSceneNames:
   - Settings
@@ -405,6 +433,9 @@ MonoBehaviour:
   masterSlider: {fileID: 0}
   musicSlider: {fileID: 0}
   sfxSlider: {fileID: 0}
+  masterPercentText: {fileID: 0}
+  musicPercentText: {fileID: 0}
+  sfxPercentText: {fileID: 0}
   crossFadeDuration: 0.5
 --- !u!4 &2146797293
 Transform:

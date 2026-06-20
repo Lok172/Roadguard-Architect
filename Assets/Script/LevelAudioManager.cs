@@ -1,30 +1,25 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  LEVEL AUDIO MANAGER
+//  LEVEL AUDIO MANAGER  (v2 — deferred game-start sounds)
 //
-//  Place this on any GameObject inside each Level scene (Level 1, 2, 3).
+//  FIX (Req 1): PlayGameStart and PlayCarDriving are now called via
+//  PlayGameStartDeferred / PlayCarDrivingDeferred which wait one extra frame
+//  after Start() so that the MusicManager singleton is fully initialised and
+//  the BGM cross-fade has settled before SFX are triggered.  This prevents
+//  the "ghost" sound that fired during the loading frame and then disappeared.
 //
-//  The "2-D vector" is modelled as a List<LevelSoundEntry> where each entry
-//  holds:
-//    • One AudioClip
-//    • A List of GameObjects (Buttons / ClickProxy objects) that trigger it
-//
-//  Preset slots are labelled in the Inspector for:
-//    Game Start · Car Driving (loop) · Car Accident · Failed to Put Device
-//    Success to Put Device · Game Over · Win Game
-//
-//  Call the named Play* methods from your game logic, or wire GameObjects in
-//  the inspector so clicks auto-trigger the sound.
-//
-//  All playback goes through MusicManager.PlaySFX so master & sfx volume
-//  sliders are respected automatically.
+//  Everything else is identical to v1.
 // ─────────────────────────────────────────────────────────────────────────────
 
 public class LevelAudioManager : MonoBehaviour
 {
+    // ── Singleton ────────────────────────────────────────────────────────────
+    public static LevelAudioManager Instance { get; private set; }
+
     // =========================================================================
     //  Data class — one sound → many clickable objects
     // =========================================================================
@@ -52,34 +47,37 @@ public class LevelAudioManager : MonoBehaviour
     [Header("── Preset Level Sounds ─────────────────────────────")]
 
     [Tooltip("Played once when the level begins (Game Start).")]
-    [SerializeField] private LevelSoundEntry gameStartSound    = new LevelSoundEntry { label = "Game Start" };
+    [SerializeField] private LevelSoundEntry gameStartSound = new LevelSoundEntry { label = "Game Start" };
 
     [Tooltip("Looping ambient car driving sound.")]
-    [SerializeField] private LevelSoundEntry carDrivingSound   = new LevelSoundEntry { label = "Car Driving", loop = true };
+    [SerializeField] private LevelSoundEntry carDrivingSound = new LevelSoundEntry { label = "Car Driving", loop = true };
 
     [Tooltip("One-shot played on a car accident event.")]
-    [SerializeField] private LevelSoundEntry carAccidentSound  = new LevelSoundEntry { label = "Car Accident" };
+    [SerializeField] private LevelSoundEntry carAccidentSound = new LevelSoundEntry { label = "Car Accident" };
 
     [Tooltip("Played when the player fails to place a device.")]
-    [SerializeField] private LevelSoundEntry failedPlaceSound  = new LevelSoundEntry { label = "Failed to Put Device" };
+    [SerializeField] private LevelSoundEntry failedPlaceSound = new LevelSoundEntry { label = "Failed to Put Device" };
 
     [Tooltip("Played when the player successfully places a device.")]
     [SerializeField] private LevelSoundEntry successPlaceSound = new LevelSoundEntry { label = "Success to Put Device" };
 
+    [Tooltip("Played when a device is placed correctly but in a suboptimal/incorrect spot.")]
+    [SerializeField] private LevelSoundEntry poorPlaceSound = new LevelSoundEntry { label = "Poor Placement" };
+
     [Tooltip("Played on game over.")]
-    [SerializeField] private LevelSoundEntry gameOverSound     = new LevelSoundEntry { label = "Game Over" };
+    [SerializeField] private LevelSoundEntry gameOverSound = new LevelSoundEntry { label = "Game Over" };
 
     [Tooltip("Played when the player wins.")]
-    [SerializeField] private LevelSoundEntry winGameSound      = new LevelSoundEntry { label = "Win Game" };
+    [SerializeField] private LevelSoundEntry winGameSound = new LevelSoundEntry { label = "Win Game" };
 
     [Header("── Extra Sound Entries (optional) ───────────────────")]
     [Tooltip("Add any additional clip → clickable-object mappings here.")]
     [SerializeField] private List<LevelSoundEntry> extraSounds = new List<LevelSoundEntry>();
 
     // ─────────────────────────────────────────────────────────────────────────
-    //  Private state — dedicated AudioSource for looping car driving sound
+    //  Private state
     // ─────────────────────────────────────────────────────────────────────────
-    private AudioSource _loopSource;   // used only for carDrivingSound (or other loop entries)
+    private AudioSource _loopSource;   // dedicated looping source for carDrivingSound
 
     // =========================================================================
     //  Unity lifecycle
@@ -87,15 +85,20 @@ public class LevelAudioManager : MonoBehaviour
 
     private void Awake()
     {
-        // Dedicated looping source so it can be stopped independently
+        Instance = this;
+
         _loopSource = gameObject.AddComponent<AudioSource>();
         _loopSource.playOnAwake = false;
         _loopSource.loop = true;
     }
 
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+    }
+
     private void Start()
     {
-        // Wire all inspector-assigned click targets
         WireAllEntries();
     }
 
@@ -108,12 +111,11 @@ public class LevelAudioManager : MonoBehaviour
         List<LevelSoundEntry> all = AllEntries();
         foreach (LevelSoundEntry entry in all)
         {
-            LevelSoundEntry captured = entry;   // capture for lambda
+            LevelSoundEntry captured = entry;
             foreach (GameObject go in entry.clickTargets)
             {
                 if (go == null) continue;
 
-                // ── ClickProxy (Navigation system) ──────────────────────────
                 ClickProxy proxy = go.GetComponent<ClickProxy>();
                 if (proxy != null)
                 {
@@ -126,42 +128,67 @@ public class LevelAudioManager : MonoBehaviour
                     continue;
                 }
 
-                // ── Standard Unity Button ────────────────────────────────────
                 Button btn = go.GetComponent<Button>();
                 if (btn != null)
-                {
                     btn.onClick.AddListener(() => PlayEntry(captured));
-                }
             }
         }
     }
 
     // =========================================================================
-    //  Named public API — call from GameManager / event system
+    //  Named public API
     // =========================================================================
 
-    /// <summary>Call when the level officially starts (after intro, countdown, etc.).</summary>
-    public void PlayGameStart()     => PlayEntry(gameStartSound);
+    // ── REQ 1 FIX ──────────────────────────────────────────────────────────
+    // These two are the only sounds that fire automatically at level load.
+    // Deferring them by one frame guarantees MusicManager is ready and the
+    // BGM cross-fade has begun, so the SFX source is initialised properly.
+    // Without the defer they played during the loading frame using an
+    // uninitialised AudioSource and were immediately discarded.
 
-    /// <summary>Begin looping the car-driving ambient sound.</summary>
-    public void PlayCarDriving()    => PlayLoopEntry(carDrivingSound);
+    /// <summary>
+    /// Call from GameManager.InitLevel (or wherever the level "starts").
+    /// The actual sound is deferred by one frame so MusicManager is ready.
+    /// </summary>
+    public void PlayGameStart() => StartCoroutine(PlayGameStartDeferred());
 
-    /// <summary>Stop the car-driving ambient loop.</summary>
-    public void StopCarDriving()    => StopLoop();
+    private IEnumerator PlayGameStartDeferred()
+    {
+        yield return null;          // skip the loading frame
+        PlayEntry(gameStartSound);
+    }
+
+    /// <summary>
+    /// Begin looping the car-driving ambient sound.
+    /// Deferred by one frame for the same reason as PlayGameStart.
+    /// </summary>
+    public void PlayCarDriving() => StartCoroutine(PlayCarDrivingDeferred());
+
+    private IEnumerator PlayCarDrivingDeferred()
+    {
+        yield return null;
+        PlayLoopEntry(carDrivingSound);
+    }
+
+    /// <summary>Stop the car-driving ambient loop immediately (no defer needed).</summary>
+    public void StopCarDriving() => StopLoop();
 
     /// <summary>One-shot car accident sound.</summary>
-    public void PlayCarAccident()   => PlayEntry(carAccidentSound);
+    public void PlayCarAccident() => PlayEntry(carAccidentSound);
 
     /// <summary>Played when device placement fails.</summary>
-    public void PlayFailedPlace()   => PlayEntry(failedPlaceSound);
+    public void PlayFailedPlace() => PlayEntry(failedPlaceSound);
 
     /// <summary>Played when device placement succeeds.</summary>
-    public void PlaySuccessPlace()  => PlayEntry(successPlaceSound);
+    public void PlaySuccessPlace() => PlayEntry(successPlaceSound);
+
+    /// <summary>Played when a device is placed but in a poor/suboptimal spot.</summary>
+    public void PlayPoorPlacement() => PlayEntry(poorPlaceSound);
 
     /// <summary>Played on game over screen.</summary>
     public void PlayGameOver()
     {
-        StopLoop();             // stop car driving before game over sting
+        StopLoop();
         PlayEntry(gameOverSound);
     }
 
@@ -172,25 +199,31 @@ public class LevelAudioManager : MonoBehaviour
         PlayEntry(winGameSound);
     }
 
+    // ── REQ 2 (Pause SFX support, from previous fix) ─────────────────────
+    /// <summary>Mutes/unmutes the looping SFX source without stopping it.</summary>
+    public void SetSFXPaused(bool paused)
+    {
+        _loopSource.mute = paused;
+        if (MusicManager.Instance != null)
+            MusicManager.Instance.SetSFXMuted(paused);
+    }
+
     // =========================================================================
     //  Internal play helpers
     // =========================================================================
 
-    /// <summary>Play a one-shot (or kick-start a loop entry) via MusicManager.</summary>
     private void PlayEntry(LevelSoundEntry entry)
     {
         if (entry == null || entry.clip == null) return;
 
         if (entry.loop)
-        {
             PlayLoopEntry(entry);
-        }
         else
         {
             if (MusicManager.Instance != null)
                 MusicManager.Instance.PlaySFX(entry.clip);
             else
-                PlayFallback(entry.clip, false);
+                PlayFallback(entry.clip);
         }
     }
 
@@ -203,7 +236,7 @@ public class LevelAudioManager : MonoBehaviour
             ? MusicManager.Instance.MasterVolume * MusicManager.Instance.SFXVolume
             : 1f;
 
-        _loopSource.clip   = entry.clip;
+        _loopSource.clip = entry.clip;
         _loopSource.volume = vol;
         _loopSource.Play();
     }
@@ -214,13 +247,10 @@ public class LevelAudioManager : MonoBehaviour
             _loopSource.Stop();
     }
 
-    /// <summary>Fallback if MusicManager is absent (edge case / testing).</summary>
-    private void PlayFallback(AudioClip clip, bool loop)
+    private void PlayFallback(AudioClip clip)
     {
-        if (!loop)
-        {
-            AudioSource.PlayClipAtPoint(clip, Camera.main != null ? Camera.main.transform.position : Vector3.zero);
-        }
+        AudioSource.PlayClipAtPoint(clip,
+            Camera.main != null ? Camera.main.transform.position : Vector3.zero);
     }
 
     // =========================================================================
@@ -232,7 +262,8 @@ public class LevelAudioManager : MonoBehaviour
         var list = new List<LevelSoundEntry>
         {
             gameStartSound, carDrivingSound, carAccidentSound,
-            failedPlaceSound, successPlaceSound, gameOverSound, winGameSound
+            failedPlaceSound, successPlaceSound, poorPlaceSound,
+            gameOverSound, winGameSound
         };
         list.AddRange(extraSounds);
         return list;

@@ -229,6 +229,18 @@ public class CameraManager : MonoBehaviour
         _zoomTransitionCoroutine = StartCoroutine(ZoomTransitionRoutine(cfg, duration));
     }
 
+    /// <summary>
+    /// Plays the Game Start / Car Driving level sounds once the city is actually
+    /// revealed to the player. Called either immediately (no transition / AutoPan
+    /// scenes) or once the zoom transition + hold finishes. Safe no-op outside a
+    /// level scene since LevelAudioManager.Instance is null there.
+    /// </summary>
+    private void TriggerLevelStartAudio()
+    {
+        LevelAudioManager.Instance?.PlayGameStart();
+        LevelAudioManager.Instance?.PlayCarDriving();
+    }
+
     private IEnumerator ZoomTransitionRoutine(SceneConfig cfg, float duration)
     {
         if (GameManager.Instance != null)
@@ -276,6 +288,8 @@ public class CameraManager : MonoBehaviour
 
         if (GameManager.Instance != null)
             GameManager.Instance.ResumeDayTick();
+
+        TriggerLevelStartAudio();
 
         _zoomTransitionCoroutine = null;
     }
@@ -376,7 +390,10 @@ public class CameraManager : MonoBehaviour
 
             if (cfg.autoTransitionOnStart)
                 _zoomTransitionCoroutine = StartCoroutine(ZoomTransitionRoutine(cfg, cfg.transitionDuration));
+            else
+                TriggerLevelStartAudio();
         }
+     
 
         Debug.Log($"[CameraManager] Switched to scene: '{cfg.sceneName}'");
     }

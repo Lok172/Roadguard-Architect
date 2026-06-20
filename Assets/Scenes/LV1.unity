@@ -964,7 +964,7 @@ MonoBehaviour:
   zoneType: 0
   tileID: ResRoad_00
   segmentType: 1
-  forwardAxis: 0
+  forwardAxis: 1
   maxDevices: 4
   cornerInsetX: 1.84
   cornerInsetZ: 3.56
@@ -5667,6 +5667,91 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1382296104}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1562581485
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1562581487}
+  - component: {fileID: 1562581486}
+  m_Layer: 0
+  m_Name: 'LevelAudioManager '
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1562581486
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1562581485}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8eba62990916e1345bafb0d5f4f86522, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LevelAudioManager
+  gameStartSound:
+    label: Game Start
+    clip: {fileID: 8300000, guid: 611203644b69f0a4a87dab40aa0222d2, type: 3}
+    loop: 0
+    clickTargets: []
+  carDrivingSound:
+    label: Car Driving
+    clip: {fileID: 8300000, guid: d20ddd03cdd3ddb4fad820bd5fc03b1b, type: 3}
+    loop: 1
+    clickTargets: []
+  carAccidentSound:
+    label: Car Accident
+    clip: {fileID: 8300000, guid: 14cc19c280f5fe7428d443be4a2175f1, type: 3}
+    loop: 0
+    clickTargets: []
+  failedPlaceSound:
+    label: Failed to Put Device
+    clip: {fileID: 8300000, guid: 588543e3a28320c44b024be12109de9a, type: 3}
+    loop: 0
+    clickTargets: []
+  successPlaceSound:
+    label: Success to Put Device
+    clip: {fileID: 8300000, guid: 303311787687fa5478a9496f9f9ba3e3, type: 3}
+    loop: 0
+    clickTargets: []
+  poorPlaceSound:
+    label: Poor Placement
+    clip: {fileID: 8300000, guid: 65b06bbc40a80e74da73a70c88f6785c, type: 3}
+    loop: 0
+    clickTargets: []
+  gameOverSound:
+    label: Game Over
+    clip: {fileID: 8300000, guid: d080ab92eafffe7419abef1a9ad266dc, type: 3}
+    loop: 0
+    clickTargets: []
+  winGameSound:
+    label: Win Game
+    clip: {fileID: 8300000, guid: 2c6b1ca603dddbd458747faaca00cfe5, type: 3}
+    loop: 0
+    clickTargets: []
+  extraSounds: []
+--- !u!4 &1562581487
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1562581485}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1562832206
 GameObject:
   m_ObjectHideFlags: 0
@@ -8146,7 +8231,7 @@ MonoBehaviour:
   zoneType: 0
   tileID: ResRoad_00
   segmentType: 1
-  forwardAxis: 0
+  forwardAxis: 1
   maxDevices: 4
   cornerInsetX: 1.84
   cornerInsetZ: 3.56
@@ -8235,3 +8320,4 @@ SceneRoots:
   - {fileID: 2012332234}
   - {fileID: 267619134}
   - {fileID: 8282023}
+  - {fileID: 1562581487}
