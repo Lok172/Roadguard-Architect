@@ -42,8 +42,7 @@ public class LevelSelectManager : MonoBehaviour
         [Tooltip("Optional lock icon / dim overlay shown while the level is locked.")]
         public GameObject lockedOverlay;
 
-        [Tooltip("The scene to load when this level's Select button is clicked.")]
-        [SceneName] public string sceneName = "";
+        
     }
 
     [Header("Level Panels (in order)")]
@@ -75,15 +74,7 @@ public class LevelSelectManager : MonoBehaviour
                 // Always clear old listeners to prevent stacking on repeated OnEnable calls.
                 entry.selectButton.onClick.RemoveAllListeners();
 
-                // Only wire the listener when the level is actually unlocked.
-                // A locked button has interactable=false which suppresses Unity clicks,
-                // but removing the listener is a belt-and-suspenders guard for any code
-                // path that calls Button.onClick.Invoke() directly (e.g. automation tests).
-                if (unlocked && !string.IsNullOrEmpty(entry.sceneName))
-                {
-                    string scene = entry.sceneName;   // capture for lambda
-                    entry.selectButton.onClick.AddListener(() => LoadLevel(scene));
-                }
+               
             }
 
             if (entry.lockedOverlay != null)
@@ -91,12 +82,6 @@ public class LevelSelectManager : MonoBehaviour
         }
     }
 
-    private void LoadLevel(string sceneName)
-    {
-        // Always restore normal time in case we're coming from a paused/frozen state.
-        Time.timeScale = 1f;
-        SceneManager.LoadScene(sceneName);
-    }
 }
 
 // ─────────────────────────────────────────────────────────────────

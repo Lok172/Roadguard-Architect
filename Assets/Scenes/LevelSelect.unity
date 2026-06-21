@@ -337,19 +337,16 @@ MonoBehaviour:
   levelPanels:
   - level: 1
     panelRoot: {fileID: 531481759}
-    selectButton: {fileID: 0}
-    lockedOverlay: {fileID: 0}
-    sceneName: Environment
+    selectButton: {fileID: 1603291499}
+    lockedOverlay: {fileID: 747437135}
   - level: 2
     panelRoot: {fileID: 2035055157}
     selectButton: {fileID: 1346413668}
-    lockedOverlay: {fileID: 0}
-    sceneName: Environment
+    lockedOverlay: {fileID: 747437135}
   - level: 3
     panelRoot: {fileID: 1639234794}
     selectButton: {fileID: 1458147224}
     lockedOverlay: {fileID: 1218851570}
-    sceneName: Environment
   developerMode: 0
 --- !u!1 &747437135
 GameObject:
@@ -1705,7 +1702,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2304010200593794347, guid: e0320a7c2181dbf489feb2903dc72028, type: 3}
       propertyPath: navigationTargets.Array.data[3].sceneName
-      value: MainMenu
+      value: LV3
       objectReference: {fileID: 0}
     - target: {fileID: 2304010200593794347, guid: e0320a7c2181dbf489feb2903dc72028, type: 3}
       propertyPath: navigationTargets.Array.data[0].clickableObject

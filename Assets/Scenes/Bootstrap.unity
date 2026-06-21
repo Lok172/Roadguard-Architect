@@ -237,13 +237,13 @@ MonoBehaviour:
     targetZoom: 30
     zoomVelocity: 0.0005
   - sceneName: LV2
-    startPosition: {x: 265, y: 50, z: 140}
+    startPosition: {x: 258, y: 46.2, z: 140}
     startRotation: {x: 57, y: -90, z: 0}
     cameraMode: 2
     movementSpeed: 0
     zoomMultiplier: 50
-    minZoom: 18
-    maxZoom: 56
+    minZoom: 20
+    maxZoom: 64
     initialZoom: 1
     autoTransitionOnStart: 1
     transitionDuration: 2
@@ -251,7 +251,25 @@ MonoBehaviour:
     zoomSmoothTime: 0.25
     positionSmoothTime: 0.2
     dragSensitivity: 0.3
-    dragZoomThreshold: 50
+    dragZoomThreshold: 60
+    targetZoom: 30
+    zoomVelocity: 0.0005
+  - sceneName: LV3
+    startPosition: {x: 154, y: 84, z: 19}
+    startRotation: {x: 64, y: 0, z: 0}
+    cameraMode: 2
+    movementSpeed: 0
+    zoomMultiplier: 50
+    minZoom: 20
+    maxZoom: 60
+    initialZoom: 1
+    autoTransitionOnStart: 1
+    transitionDuration: 2
+    postTransitionHold: 2
+    zoomSmoothTime: 0.25
+    positionSmoothTime: 0.2
+    dragSensitivity: 0.3
+    dragZoomThreshold: 60
     targetZoom: 30
     zoomVelocity: 0.0005
   cameraDisplay: {fileID: 0}
@@ -349,7 +367,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PageManager
   masterPermanentScenes:
   - Environment
-  - BootStrap
+  - Bootstrap
+  - City
   uiSceneGroups:
   - uiSceneName: MainMenu
     additionalScenes:
@@ -359,6 +378,10 @@ MonoBehaviour:
     - City
     - LvUI & Manager
   - uiSceneName: LV2
+    additionalScenes:
+    - City
+    - LvUI & Manager
+  - uiSceneName: LV3
     additionalScenes:
     - City
     - LvUI & Manager
@@ -410,22 +433,30 @@ MonoBehaviour:
   - clip: {fileID: 8300000, guid: 209f4ddc3a746a64fb3185b432f51675, type: 3}
     sceneNames:
     - MainMenu
-    - LevelSelect
+    - SafetyRecord
     - Settings
+    - LevelSelect
+    - User Select
+    - LevelResult
   - clip: {fileID: 8300000, guid: 528e80c8fd7bf0b4d925a26acbbed277, type: 3}
     sceneNames:
     - LvUI & Manager
     - LV1
     - LV2
+    - LV3
   buttonSoundEntries:
   - clip: {fileID: 8300000, guid: 7bfdd3b285aa72f478a5d364f61667fb, type: 3}
     sceneNames:
     - MainMenu
+    - SafetyRecord
     - Settings
+    - User Select
+    - LevelSelect
     - LV1
     - LV2
+    - LV3
     - LvUI & Manager
-    - LevelSelect
+    - LevelResult
   sliderClip: {fileID: 8300000, guid: 8ab1589089c332a40b0b72c1c3b34d19, type: 3}
   sliderSceneNames:
   - Settings

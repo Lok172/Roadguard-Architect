@@ -108,30 +108,56 @@ public class PauseMenuController : MonoBehaviour
     }
 
     /// <summary>
-    /// Restarts (reloads) the current level.
-    /// Closes the pause panel, restores time scale, then delegates to
-    /// GameManager.InitLevel so all game state is cleanly reset without a
-    /// full scene reload — matching the same path used by the Retry button
-    /// in the Level Results scene.
-    /// Falls back to reloading the active scene if GameManager is absent.
+    /// Fully reloads the current level scene via PageManager so that all
+    /// placed devices, cars, road state, and UI are rebuilt from scratch —
+    /// not just the GameManager numbers.
+    ///
+    /// Flow:
+    ///   1. Restore Time.timeScale and un-mute SFX (ClosePause).
+    ///   2. Ask PageManager to switch to the current level scene by name,
+    ///      which unloads it and reloads it with all its additional scenes
+    ///      (City, LvUI & Manager, etc.) exactly as when the player first
+    ///      entered the level from LevelSelect.
+    ///   3. Fallback: if PageManager is not present, use SceneManager
+    ///      directly (single-scene builds / editor testing).
     /// </summary>
     public void RestartLevel()
     {
-        // Close the panel and restore time first so the level starts cleanly.
+        // Must restore time BEFORE the scene switch so coroutines in the
+        // new scene start with timeScale = 1.
         ClosePause();
 
+        // Determine the current level scene name from GameManager.
+        string levelSceneName = null;
         if (GameManager.Instance != null)
+            levelSceneName = LevelSceneNameFor(GameManager.Instance.currentLevel);
+
+        // Prefer PageManager so the full scene group (City, LvUI & Manager …)
+        // is unloaded and reloaded cleanly.
+        if (PageManager.Instance != null && !string.IsNullOrEmpty(levelSceneName))
         {
-            GameManager.Instance.InitLevel(GameManager.Instance.currentLevel);
+            // Force PageManager to treat this as a fresh load even if
+            // currentLoadedUI already equals levelSceneName (same scene restart).
+            PageManager.Instance.ForceChangeUI(levelSceneName);
+        }
+        else if (!string.IsNullOrEmpty(levelSceneName) && PageManager.Instance != null)
+        {
+            PageManager.Instance.ChangeUI(levelSceneName);
         }
         else
         {
-            // Fallback: reload the active scene directly.
+            // Fallback for single-scene / editor setups without PageManager.
             Time.timeScale = 1f;
             UnityEngine.SceneManagement.SceneManager.LoadScene(
                 UnityEngine.SceneManagement.SceneManager.GetActiveScene().name);
         }
     }
+
+    /// <summary>
+    /// Maps a GameManager level number to the scene name used in PageManager.
+    /// Edit this if your scene naming convention differs (e.g. "Level1", "LV_01").
+    /// </summary>
+    private static string LevelSceneNameFor(int level) => $"LV{level}";
 
     private void OnDestroy()
     {
