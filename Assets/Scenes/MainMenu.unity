@@ -138,11 +138,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2304010200593794347, guid: e0320a7c2181dbf489feb2903dc72028, type: 3}
       propertyPath: navigationTargets.Array.data[0].sceneName
-      value: LevelSelect
+      value: User Select
       objectReference: {fileID: 0}
     - target: {fileID: 2304010200593794347, guid: e0320a7c2181dbf489feb2903dc72028, type: 3}
       propertyPath: navigationTargets.Array.data[1].sceneName
-      value: LevelResult
+      value: SafetyRecord
       objectReference: {fileID: 0}
     - target: {fileID: 2304010200593794347, guid: e0320a7c2181dbf489feb2903dc72028, type: 3}
       propertyPath: navigationTargets.Array.data[2].sceneName

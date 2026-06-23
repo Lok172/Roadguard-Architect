@@ -24,7 +24,7 @@ public class ApiClient : MonoBehaviour
 
     [Header("Backend URL")]
     [Tooltip("Base URL of the ASP.NET Core Web API, e.g. http://localhost:5000")]
-    public string baseUrl = "http://localhost:5000";
+    public string baseUrl = "http://localhost:5230";
 
     private void Awake()
     {

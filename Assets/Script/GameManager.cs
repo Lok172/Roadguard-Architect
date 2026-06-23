@@ -172,6 +172,9 @@ public class GameManager : MonoBehaviour
         _dayTickPaused = false;
         _consecutiveLowAccidentDays = 0;
 
+        PlayerPrefs.SetInt("StartAccidentRate", _baselineAccidentRate);
+        PlayerPrefs.Save();
+
         _payload = new LevelResultPayload
         {
             userId = UserSession.IsLoggedIn ? UserSession.CurrentUser.userId : 0,

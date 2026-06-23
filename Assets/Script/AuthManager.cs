@@ -294,7 +294,7 @@ public class AuthManager : MonoBehaviour
         string msg = $"Welcome, <b>{user.username}</b>";
 
         if (user.userId > 0)
-            msg += $"\nPlayer ID: {user.userId}";
+            msg += $"\nPlayer ID: {user.userId.ToString("D6")}";
 
         welcomeText.text = msg;
     }
