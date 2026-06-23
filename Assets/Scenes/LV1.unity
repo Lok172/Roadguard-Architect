@@ -4567,7 +4567,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RoadManager
   complexityMultiplier: 1
   dailyAccidentGain: 1
-  perCorrectDeviceReduction: 0.75
+  perCorrectDeviceReduction: 3
   happinessPerAccidentRate: 1
   _sections: []
 --- !u!1 &1287189284

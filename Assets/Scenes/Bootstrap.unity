@@ -119,6 +119,50 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &282503749
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 282503751}
+  - component: {fileID: 282503750}
+  m_Layer: 0
+  m_Name: CoroutineRunner
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &282503750
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 282503749}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7898ab428ed4f8441b47ec810761b9ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CoroutineRunner
+--- !u!4 &282503751
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 282503749}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &629565082
 GameObject:
   m_ObjectHideFlags: 0
@@ -201,10 +245,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CameraRotate
   scenes:
   - sceneName: MainMenu
-    startPosition: {x: 268, y: 70, z: 105}
+    startPosition: {x: 280, y: 70, z: 120}
     startRotation: {x: 53, y: -90, z: 0}
     cameraMode: 1
     movementSpeed: 10
+    panEndPosition: {x: 210, y: 70, z: 120}
     zoomMultiplier: 0
     minZoom: 0
     maxZoom: 0
@@ -223,6 +268,7 @@ MonoBehaviour:
     startRotation: {x: 73.6, y: 0, z: 0}
     cameraMode: 2
     movementSpeed: 0
+    panEndPosition: {x: 0, y: 0, z: 0}
     zoomMultiplier: 50
     minZoom: 4
     maxZoom: 58
@@ -241,6 +287,7 @@ MonoBehaviour:
     startRotation: {x: 57, y: -90, z: 0}
     cameraMode: 2
     movementSpeed: 0
+    panEndPosition: {x: 0, y: 0, z: 0}
     zoomMultiplier: 50
     minZoom: 20
     maxZoom: 64
@@ -259,6 +306,7 @@ MonoBehaviour:
     startRotation: {x: 64, y: 0, z: 0}
     cameraMode: 2
     movementSpeed: 0
+    panEndPosition: {x: 0, y: 0, z: 0}
     zoomMultiplier: 50
     minZoom: 20
     maxZoom: 60
@@ -400,6 +448,51 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1919190641
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1919190643}
+  - component: {fileID: 1919190642}
+  m_Layer: 0
+  m_Name: APIClilent
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1919190642
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1919190641}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1206499b293d9134f98404b06eb47123, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ApiClient
+  baseUrl: http://localhost:5230
+--- !u!4 &1919190643
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1919190641}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 238.51663, y: 5.33572, z: 113.64246}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2146797291
 GameObject:
   m_ObjectHideFlags: 0
@@ -492,3 +585,5 @@ SceneRoots:
   - {fileID: 1730907750}
   - {fileID: 1404589075}
   - {fileID: 629565084}
+  - {fileID: 1919190643}
+  - {fileID: 282503751}

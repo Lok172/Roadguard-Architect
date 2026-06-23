@@ -268,6 +268,14 @@ public class MusicManager : MonoBehaviour
             btn.onClick.RemoveListener(() => PlayButtonSound(captured));
             btn.onClick.AddListener(() => PlayButtonSound(captured));
         }
+
+        // TMP_Dropdown — play button sound when the value changes (item selected)
+        foreach (TMPro.TMP_Dropdown dropdown in Object.FindObjectsByType<TMPro.TMP_Dropdown>(FindObjectsSortMode.None))
+        {
+            AudioClip captured = clip;
+            dropdown.onValueChanged.RemoveListener(_ => PlayButtonSound(captured));
+            dropdown.onValueChanged.AddListener(_ => PlayButtonSound(captured));
+        }
     }
 
     // =========================================================================
@@ -446,6 +454,13 @@ public class MusicManager : MonoBehaviour
             captured.onClick.AddListener(OnPausePanelButtonClick);
         }
 
+        // ── TMP_Dropdowns — click sound on value change ──────────────────────
+        foreach (TMPro.TMP_Dropdown dropdown in panel.GetComponentsInChildren<TMPro.TMP_Dropdown>(true))
+        {
+            dropdown.onValueChanged.RemoveListener(_ => OnPausePanelButtonClick());
+            dropdown.onValueChanged.AddListener(_ => OnPausePanelButtonClick());
+        }
+
         // ── Volume Sliders — drive volume + label ────────────────────────────
         foreach (Slider slider in panel.GetComponentsInChildren<Slider>(true))
         {
@@ -480,6 +495,47 @@ public class MusicManager : MonoBehaviour
                 if (lbl != null) UpdatePercentLabel(lbl, _sfxVolume);
                 slider.onValueChanged.AddListener(v => UpdatePercentLabel(lbl, v));
             }
+        }
+    }
+
+    /// <summary>
+    /// Attaches the current scene's button sound to every Button and
+    /// TMP_Dropdown inside <paramref name="panel"/>.  Call this from any
+    /// manager that activates a panel after the initial scene-load sweep
+    /// (e.g. AuthManager activating confirmationPanel or nameErrorPanel).
+    /// </summary>
+    public void HookPanel(GameObject panel)
+    {
+        if (panel == null) return;
+
+        // Resolve the clip for the current scene (same fallback as pause panel).
+        AudioClip clip = null;
+        AudioClip firstAvailable = null;
+        foreach (ButtonSoundEntry entry in buttonSoundEntries)
+        {
+            if (entry.clip == null) continue;
+            if (firstAvailable == null) firstAvailable = entry.clip;
+            if (_currentScene != null && entry.sceneNames.Contains(_currentScene))
+            {
+                clip = entry.clip;
+                break;
+            }
+        }
+        AudioClip resolved = clip != null ? clip : firstAvailable;
+        if (resolved == null) return;
+
+        foreach (Button btn in panel.GetComponentsInChildren<Button>(true))
+        {
+            AudioClip captured = resolved;
+            btn.onClick.RemoveListener(() => PlayButtonSound(captured));
+            btn.onClick.AddListener(() => PlayButtonSound(captured));
+        }
+
+        foreach (TMPro.TMP_Dropdown dropdown in panel.GetComponentsInChildren<TMPro.TMP_Dropdown>(true))
+        {
+            AudioClip captured = resolved;
+            dropdown.onValueChanged.RemoveListener(_ => PlayButtonSound(captured));
+            dropdown.onValueChanged.AddListener(_ => PlayButtonSound(captured));
         }
     }
 

@@ -8,21 +8,31 @@ using UnityEditor;
 #endif
 
 // ─────────────────────────────────────────────────────────────────
-//  GAME MANAGER (v6)
+//  GAME MANAGER (v8)
 //
-//  CHANGES vs v5:
-//    • Added Developer Cheats section (Inspector-tunable):
-//      - devMode toggle
-//      - devHappiness, devMoney, devTotalDays overrides
-//      - Custom Inspector with "Activate Dev Mode" / "Deactivate"
-//        buttons.
-//    • Everything else unchanged from v5.
+//  CHANGES vs v7:
+//    • Added levelResultSceneName (public string) below Level Configuration.
+//      On end-game, after FinaliseAndSubmitPayload(), the game opens the
+//      Level Results scene via PageManager.ChangeUI(levelResultSceneName)
+//      or falls back to SceneManager.LoadScene().
+//    • Safety Score formula changed to three weighted factors:
+//        Accident Rate       40%
+//        Device Effectiveness 30%
+//        Happiness           30%
+//    • _totalBudgetSpent and TotalBudgetSpent removed (no longer needed).
+//    • FinaliseAndSubmitPayload now computes overallDeviceEffectiveness
+//      from RoadManager before scoring, then writes it to the payload.
+//    • CalculateFinalScore(float) signature updated to
+//      CalculateFinalScore(float accidentRate, float deviceEff, float happiness).
+//    • SpendCapital no longer tracks _totalBudgetSpent.
+//    • Custom Inspector live stat "Budget Spent" line removed.
 // ─────────────────────────────────────────────────────────────────
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
+    // ── Level Configuration ───────────────────────────────────────
     [Header("Level Configuration")]
     public int currentLevel = 1;
 
@@ -37,11 +47,16 @@ public class GameManager : MonoBehaviour
 
     public LevelConfig[] levelConfigs = new LevelConfig[]
     {
-        new LevelConfig { level = 1, startCapitalRM = 1000f, startAccidentRate = 10, startHappiness = 100f },
-        new LevelConfig { level = 2, startCapitalRM = 2500f, startAccidentRate = 15, startHappiness = 80f  },
-        new LevelConfig { level = 3, startCapitalRM = 3500f, startAccidentRate = 25, startHappiness = 60f  }
+        new LevelConfig { level = 1, startCapitalRM = 1000f,  startAccidentRate = 10, startHappiness = 100f },
+        new LevelConfig { level = 2, startCapitalRM = 2500f,  startAccidentRate = 15, startHappiness = 80f  },
+        new LevelConfig { level = 3, startCapitalRM = 3500f,  startAccidentRate = 25, startHappiness = 60f  }
     };
 
+    [Tooltip("Name of the UI page / scene to open when a level ends. " +
+             "Used with PageManager.ChangeUI(); falls back to SceneManager.LoadScene().")]
+    public string levelResultSceneName = "LevelResult";
+
+    // ── Game Rules ────────────────────────────────────────────────
     [Header("Game Rules")]
     public float secondsPerDay = 2f;
     public int totalDays = 90;
@@ -50,41 +65,33 @@ public class GameManager : MonoBehaviour
     public float baseTaxPerDay = 50f;
 
     [Header("Baseline Accident Decay")]
-    [Tooltip("How much the baseline accident rate decreases each in-game day. " +
-             "Allows the accident rate to eventually reach 0.")]
+    [Tooltip("How much the baseline accident rate decreases each in-game day.")]
     [Min(0f)] public float baselineDecayPerDay = 1f;
 
     [Header("Low Accident Streak Bonus")]
     [Tooltip("Accident rate must stay strictly below this for the streak to count.")]
     public int lowAccidentThreshold = 3;
-
     [Tooltip("Consecutive days below threshold before the first bonus fires.")]
     public int lowAccidentStreakRequired = 5;
-
     [Tooltip("After the first bonus, a new bonus fires every this-many days (while streak holds).")]
     public int lowAccidentBonusInterval = 3;
-
     [Tooltip("Min happiness bonus per trigger.")]
     public float lowAccidentBonusMin = 3f;
-
     [Tooltip("Max happiness bonus per trigger.")]
     public float lowAccidentBonusMax = 7f;
 
-    // ── Developer Cheats ──────────────────────────────────────────
+    // ── Developer Cheats ─────────────────────────────────────────
     [Header("Developer Cheats")]
     [Tooltip("When active, happiness is locked, money and days are overridden.")]
     public bool devMode = false;
-
     [Tooltip("Happiness is clamped to this value every frame while devMode is on.")]
-    [Range(0f, 100f)]
-    public float devHappiness = 100f;
-
+    [Range(0f, 100f)] public float devHappiness = 100f;
     [Tooltip("Capital is set to this value when dev mode is activated.")]
     public float devMoney = 99999f;
-
     [Tooltip("Total days is set to this value when dev mode is activated.")]
     public int devTotalDays = 1000;
 
+    // ── Runtime State ─────────────────────────────────────────────
     [Header("Runtime State (read-only)")]
     [SerializeField] private float _capital;
     [SerializeField] private float _happiness;
@@ -95,6 +102,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private int _consecutiveLowAccidentDays;
     private bool _dayTickPaused;
 
+    // ── Public accessors ─────────────────────────────────────────
     public float Capital => _capital;
     public float Happiness => _happiness;
     public int AccidentRate => _accidentRate;
@@ -103,12 +111,14 @@ public class GameManager : MonoBehaviour
     public bool GameRunning => _gameRunning;
     public int ConsecutiveLowAccidentDays => _consecutiveLowAccidentDays;
 
-    // ── Tile registry (kept for legacy event subscribers) ──
+    // ── Internal registries ───────────────────────────────────────
     private readonly List<RoadTile> _allTiles = new List<RoadTile>();
-
-    // ── Road Manager ──
     private RoadManager _roadManager;
 
+    // ── Result payload built throughout the level ─────────────────
+    private LevelResultPayload _payload;
+
+    // ── Events ────────────────────────────────────────────────────
     [Header("Events")]
     public UnityEvent<float> OnCapitalChanged;
     public UnityEvent<float> OnHappinessChanged;
@@ -127,27 +137,28 @@ public class GameManager : MonoBehaviour
         Instance = this;
     }
 
-    private void Start() => InitLevel(currentLevel);
+    private void Start()
+    {
+        currentLevel = PlayerPrefs.GetInt("CurrentLevel", currentLevel);
+        InitLevel(currentLevel);
+    }
 
     private void LateUpdate()
     {
-        // Dev mode: lock happiness every frame
-        if (devMode && _gameRunning)
+        if (devMode && _gameRunning && !Mathf.Approximately(_happiness, devHappiness))
         {
-            if (!Mathf.Approximately(_happiness, devHappiness))
-            {
-                _happiness = devHappiness;
-                OnHappinessChanged?.Invoke(_happiness);
-            }
+            _happiness = devHappiness;
+            OnHappinessChanged?.Invoke(_happiness);
         }
     }
+
+    // ─────────────────────────────────────────
+    //  LEVEL INITIALISATION
+    // ─────────────────────────────────────────
 
     public void InitLevel(int level)
     {
         StopAllCoroutines();
-
-        // Always resume normal time when a level (re)starts — guards against a
-        // previous Game Over / Victory leaving the game frozen.
         Time.timeScale = 1f;
 
         LevelConfig cfg = GetLevelConfig(level);
@@ -161,14 +172,19 @@ public class GameManager : MonoBehaviour
         _dayTickPaused = false;
         _consecutiveLowAccidentDays = 0;
 
-        // Apply dev overrides if active at level start
+        _payload = new LevelResultPayload
+        {
+            userId = UserSession.IsLoggedIn ? UserSession.CurrentUser.userId : 0,
+            level = level
+        };
+
         if (devMode) ApplyDevOverrides();
 
         StartCoroutine(BroadcastNextFrame());
         StartCoroutine(DayTickRoutine());
 
         Debug.Log($"[GameManager] Level {level} started. Capital=RM{_capital} " +
-                  $"BaselineAccident={_baselineAccidentRate} DecayPerDay={baselineDecayPerDay}" +
+                  $"Baseline={_baselineAccidentRate} DecayPerDay={baselineDecayPerDay}" +
                   (devMode ? " [DEV MODE]" : ""));
     }
 
@@ -182,10 +198,6 @@ public class GameManager : MonoBehaviour
     //  DEVELOPER CHEATS
     // ─────────────────────────────────────────
 
-    /// <summary>
-    /// Activates dev mode: sets money, days, and locks happiness.
-    /// Safe to call from Inspector button or code at any time.
-    /// </summary>
     public void ActivateDevMode()
     {
         devMode = true;
@@ -194,7 +206,6 @@ public class GameManager : MonoBehaviour
                   $"Happiness={devHappiness}, Money=RM{devMoney}, Days={devTotalDays}");
     }
 
-    /// <summary>Deactivates dev mode. Current values are kept but no longer locked.</summary>
     public void DeactivateDevMode()
     {
         devMode = false;
@@ -206,7 +217,6 @@ public class GameManager : MonoBehaviour
         _happiness = devHappiness;
         _capital = devMoney;
         totalDays = devTotalDays;
-
         OnHappinessChanged?.Invoke(_happiness);
         OnCapitalChanged?.Invoke(_capital);
         OnDayChanged?.Invoke(_daysPassed, totalDays);
@@ -221,10 +231,7 @@ public class GameManager : MonoBehaviour
         if (!_allTiles.Contains(tile)) _allTiles.Add(tile);
     }
 
-    public void UnregisterTile(RoadTile tile)
-    {
-        _allTiles.Remove(tile);
-    }
+    public void UnregisterTile(RoadTile tile) { _allTiles.Remove(tile); }
 
     public void RegisterRoadManager(RoadManager rm)
     {
@@ -238,7 +245,7 @@ public class GameManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────
-    //  DAY TICK PAUSE  (used during placement drag)
+    //  DAY TICK PAUSE
     // ─────────────────────────────────────────
 
     public void PauseDayTick() => _dayTickPaused = true;
@@ -264,7 +271,8 @@ public class GameManager : MonoBehaviour
             result == PlacementResult.InsufficientFunds)
             return result;
 
-        ModifyCapital(-costSpent);
+        SpendCapital(costSpent);
+
         if (!Mathf.Approximately(happinessDelta, 0f))
             ModifyHappiness(happinessDelta);
 
@@ -273,8 +281,17 @@ public class GameManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────
-    //  ECONOMY
+    //  BUDGET / ECONOMY
     // ─────────────────────────────────────────
+
+    /// <summary>Deducts cost from capital. Returns false if insufficient funds.</summary>
+    public bool SpendCapital(float cost)
+    {
+        if (_capital < cost) return false;
+        _capital -= cost;
+        OnCapitalChanged?.Invoke(_capital);
+        return true;
+    }
 
     public void ModifyCapital(float delta)
     {
@@ -349,11 +366,13 @@ public class GameManager : MonoBehaviour
             // 3) Update city aggregate rate.
             RecomputeCityAccidentRate();
 
-            // 4) Low-accident streak bonus.
+            // 4) Record daily accident snapshot for the trend graph.
+            LevelProgress.RecordDailyAccidentRate(_payload, _daysPassed, _accidentRate);
+
+            // 5) Low-accident streak bonus.
             if (_accidentRate < lowAccidentThreshold)
             {
                 _consecutiveLowAccidentDays++;
-
                 if (_consecutiveLowAccidentDays >= lowAccidentStreakRequired)
                 {
                     int daysPastStreak = _consecutiveLowAccidentDays - lowAccidentStreakRequired;
@@ -371,7 +390,7 @@ public class GameManager : MonoBehaviour
                 _consecutiveLowAccidentDays = 0;
             }
 
-            // 5) Tax revenue.
+            // 6) Tax revenue.
             float tax = CalculateDailyTaxRevenue();
             ModifyCapital(tax);
 
@@ -390,10 +409,11 @@ public class GameManager : MonoBehaviour
             _gameRunning = false;
             StopAllCoroutines();
             Debug.Log("[GameManager] VICTORY — Accident rate = 0!");
-            LevelProgress.MarkLevelCleared(currentLevel);
             LevelAudioManager.Instance?.PlayWinGame();
+            FinaliseAndSubmitPayload(won: true);
             OnVictory?.Invoke();
-            Time.timeScale = 0f;   // freeze cars, day tick, crash spawning — everything stops
+            Time.timeScale = 0f;
+            OpenLevelResultScene();
         }
     }
 
@@ -404,8 +424,106 @@ public class GameManager : MonoBehaviour
         StopAllCoroutines();
         Debug.Log("[GameManager] GAME OVER");
         LevelAudioManager.Instance?.PlayGameOver();
+        FinaliseAndSubmitPayload(won: false);
         OnGameOver?.Invoke();
-        Time.timeScale = 0f;   // freeze cars, day tick, crash spawning — everything stops
+        Time.timeScale = 0f;
+        OpenLevelResultScene();
+    }
+
+    // ─────────────────────────────────────────
+    //  LEVEL RESULT SCENE
+    // ─────────────────────────────────────────
+
+    /// <summary>
+    /// Opens the Level Results screen via PageManager if available,
+    /// otherwise loads the scene by name.
+    /// </summary>
+    private void OpenLevelResultScene()
+    {
+        if (string.IsNullOrWhiteSpace(levelResultSceneName))
+        {
+            Debug.LogWarning("[GameManager] levelResultSceneName is empty — cannot open Level Results.");
+            return;
+        }
+
+        if (PageManager.Instance != null)
+        {
+            PageManager.Instance.ChangeUI(levelResultSceneName);
+            Debug.Log($"[GameManager] Opening Level Results via PageManager: '{levelResultSceneName}'");
+        }
+        else
+        {
+            UnityEngine.SceneManagement.SceneManager.LoadScene(levelResultSceneName);
+            Debug.Log($"[GameManager] Opening Level Results via SceneManager: '{levelResultSceneName}'");
+        }
+    }
+
+    // ─────────────────────────────────────────
+    //  PAYLOAD FINALISATION
+    // ─────────────────────────────────────────
+
+    private void FinaliseAndSubmitPayload(bool won)
+    {
+        // Collect device effectiveness data first (needed for scoring).
+        if (_roadManager != null)
+            _roadManager.PopulateDeviceEffectiveness(_payload.deviceEffectiveness);
+
+        // Compute overall device effectiveness: total correct / total placed * 100.
+        float overallDeviceEff = ComputeOverallDeviceEffectiveness(_payload.deviceEffectiveness);
+
+        int score = CalculateFinalScore(_accidentRate, overallDeviceEff, _happiness);
+
+        _payload.daysUsed = _daysPassed;
+        _payload.finalAccidentRate = _accidentRate;
+        _payload.finalHappiness = _happiness;
+        _payload.safetyScore = score;
+        _payload.overallDeviceEffectiveness = overallDeviceEff;
+
+        // Bridge to the Level Results scene.
+        LastLevelResult.Set(_payload);
+
+        // Submit to backend and mark cleared locally (both win and loss).
+        LevelProgress.MarkLevelCleared(currentLevel, _payload);
+    }
+
+    /// <summary>
+    /// Aggregates correctness across all device entries to produce
+    /// an overall effectiveness percentage (0–100).
+    /// </summary>
+    private static float ComputeOverallDeviceEffectiveness(List<DeviceEffectivenessEntry> entries)
+    {
+        if (entries == null || entries.Count == 0) return 0f;
+
+        int totalPlaced = 0;
+        int totalCorrect = 0;
+
+        foreach (var e in entries)
+        {
+            totalPlaced += e.placedCount;
+            // effectivenessPercent = correct/placed*100, so correct = placedCount * pct / 100
+            totalCorrect += Mathf.RoundToInt(e.placedCount * e.effectivenessPercent / 100f);
+        }
+
+        return totalPlaced > 0 ? (float)totalCorrect / totalPlaced * 100f : 0f;
+    }
+
+    // ─────────────────────────────────────────
+    //  SCORE FORMULA
+    // ─────────────────────────────────────────
+
+    /// <summary>
+    /// Safety Score (1–10 000) weighted:
+    ///   40% accident-rate performance   (100 − accidentRate × 4, clamped 0–100)
+    ///   30% overall device effectiveness (0–100)
+    ///   30% final happiness              (0–100)
+    /// </summary>
+    public int CalculateFinalScore(float accidentRate, float deviceEffectiveness, float happiness)
+    {
+        float accidentScore = Mathf.Clamp(100f - accidentRate * 4f, 0f, 100f);
+        float raw = accidentScore * 0.40f
+                  + deviceEffectiveness * 0.30f
+                  + happiness * 0.30f;
+        return Mathf.Clamp(Mathf.RoundToInt(raw * 100f), 1, 10000);
     }
 
     // ─────────────────────────────────────────
@@ -432,15 +550,18 @@ public class GameManager : MonoBehaviour
         OnAccidentRateChanged?.Invoke(_accidentRate);
         OnDayChanged?.Invoke(_daysPassed, totalDays);
     }
+}
 
-    public int CalculateFinalScore(float totalBudgetSpent)
-    {
-        float accidentScore = Mathf.Max(0, 100 - _accidentRate * 4f);
-        float happinessScore = _happiness;
-        float budgetScore = Mathf.Clamp(100f - (totalBudgetSpent / 100f), 0f, 100f);
-        float raw = accidentScore * 0.5f + happinessScore * 0.3f + budgetScore * 0.2f;
-        return Mathf.Clamp(Mathf.RoundToInt(raw * 100f), 1, 10000);
-    }
+// ─────────────────────────────────────────────────────────────────
+//  LAST LEVEL RESULT
+// ─────────────────────────────────────────────────────────────────
+
+public static class LastLevelResult
+{
+    public static LevelResultPayload Payload { get; private set; }
+
+    public static void Set(LevelResultPayload p) => Payload = p;
+    public static void Clear() => Payload = null;
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -460,9 +581,7 @@ public class GameManagerEditor : Editor
         EditorGUILayout.Space(10);
         EditorGUILayout.LabelField("Developer Controls", EditorStyles.boldLabel);
 
-        // ── Status ───────────────────────────
         if (gm.devMode)
-        {
             EditorGUILayout.HelpBox(
                 "DEV MODE ACTIVE\n" +
                 $"Happiness locked to {gm.devHappiness}\n" +
@@ -470,17 +589,11 @@ public class GameManagerEditor : Editor
                 $"Total days = {gm.devTotalDays}\n" +
                 "Game-over from happiness/day-limit is disabled.",
                 MessageType.Warning);
-        }
         else
-        {
-            EditorGUILayout.HelpBox(
-                "Dev mode is OFF. Click below to activate.",
-                MessageType.Info);
-        }
+            EditorGUILayout.HelpBox("Dev mode is OFF. Click below to activate.", MessageType.Info);
 
         EditorGUILayout.Space(4);
 
-        // ── Buttons ──────────────────────────
         if (!gm.devMode)
         {
             GUI.backgroundColor = new Color(0.3f, 0.85f, 1f);
@@ -504,15 +617,14 @@ public class GameManagerEditor : Editor
 
         GUI.backgroundColor = Color.white;
 
-        // ── Runtime info ─────────────────────
         if (Application.isPlaying)
         {
             EditorGUILayout.Space(6);
             EditorGUILayout.LabelField("Live Stats", EditorStyles.miniLabel);
-            EditorGUILayout.LabelField($"Capital: RM {gm.Capital:N0}");
-            EditorGUILayout.LabelField($"Happiness: {gm.Happiness:F1}");
-            EditorGUILayout.LabelField($"Accident Rate: {gm.AccidentRate}");
-            EditorGUILayout.LabelField($"Day: {gm.DaysPassed} / {gm.TotalDays}");
+            EditorGUILayout.LabelField($"Capital:        RM {gm.Capital:N0}");
+            EditorGUILayout.LabelField($"Happiness:      {gm.Happiness:F1}");
+            EditorGUILayout.LabelField($"Accident Rate:  {gm.AccidentRate}");
+            EditorGUILayout.LabelField($"Day:            {gm.DaysPassed} / {gm.TotalDays}");
             Repaint();
         }
     }

@@ -35,6 +35,10 @@ public class CameraManager : MonoBehaviour
         [Header("Auto Pan Settings")]
         public float movementSpeed = 5f;
 
+        [Tooltip("The X position the camera pans TO before reversing. " +
+                 "Leave at (0,0,0) to fall back to the working-area bounds.")]
+        public Vector3 panEndPosition = Vector3.zero;
+
         // ── Zoom ───────────────────────────────────────────────
         [Header("Zoom Settings")]
         public float zoomMultiplier = 50f;
@@ -393,7 +397,7 @@ public class CameraManager : MonoBehaviour
             else
                 TriggerLevelStartAudio();
         }
-     
+
 
         Debug.Log($"[CameraManager] Switched to scene: '{cfg.sceneName}'");
     }
@@ -432,6 +436,11 @@ public class CameraManager : MonoBehaviour
 
     // ─────────────────────────────────────────────────────────────
     //  Auto Pan
+    //
+    //  If panEndPosition is set (non-zero), the camera bounces
+    //  between startPosition.x and panEndPosition.x, clamped to
+    //  whichever is the smaller/larger of the two.
+    //  Otherwise falls back to the working-area X bounds.
     // ─────────────────────────────────────────────────────────────
     private void HandlePan(SceneConfig cfg)
     {
@@ -439,12 +448,26 @@ public class CameraManager : MonoBehaviour
         Vector3 pos = cameraTransform.position;
         pos.x += movement;
 
-        var (minX, maxX, _, _) = GetCameraBounds(cfg);
+        // Determine the X range for this scene.
+        float panMinX, panMaxX;
+        bool hasExplicitEnd = cfg.panEndPosition != Vector3.zero;
 
-        if (pos.x >= maxX || pos.x <= minX)
+        if (hasExplicitEnd)
+        {
+            panMinX = Mathf.Min(cfg.startPosition.x, cfg.panEndPosition.x);
+            panMaxX = Mathf.Max(cfg.startPosition.x, cfg.panEndPosition.x);
+        }
+        else
+        {
+            var (wMinX, wMaxX, _, _) = GetCameraBounds(cfg);
+            panMinX = wMinX;
+            panMaxX = wMaxX;
+        }
+
+        if (pos.x >= panMaxX || pos.x <= panMinX)
             panDirection *= -1;
 
-        pos.x = Mathf.Clamp(pos.x, minX, maxX);
+        pos.x = Mathf.Clamp(pos.x, panMinX, panMaxX);
         cameraTransform.position = pos;
     }
 

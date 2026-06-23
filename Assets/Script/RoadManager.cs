@@ -143,6 +143,59 @@ public class RoadManager : MonoBehaviour
         return n;
     }
 
+    // ─────────────────────────────────────────
+    //  DEVICE EFFECTIVENESS  (called by GameManager on end-game)
+    // ─────────────────────────────────────────
+
+    /// <summary>
+    /// Iterates all sections/tiles to compute per-device-type effectiveness
+    /// and writes DeviceEffectivenessEntry records into the provided list.
+    /// Called by GameManager.FinaliseAndSubmitPayload().
+    /// </summary>
+    public void PopulateDeviceEffectiveness(List<DeviceEffectivenessEntry> list)
+    {
+        if (list == null) return;
+        list.Clear();
+
+        var totals = new Dictionary<TrafficDeviceType, int>();
+        var correct = new Dictionary<TrafficDeviceType, int>();
+
+        foreach (var section in _sections)
+        {
+            if (section == null) continue;
+            foreach (var tile in section.ChildTiles)
+            {
+                if (tile == null) continue;
+                foreach (var slot in tile.Slots)
+                {
+                    if (slot.deviceType == TrafficDeviceType.None) continue;
+
+                    if (!totals.ContainsKey(slot.deviceType))
+                    {
+                        totals[slot.deviceType] = 0;
+                        correct[slot.deviceType] = 0;
+                    }
+
+                    totals[slot.deviceType]++;
+                    if (tile.IsSlotCorrect(slot))
+                        correct[slot.deviceType]++;
+                }
+            }
+        }
+
+        foreach (var kv in totals)
+        {
+            int t = kv.Value;
+            int c = correct[kv.Key];
+            list.Add(new DeviceEffectivenessEntry
+            {
+                deviceType = kv.Key.ToString(),
+                placedCount = t,
+                effectivenessPercent = t > 0 ? (float)c / t * 100f : 0f
+            });
+        }
+    }
+
 #if UNITY_EDITOR
     private void OnDrawGizmos()
     {

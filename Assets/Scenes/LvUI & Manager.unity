@@ -3463,7 +3463,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80e3ec0e5a5c4c24ba76838baa1ee61c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
-  currentLevel: 3
+  currentLevel: 2
   levelConfigs:
   - level: 1
     startCapitalRM: 1000
@@ -3478,7 +3478,7 @@ MonoBehaviour:
     startAccidentRate: 25
     startHappiness: 60
   secondsPerDay: 2
-  totalDays: 90
+  totalDays: 1000
   safetyThreshold: 3
   safetyMultiplier: 2
   baseTaxPerDay: 250
@@ -3492,8 +3492,8 @@ MonoBehaviour:
   devHappiness: 100
   devMoney: 99999
   devTotalDays: 1000
-  _capital: 1000
-  _happiness: 0
+  _capital: 99999
+  _happiness: 100
   _accidentRate: 0
   _baselineAccidentRate: 0
   _daysPassed: 0

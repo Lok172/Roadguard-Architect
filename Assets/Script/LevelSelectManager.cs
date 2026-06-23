@@ -14,12 +14,12 @@ using UnityEditor;
 //  Locks each level's Select button until the previous level has been
 //  cleared (tracked via LevelProgress / PlayerPrefs).
 //
-//  Setup per entry:
-//    level         → 1, 2, 3 ...
-//    panelRoot     → the LevelPanel 1 / LevelPanel 2 / LevelPanel 3 GameObject
+//  Setup per entry in the Inspector:
+//    level         → 1, 2, 3 …
+//    panelRoot     → the LevelPanel 1 / 2 / 3 GameObject
 //    selectButton  → the "Select" Button inside that panel
 //    lockedOverlay → OPTIONAL lock icon / dimmer shown while locked
-//    sceneName     → the scene to load when this level's button is clicked
+//    sceneName     → scene to load when this level's button is pressed
 //
 //  Tick "Developer Mode" in the Inspector to unlock every level
 //  regardless of saved progress (handy for testing/demoing).
@@ -30,7 +30,7 @@ public class LevelSelectManager : MonoBehaviour
     [System.Serializable]
     public class LevelPanelEntry
     {
-        [Tooltip("Level number this panel represents (1, 2, 3 ...).")]
+        [Tooltip("Level number this panel represents (1, 2, 3 …).")]
         public int level = 1;
 
         [Tooltip("The LevelPanel GameObject (e.g. 'LevelPanel 1').")]
@@ -42,7 +42,9 @@ public class LevelSelectManager : MonoBehaviour
         [Tooltip("Optional lock icon / dim overlay shown while the level is locked.")]
         public GameObject lockedOverlay;
 
-        
+        [Tooltip("Scene to load when this level's Select button is clicked. " +
+                 "Used if PageManager is not present in the scene.")]
+        [SceneName] public string sceneName;
     }
 
     [Header("Level Panels (in order)")]
@@ -57,8 +59,11 @@ public class LevelSelectManager : MonoBehaviour
         RefreshLevelLocks();
     }
 
-    /// <summary>Re-evaluates and applies the locked/unlocked state for every panel,
-    /// and wires each Select button to load its assigned scene.</summary>
+    /// <summary>
+    /// Re-evaluates the locked/unlocked state for every panel and
+    /// (re-)wires each Select button to load its assigned scene.
+    /// Safe to call repeatedly; old listeners are cleared first.
+    /// </summary>
     public void RefreshLevelLocks()
     {
         foreach (LevelPanelEntry entry in levelPanels)
@@ -71,17 +76,34 @@ public class LevelSelectManager : MonoBehaviour
             {
                 entry.selectButton.interactable = unlocked;
 
-                // Always clear old listeners to prevent stacking on repeated OnEnable calls.
+                // Clear old listeners to prevent stacking on repeated OnEnable calls.
                 entry.selectButton.onClick.RemoveAllListeners();
 
-               
+                if (unlocked)
+                {
+                    // Capture loop variables for the closure.
+                    int capturedLevel = entry.level;
+                    string capturedSceneName = entry.sceneName;
+
+                    entry.selectButton.onClick.AddListener(() =>
+                    {
+                        // Persist the chosen level so GameManager can read it
+                        // even though it lives in a different scene.
+                        PlayerPrefs.SetInt("CurrentLevel", capturedLevel);
+                        PlayerPrefs.Save();
+
+                        if (PageManager.Instance != null)
+                            PageManager.Instance.ChangeUI(capturedSceneName);
+                        else
+                            SceneManager.LoadScene(capturedSceneName);
+                    });
+                }
             }
 
             if (entry.lockedOverlay != null)
                 entry.lockedOverlay.SetActive(!unlocked);
         }
     }
-
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -103,7 +125,9 @@ public class LevelSelectManagerEditor : Editor
 
         if (!Application.isPlaying)
         {
-            EditorGUILayout.HelpBox("Enter Play Mode to reset progress or refresh locks at runtime.", MessageType.Info);
+            EditorGUILayout.HelpBox(
+                "Enter Play Mode to reset progress or refresh locks at runtime.",
+                MessageType.Info);
             return;
         }
 
