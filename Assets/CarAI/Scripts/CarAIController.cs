@@ -219,7 +219,7 @@ public class CarAIController : MonoBehaviour
 
             Turn(steerAngle);
 
-            float maxDistance = kmh * kmh / 100f + distanceFromObjects;
+            float maxDistance = kmh * kmh / 1000f + distanceFromObjects;
 
             RaycastHit carHit = new RaycastHit();
 

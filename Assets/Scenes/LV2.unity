@@ -3433,87 +3433,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: -90, y: 0, z: 0}
---- !u!1 &2062908655
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2062908657}
-  - component: {fileID: 2062908658}
-  m_Layer: 0
-  m_Name: 'CarManager '
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2062908657
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2062908655}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2062908658
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2062908655}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 515eab7537cf3b948a65b8eb756210f3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CarManager
-  dragButton: 1
-  dragThresholdPixels: 5
-  carPrefabs:
-  - {fileID: 100000, guid: 1fd103605340954428571e3fe6a7f6c6, type: 3}
-  - {fileID: 100000, guid: e1c9b9152de672f46bf04b3ad58cf61e, type: 3}
-  - {fileID: 100000, guid: eee8a89bee6b96b42bbfbf8f36ed7598, type: 3}
-  poolSizePerPrefab: 10
-  maxActiveCars: 10
-  respawnDelay: 3
-  autoCollectIntersections: 1
-  intersections: []
-  endpointIntersections:
-  - {fileID: 1280578342}
-  - {fileID: 970030764}
-  - {fileID: 1194946311}
-  - {fileID: 53612477}
-  minRiskEval: 1.5
-  maxRiskEval: 5
-  recentRateInterval: 30
-  accidentsForMinInterval: 5
-  smokeVFXPrefab: {fileID: 2900496037033356032, guid: ffb552a29a2a90f4ea5388f288497631, type: 3}
-  barrierFencePrefab: {fileID: 100000, guid: e2cf89d038ff4c24eb06c664e8a99502, type: 3}
-  crashDisappearDuration: 4
-  crashFadeDuration: 2.5
-  crashSmokeFadeLead: 1
-  barrierPaddingWithCar: 1
-  barrierPaddingInBetween: 8
-  crashRecoveryDuration: 3
-  crashFrontSpeed: 2
-  crashRearSpeed: 12
-  crashSpawnGap: 8
-  crashFrontT: 0.6
-  crashClearanceDistance: 130
-  blockBufferSegments: 1
-  crashSearchExtraSegments: 6
-  crashImpactTimeout: 15
-  tileLinkMaxDistance: 3
 --- !u!1 &2116568730
 GameObject:
   m_ObjectHideFlags: 0
@@ -3734,7 +3653,6 @@ Transform:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 2062908657}
   - {fileID: 1906617781}
   - {fileID: 954105350}
   - {fileID: 272466986}

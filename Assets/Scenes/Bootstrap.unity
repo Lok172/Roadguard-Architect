@@ -416,7 +416,6 @@ MonoBehaviour:
   masterPermanentScenes:
   - Environment
   - Bootstrap
-  - City
   uiSceneGroups:
   - uiSceneName: MainMenu
     additionalScenes:

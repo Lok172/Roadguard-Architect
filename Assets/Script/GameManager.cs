@@ -91,6 +91,13 @@ public class GameManager : MonoBehaviour
     [Tooltip("Total days is set to this value when dev mode is activated.")]
     public int devTotalDays = 1000;
 
+    // ── Accident Simulation ───────────────────────────────────────
+    [Header("Accident Simulation")]
+    [Tooltip("Assign the AreaTargetManager in the scene. If null, accident simulation is skipped.")]
+    public AreaTargetManager areaTargetManager;
+    [Tooltip("How often (real seconds) GameManager picks a random car and triggers an accident.")]
+    [Min(1f)] public float accidentIntervalSeconds = 10f;
+
     // ── Runtime State ─────────────────────────────────────────────
     [Header("Runtime State (read-only)")]
     [SerializeField] private float _capital;
@@ -140,6 +147,13 @@ public class GameManager : MonoBehaviour
     private void Start()
     {
         currentLevel = PlayerPrefs.GetInt("CurrentLevel", currentLevel);
+
+        GameObject obj = GameObject.Find("AreaTargetManager");
+        if (obj != null)
+            areaTargetManager = obj.GetComponent<AreaTargetManager>();
+        else
+            Debug.LogWarning("[GameManager] No GameObject named 'AreaTargetManager' found in scene.");
+
         InitLevel(currentLevel);
     }
 
@@ -185,6 +199,7 @@ public class GameManager : MonoBehaviour
 
         StartCoroutine(BroadcastNextFrame());
         StartCoroutine(DayTickRoutine());
+        StartCoroutine(AccidentSimulationRoutine());
 
         Debug.Log($"[GameManager] Level {level} started. Capital=RM{_capital} " +
                   $"Baseline={_baselineAccidentRate} DecayPerDay={baselineDecayPerDay}" +
@@ -398,6 +413,35 @@ public class GameManager : MonoBehaviour
             ModifyCapital(tax);
 
             if (_daysPassed >= totalDays && !devMode) TriggerGameOver();
+        }
+    }
+
+    // ─────────────────────────────────────────
+    //  ACCIDENT SIMULATION
+    // ─────────────────────────────────────────
+
+    /// <summary>
+    /// Every accidentIntervalSeconds, picks a random car inside the
+    /// designated area cubes and triggers the accident sequence on it.
+    /// Stops automatically when the game ends.
+    /// </summary>
+    private IEnumerator AccidentSimulationRoutine()
+    {
+        if (areaTargetManager == null)
+        {
+            Debug.LogWarning("[GameManager] AccidentSimulationRoutine: no AreaTargetManager assigned — skipping.");
+            yield break;
+        }
+
+        while (_gameRunning)
+        {
+            yield return new WaitForSeconds(accidentIntervalSeconds);
+
+            if (!_gameRunning) break;
+            if (_dayTickPaused) continue;
+
+            Debug.Log($"[GameManager] Triggering accident simulation (every {accidentIntervalSeconds}s).");
+            areaTargetManager.PickTargetCar();
         }
     }
 

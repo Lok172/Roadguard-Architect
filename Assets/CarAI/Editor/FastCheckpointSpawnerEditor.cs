@@ -39,7 +39,7 @@ public class FastCheckpointSpawnerEditor : Editor
         Event e = Event.current;
 
         //Spawn checkpoint
-        if(e.type == EventType.KeyUp && e.keyCode == KeyCode.E)   
+        if(e.type == EventType.KeyUp && e.keyCode == KeyCode.R)   
         {
             if(parent == null)
             {

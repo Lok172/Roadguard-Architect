@@ -3477,6 +3477,7 @@ MonoBehaviour:
     startCapitalRM: 15000
     startAccidentRate: 25
     startHappiness: 60
+  levelResultSceneName: LevelResult
   secondsPerDay: 2
   totalDays: 1000
   safetyThreshold: 3
@@ -3492,6 +3493,8 @@ MonoBehaviour:
   devHappiness: 100
   devMoney: 99999
   devTotalDays: 1000
+  areaTargetManager: {fileID: 0}
+  accidentIntervalSeconds: 10
   _capital: 99999
   _happiness: 100
   _accidentRate: 0

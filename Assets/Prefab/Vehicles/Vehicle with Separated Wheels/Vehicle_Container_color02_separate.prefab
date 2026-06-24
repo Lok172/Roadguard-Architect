@@ -640,7 +640,6 @@ GameObject:
   m_Component:
   - component: {fileID: 400012}
   - component: {fileID: 9122638177971269757}
-  - component: {fileID: 1381490948297947684}
   m_Layer: 0
   m_Name: Vehicle_Container_color02_separate
   m_TagString: Untagged
@@ -697,25 +696,3 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!114 &1381490948297947684
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 100014}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4a6fe283fc4c212418b26f3c58c2a09c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CarAgent
-  baseSpeed: 8
-  speedBumpSpeed: 2
-  speedBumpTransitionTime: 0.5
-  trafficLightWaitN: 3
-  stopSignStopChance: 0.5
-  stopSignDuration: 2
-  _currentSpeed: 0
-  _isCrashed: 0
-  _isStopped: 0
-  _waypointIndex: 0

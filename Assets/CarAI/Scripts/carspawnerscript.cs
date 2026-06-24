@@ -23,12 +23,17 @@ public class carspawnerscript : MonoBehaviour
     public int recklessnessMin = 0;
     public int recklessnessMax = 0;
 
+
+
     // Start is called before the first frame update
     void Start()
     {
+        Debug.Log("Spawner Start");
         StartCoroutine(SpawnCycle());
     }
 
+
+    
     // Update is called once per frame
     void Update()
     {
