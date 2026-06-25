@@ -10,16 +10,27 @@ public class CheckpointScript : MonoBehaviour
     public int speedLimit;
 
     [Tooltip("List of the next checkpoints. If you add more that one checkpoint, the ai will choose one randomly.")]
-    public List<Transform> nextCheckpoints = new List<Transform> ();
+    public List<Transform> nextCheckpoints = new List<Transform>();
+
+    [Tooltip("If true, this checkpoint's material is visible at runtime. " +
+             "If false, the MeshRenderer on this checkpoint is disabled so it is invisible in-game.")]
+    public bool showCheckpointMaterial = false;
 
     void Awake()
     {
-        for(int i = 0; i < nextCheckpoints.Count; i++)
+        for (int i = 0; i < nextCheckpoints.Count; i++)
         {
-            if(nextCheckpoints[i] == null)
+            if (nextCheckpoints[i] == null)
             {
                 nextCheckpoints.RemoveAt(i);
             }
+        }
+
+        // Hide this checkpoint's mesh at runtime if requested.
+        if (!showCheckpointMaterial)
+        {
+            MeshRenderer mr = GetComponent<MeshRenderer>();
+            if (mr != null) mr.enabled = false;
         }
     }
 
@@ -33,24 +44,24 @@ public class CheckpointScript : MonoBehaviour
     {
         CarAIController controller = other.GetComponent<CarAIController>();
 
-        if(controller && controller.nextCheckpoint.gameObject == transform.gameObject)
+        if (controller && controller.nextCheckpoint.gameObject == transform.gameObject)
         {
-            if(speedLimit != -1)
+            if (speedLimit != -1)
                 controller.speedLimit = speedLimit;
 
-            if(controller.taxiMode)
+            if (controller.taxiMode)
             {
                 TaxiScript taxiScript = other.GetComponent<TaxiScript>();
-                if(taxiScript)
+                if (taxiScript)
                 {
-                    if(taxiScript.bestRoute[taxiScript.bestRoute.Count - 1] == transform)
+                    if (taxiScript.bestRoute[taxiScript.bestRoute.Count - 1] == transform)
                     {
                         controller.speedLimit = 0;
                     }
                     else
                     {
                         int index = taxiScript.bestRoute.IndexOf(transform);
-                        controller.nextCheckpoint = taxiScript.bestRoute[index+1];
+                        controller.nextCheckpoint = taxiScript.bestRoute[index + 1];
                     }
                 }
             }
@@ -67,16 +78,16 @@ public class CheckpointScript : MonoBehaviour
         }
     }
 
-    #if UNITY_EDITOR
+#if UNITY_EDITOR
     private void OnDrawGizmos()
     {
         Gizmos.color = Color.red;
 
-        for(int i=0; i < nextCheckpoints.Count; i++)
+        for (int i = 0; i < nextCheckpoints.Count; i++)
         {
             Gizmos.DrawLine(transform.position, nextCheckpoints[i].position);
         }
     }
-    
-    #endif
+
+#endif
 }

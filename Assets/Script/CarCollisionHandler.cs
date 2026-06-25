@@ -28,6 +28,14 @@ public class CarCollisionHandler : MonoBehaviour
     public float fadeDuration = 1.5f;
     public StopScript accidentStopper;
 
+    // ─── Flip Detection Config ────────────────────────────────────────────────
+
+    [Header("Flip Detection")]
+    [Tooltip("Z-axis rotation degrees beyond which the car counts as flipped.")]
+    public float flipAngleThreshold = 30f;
+    [Tooltip("How often (seconds) to re-check for a flip while the car is running.")]
+    public float flipCheckInterval = 1f;
+
     // ─── Private ──────────────────────────────────────────────────────────────
 
     private CarAIController _controller;
@@ -41,16 +49,47 @@ public class CarCollisionHandler : MonoBehaviour
         _controller = GetComponent<CarAIController>();
     }
 
+    private void Start()
+    {
+        StartCoroutine(FlipDetectionLoop());
+    }
+
+    /// <summary>
+    /// Polls every flipCheckInterval seconds.
+    /// If the car's Z rotation exceeds flipAngleThreshold, treats it as
+    /// an accident: spawns smoke and plays the accident sound, then fades out.
+    /// Mirrors the flip logic already in CarAIController.despawnForFlippingOver
+    /// but adds the full accident visual + audio sequence.
+    /// </summary>
+    private IEnumerator FlipDetectionLoop()
+    {
+        while (!_accidentStarted)
+        {
+            yield return new WaitForSeconds(flipCheckInterval);
+            if (_accidentStarted) yield break;
+
+            float z = transform.eulerAngles.z;
+            // eulerAngles are always 0-360; normalise to -180..180
+            if (z > 180f) z -= 360f;
+
+            if (Mathf.Abs(z) > flipAngleThreshold)
+            {
+                Debug.Log($"[CarCollisionHandler] Flip detected on {gameObject.name} (Z={z:F1}°) — triggering accident.");
+                TriggerAccident();
+            }
+        }
+    }
+
     /// <summary>Called by AreaTargetManager to (re-)configure the handler.</summary>
     public void Configure(GameObject smoke, float delay, float duration, StopScript stopper)
     {
-        smokePrefab      = smoke;
-        fadeDelay        = delay;
-        fadeDuration     = duration;
-        accidentStopper  = stopper;
+        smokePrefab = smoke;
+        fadeDelay = delay;
+        fadeDuration = duration;
+        accidentStopper = stopper;
 
         // Reset state so the handler is ready for a fresh accident
-        colliderCollide  = false;
+        colliderCollide = false;
         _accidentStarted = false;
 
         if (_smokeInstance != null)
@@ -79,9 +118,12 @@ public class CarCollisionHandler : MonoBehaviour
     {
         if (_accidentStarted) return;   // Only trigger once
         _accidentStarted = true;
-        colliderCollide  = true;
+        colliderCollide = true;
 
         Debug.Log($"[CarCollisionHandler] Accident triggered on {gameObject.name}");
+
+        // 5 – Play accident sound via LevelAudioManager
+        LevelAudioManager.Instance?.PlayCarAccident();
 
         // 3 – Spawn smoke at car centre
         SpawnSmoke();

@@ -68,6 +68,21 @@ public class GameManager : MonoBehaviour
     [Tooltip("How much the baseline accident rate decreases each in-game day.")]
     [Min(0f)] public float baselineDecayPerDay = 1f;
 
+    [Header("Daily Accident Gain Ramp")]
+    [Tooltip("dailyAccidentGain value at the start of the level (day 1).")]
+    [Min(0f)] public float rampAccidentGainMin = 0.5f;
+
+    [Tooltip("dailyAccidentGain value once the ramp completes. Held at this value for the rest of the level.")]
+    [Min(0f)] public float rampAccidentGainMax = 2f;
+
+    [Tooltip("Number of in-game days to linearly ramp from min to max. After this, max is locked in.")]
+    [Min(1)] public int rampDurationDays = 30;
+
+    // ── Ramp accessors (read by RoadManager) ──────────────────────
+    public float RampAccidentGainMin => rampAccidentGainMin;
+    public float RampAccidentGainMax => rampAccidentGainMax;
+    public int RampDurationDays => rampDurationDays;
+
     [Header("Low Accident Streak Bonus")]
     [Tooltip("Accident rate must stay strictly below this for the streak to count.")]
     public int lowAccidentThreshold = 3;
@@ -117,6 +132,11 @@ public class GameManager : MonoBehaviour
     public int TotalDays => totalDays;
     public bool GameRunning => _gameRunning;
     public int ConsecutiveLowAccidentDays => _consecutiveLowAccidentDays;
+
+    // ── Car Spawners ──────────────────────────────────────────────
+    [Header("Car Spawners")]
+    [Tooltip("Assign all carspawnerscript instances in the scene. GameManager will trigger them on level start.")]
+    public List<carspawnerscript> carSpawners = new List<carspawnerscript>();
 
     // ── Internal registries ───────────────────────────────────────
     private readonly List<RoadTile> _allTiles = new List<RoadTile>();
@@ -170,6 +190,13 @@ public class GameManager : MonoBehaviour
     //  LEVEL INITIALISATION
     // ─────────────────────────────────────────
 
+    /// <summary>
+    /// Re-initialises the current level. Called by SpawnerManager after it
+    /// activates the correct spawner group, so spawners are guaranteed active
+    /// before StartSpawnersNextFrame runs.
+    /// </summary>
+    public void InitLevel() => InitLevel(currentLevel);
+
     public void InitLevel(int level)
     {
         StopAllCoroutines();
@@ -200,6 +227,7 @@ public class GameManager : MonoBehaviour
         StartCoroutine(BroadcastNextFrame());
         StartCoroutine(DayTickRoutine());
         StartCoroutine(AccidentSimulationRoutine());
+        StartCoroutine(StartSpawnersNextFrame());
 
         Debug.Log($"[GameManager] Level {level} started. Capital=RM{_capital} " +
                   $"Baseline={_baselineAccidentRate} DecayPerDay={baselineDecayPerDay}" +
@@ -210,6 +238,44 @@ public class GameManager : MonoBehaviour
     {
         yield return null;
         BroadcastState();
+    }
+
+    // ─────────────────────────────────────────
+    //  CAR SPAWNER CONTROL
+    // ─────────────────────────────────────────
+
+    /// <summary>
+    /// Waits one frame (so all Awake/Start on spawners have run), then
+    /// resets and starts every registered spawner. Cars are NOT spawned
+    /// in the scene at edit-time — spawning is driven entirely from here.
+    /// </summary>
+    private IEnumerator StartSpawnersNextFrame()
+    {
+        yield return null;  // let spawner Start() finish if it ran
+
+        // Always re-scan for active spawners so that SpawnerManager's
+        // SetActive(true) calls are picked up even if the list was cached.
+        carSpawners = new List<carspawnerscript>(
+            FindObjectsByType<carspawnerscript>(FindObjectsSortMode.None));
+
+        foreach (carspawnerscript spawner in carSpawners)
+        {
+            if (spawner == null) continue;
+            spawner.ResetAndSpawn();
+        }
+
+        Debug.Log($"[GameManager] Started {carSpawners.Count} car spawner(s).");
+    }
+
+    /// <summary>
+    /// Called by carspawnerscript.Awake() to self-register.
+    /// Allows dynamically-placed spawners to be picked up automatically.
+    /// </summary>
+    public void RegisterSpawner(carspawnerscript spawner)
+    {
+        if (carSpawners == null) carSpawners = new List<carspawnerscript>();
+        if (!carSpawners.Contains(spawner))
+            carSpawners.Add(spawner);
     }
 
     // ─────────────────────────────────────────
@@ -227,6 +293,9 @@ public class GameManager : MonoBehaviour
     public void DeactivateDevMode()
     {
         devMode = false;
+        LevelConfig cfg = GetLevelConfig(currentLevel);
+        totalDays = 90;
+        OnDayChanged?.Invoke(_daysPassed, totalDays);
         Debug.Log("[GameManager] DEV MODE DEACTIVATED — values unlocked.");
     }
 
@@ -293,6 +362,17 @@ public class GameManager : MonoBehaviour
 
         if (!Mathf.Approximately(happinessDelta, 0f))
             ModifyHappiness(happinessDelta);
+
+        // Award per-device happiness bonus on a correct (Success) placement.
+        if (result == PlacementResult.Success && _roadManager != null)
+        {
+            float placementBonus = _roadManager.GetPlacementHappiness(device);
+            if (placementBonus > 0f)
+            {
+                ModifyHappiness(placementBonus);
+                Debug.Log($"[GameManager] Correct {device} placement → happiness +{placementBonus:F1}");
+            }
+        }
 
         RecomputeCityAccidentRate();
         return result;
@@ -493,6 +573,13 @@ public class GameManager : MonoBehaviour
             return;
         }
 
+        // CRITICAL: restore timeScale before switching scenes.
+        // GameManager sets it to 0 on win/loss. If we leave it at 0,
+        // MusicManager's CrossFadeBGM (which uses Time.unscaledDeltaTime, fine)
+        // works — but CameraManager's auto-pan and any Start()/OnEnable() code
+        // in the result scene that uses WaitForSeconds will freeze permanently.
+        Time.timeScale = 1f;
+
         if (PageManager.Instance != null)
         {
             PageManager.Instance.ChangeUI(levelResultSceneName);
@@ -529,8 +616,11 @@ public class GameManager : MonoBehaviour
         // Bridge to the Level Results scene.
         LastLevelResult.Set(_payload);
 
-        // Submit to backend and mark cleared locally (both win and loss).
-        LevelProgress.MarkLevelCleared(currentLevel, _payload);
+        // Only mark level cleared (unlocks next level) on victory, not on loss.
+        if (won)
+            LevelProgress.MarkLevelCleared(currentLevel, _payload);
+        else
+            LevelProgress.SubmitResultOnly(currentLevel, _payload);
     }
 
     /// <summary>

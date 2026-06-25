@@ -50,6 +50,13 @@ public class PauseMenuController : MonoBehaviour
 
     public bool IsPaused { get; private set; }
 
+    /// <summary>
+    /// Static accessor so CameraManager (or any drag script) can check
+    /// pause state without needing a direct reference.
+    /// Usage: if (PauseMenuController.GameIsPaused) return;
+    /// </summary>
+    public static bool GameIsPaused { get; private set; }
+
     private void Awake()
     {
         if (pausePanel != null)
@@ -73,13 +80,10 @@ public class PauseMenuController : MonoBehaviour
 
         Time.timeScale = 0f;
         IsPaused = true;
+        GameIsPaused = true;
 
-        // FIX Req 3: mute SFX (loop + one-shots) but leave BGM playing.
         LevelAudioManager.Instance?.SetSFXPaused(true);
 
-        // FIX Req 4: wire all Buttons and volume Sliders inside the panel
-        // through MusicManager so they have click sounds and the sliders
-        // update both the audio volumes and their percentage labels.
         if (pausePanel != null && MusicManager.Instance != null)
             MusicManager.Instance.HookPausePanel(pausePanel);
     }
@@ -96,8 +100,8 @@ public class PauseMenuController : MonoBehaviour
             Time.timeScale = 1f;
 
         IsPaused = false;
+        GameIsPaused = false;
 
-        // FIX Req 3: restore SFX (loop resumes from where it was muted).
         LevelAudioManager.Instance?.SetSFXPaused(false);
     }
 
@@ -166,6 +170,7 @@ public class PauseMenuController : MonoBehaviour
         if (IsPaused)
         {
             Time.timeScale = 1f;
+            GameIsPaused = false;
             LevelAudioManager.Instance?.SetSFXPaused(false);
         }
     }

@@ -1,4 +1,4 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections;
 using System.Collections.Generic;
@@ -34,6 +34,7 @@ public class PageManager : MonoBehaviour
 
     // Guard: prevents a second ChangeUI from running while one is in progress.
     private bool _isSwitching = false;
+
 
     private void Awake()
     {
@@ -104,7 +105,7 @@ public class PageManager : MonoBehaviour
     /// <summary>
     /// Like ChangeUI but forces a full unload + reload even if the target
     /// scene is already the current one. Used by PauseMenuController.RestartLevel
-    /// so the level scene and all its additional scenes (City, LvUI & Manager …)
+    /// so the level scene and all its additional scenes (City, LvUI & Manager ï¿½)
     /// are torn down and rebuilt from scratch.
     /// </summary>
     public void ForceChangeUI(string targetSceneName)
@@ -141,7 +142,7 @@ public class PageManager : MonoBehaviour
                 if (!string.IsNullOrWhiteSpace(s)) incomingAdditional.Add(s);
 
         // On a forced restart of the same scene we must unload everything first,
-        // then reload — otherwise Unity would see "already loaded" and skip it.
+        // then reload ï¿½ otherwise Unity would see "already loaded" and skip it.
         if (force && currentLoadedUI == newSceneName)
         {
             // Unload all additional scenes for this group.
@@ -190,7 +191,11 @@ public class PageManager : MonoBehaviour
         uiThemeManager?.ApplyThemeToAllButtons();
         Debug.Log($"Successfully applied theme to all buttons in: {newSceneName}");
 
+
         _isSwitching = false;
+
+        LevelSpawnerActivator.Instance?.Activate(newSceneName);
+        Debug.Log($"[PageManager] Notified LevelSpawnerActivator for scene: {newSceneName}");
     }
 
     // Returns true for scenes that should NEVER be unloaded by SwitchUIScene.

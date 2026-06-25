@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 400000}
   - component: {fileID: 3300000}
   - component: {fileID: 2300000}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Wheel_RR
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -101,7 +101,7 @@ GameObject:
   - component: {fileID: 400002}
   - component: {fileID: 3300002}
   - component: {fileID: 2300002}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Wheel_RL
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -191,7 +191,7 @@ GameObject:
   - component: {fileID: 400004}
   - component: {fileID: 3300004}
   - component: {fileID: 2300004}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Wheel_FR
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -281,7 +281,7 @@ GameObject:
   - component: {fileID: 400006}
   - component: {fileID: 3300006}
   - component: {fileID: 2300006}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Wheel_FL
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -371,7 +371,7 @@ GameObject:
   - component: {fileID: 400010}
   - component: {fileID: 3300008}
   - component: {fileID: 2300008}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Body
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -462,7 +462,8 @@ GameObject:
   - component: {fileID: 6727101414022693582}
   - component: {fileID: 8217216584309557539}
   - component: {fileID: 7629449752021763450}
-  m_Layer: 0
+  - component: {fileID: 6648597274525067739}
+  m_Layer: 6
   m_Name: Vehicle_Bus_color01_separate
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -569,15 +570,36 @@ MonoBehaviour:
   isCarControlledByAI: 0
   seenLayers:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 119
   kmh: 0
-  speedLimit: 50
-  distanceFromObjects: 2
+  speedLimit: 15
+  distanceFromObjects: 10
   recklessnessThreshold: 0
   despawnForFlippingOver: 1
   taxiMode: 0
   acceleration: 10000
   breaking: 100000
+  overrideSpeedLimit: -1
+  forceStop: 0
+--- !u!114 &6648597274525067739
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100010}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af620f92f210a0844abeb16f5fb29fc1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CarCollisionHandler
+  colliderCollide: 0
+  smokePrefab: {fileID: 2900496037033356032, guid: ffb552a29a2a90f4ea5388f288497631, type: 3}
+  fadeDelay: 3
+  fadeDuration: 1.5
+  accidentStopper: {fileID: 0}
+  flipAngleThreshold: 30
+  flipCheckInterval: 1
 --- !u!1 &844647559474812714
 GameObject:
   m_ObjectHideFlags: 0
@@ -588,7 +610,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4779579709396885048}
   - component: {fileID: 8062264739809230081}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: FR
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -659,7 +681,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7946770424598676196}
   - component: {fileID: 8665565433813780432}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: RR
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -729,7 +751,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1006828222144884637}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Check (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -760,7 +782,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4193649460944051346}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Wheel Collider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -795,7 +817,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 999382156653192871}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Check (2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -827,7 +849,7 @@ GameObject:
   m_Component:
   - component: {fileID: 9188400583835969729}
   - component: {fileID: 2525119927923254947}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: RL
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -898,7 +920,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3958469544669198522}
   - component: {fileID: 7141203027073451376}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: FL
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -968,7 +990,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8931817017744709940}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Check
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -999,7 +1021,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6312599478839929513}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Checks
   m_TagString: Untagged
   m_Icon: {fileID: 0}

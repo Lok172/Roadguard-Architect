@@ -87,8 +87,8 @@ public class LevelSelectManager : MonoBehaviour
 
                     entry.selectButton.onClick.AddListener(() =>
                     {
-                        // Persist the chosen level so GameManager can read it
-                        // even though it lives in a different scene.
+                        // Save CurrentLevel BEFORE navigating so SpawnerManager
+                        // always reads the correct value when the game scene loads.
                         PlayerPrefs.SetInt("CurrentLevel", capturedLevel);
                         PlayerPrefs.Save();
 

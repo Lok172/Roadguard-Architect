@@ -9,6 +9,14 @@ public class IntersectionScript : MonoBehaviour
     [Tooltip("The time a stop is green in seconds.")]
     public float wait = 5f;
 
+    [Tooltip("If true, a car will always wait the full timer even if no other cars are present at other stops. " +
+             "If false, the waiting car is allowed through immediately when all other stops are empty.")]
+    public bool WaitIfNoOtherCar = false;
+
+    [Tooltip("If true, the stop objects will show their red/green material at runtime. " +
+             "If false, the MeshRenderer on each stop is disabled and no material is shown.")]
+    public bool showStopMaterial = true;
+
     private int index = 0;
 
     private bool next = true;
@@ -17,22 +25,30 @@ public class IntersectionScript : MonoBehaviour
 
     void Awake()
     {
-        for(int i = 0; i < stops.Count; i++)
+        for (int i = 0; i < stops.Count; i++)
         {
             StopScript script = stops[i].GetComponent<StopScript>();
             script.stop = true;
             scripts.Add(script);
-            stops[i].GetComponent<MeshRenderer>().material.color = Color.red;
+
+            MeshRenderer mr = stops[i].GetComponent<MeshRenderer>();
+            if (mr != null)
+            {
+                if (showStopMaterial)
+                    mr.material.color = Color.red;
+                else
+                    mr.enabled = false;
+            }
         }
     }
 
     // Update is called once per frame
     void Update()
     {
-        if(next)
+        if (next)
         {
             index++;
-            if(index >= stops.Count)
+            if (index >= stops.Count)
             {
                 index = 0;
             }
@@ -44,21 +60,53 @@ public class IntersectionScript : MonoBehaviour
     {
         next = false;
 
-        stops[index].GetComponent<MeshRenderer>().material.color = Color.green;
+        if (showStopMaterial)
+            stops[index].GetComponent<MeshRenderer>().material.color = Color.green;
         scripts[index].stop = false;
 
-        yield return new WaitForSeconds(wait);
+        if (WaitIfNoOtherCar)
+        {
+            // Always wait the full timer regardless of traffic at other stops.
+            yield return new WaitForSeconds(wait);
+        }
+        else
+        {
+            // Count down the timer, but bail early if no other stop has cars waiting or passing.
+            float elapsed = 0f;
+            while (elapsed < wait)
+            {
+                yield return new WaitForSeconds(0.1f);
+                elapsed += 0.1f;
 
-        while(scripts[index].priority > 0)
+                // Check whether any OTHER stop currently has cars present.
+                bool otherStopHasCars = false;
+                for (int i = 0; i < scripts.Count; i++)
+                {
+                    if (i != index && scripts[i].priority > 0)
+                    {
+                        otherStopHasCars = true;
+                        break;
+                    }
+                }
+
+                // If no other stop is busy, let the current car through immediately.
+                if (!otherStopHasCars)
+                    break;
+            }
+        }
+
+        // Wait until the car that was let through has fully cleared the stop.
+        while (scripts[index].priority > 0)
         {
             yield return new WaitForSeconds(0.1f);
         }
 
-        stops[index].GetComponent<MeshRenderer>().material.color = Color.red;
+        if (showStopMaterial)
+            stops[index].GetComponent<MeshRenderer>().material.color = Color.red;
         scripts[index].stop = true;
 
         next = true;
     }
 
-    
+
 }

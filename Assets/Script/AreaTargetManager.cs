@@ -64,7 +64,11 @@ public class AreaTargetManager : MonoBehaviour
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
-
+    private void Awake()
+    {
+        if (accidentStopper == null)
+            accidentStopper = FindObjectOfType<StopScript>();
+    }
     private List<CarAIController> GatherCarsInAreas()
     {
         List<CarAIController> found = new List<CarAIController>();

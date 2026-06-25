@@ -158,12 +158,31 @@ public class MusicManager : MonoBehaviour
                 string ui = pm.currentLoadedUI;
                 if (ui != _currentScene)
                 {
+                    // FIX (BGM/button-sound regression after LevelResult):
+                    // When returning from a level to the main menu, GameManager
+                    // destroys itself but MusicManager persists. _currentScene
+                    // was still set to the level scene name, so the equality
+                    // check above was true and OnSceneChanged never fired for
+                    // the main menu — leaving BGM2 playing and buttons silent.
+                    // Setting _currentScene BEFORE calling OnSceneChanged ensures
+                    // the correct scene name is used for clip lookup inside it.
                     _currentScene = ui;
                     OnSceneChanged(ui);
                 }
             }
             yield return new WaitForSeconds(0.1f);
         }
+    }
+
+    /// <summary>
+    /// Forces MusicManager to treat the current scene as "new" on the next poll,
+    /// re-attaching button sounds and re-evaluating BGM.
+    /// Call this from any script that does a scene transition that MusicManager
+    /// might otherwise miss (e.g. PageManager.ForceChangeUI).
+    /// </summary>
+    public void InvalidateSceneCache()
+    {
+        _currentScene = null;
     }
 
     private void OnSceneChanged(string sceneName)

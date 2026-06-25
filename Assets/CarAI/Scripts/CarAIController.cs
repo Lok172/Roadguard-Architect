@@ -25,7 +25,7 @@ public class CarAIController : MonoBehaviour
     [Tooltip("The checkpoint transform that the ai checks for. Every time the car enters a checkpoint, this variable changes to the next connected checkpoint to it, or will choose one randomly if it haves multiple checkpoints connected.")]
     public Transform nextCheckpoint;
     [Tooltip("A list of the positions where the ai will shoot rays that will detect objects. Placing them inside of the car's collider is ideal.")]
-    public List<Transform> checks = new List<Transform> {null};
+    public List<Transform> checks = new List<Transform> { null };
     [Tooltip("If its true, the AI will check for checkpoints.")]
     public bool CheckPointSearch = true;
     [Tooltip("If its true, it means an object is in front of the car.")]
@@ -64,6 +64,15 @@ public class CarAIController : MonoBehaviour
     private float steerAngle = 0f;
     private bool flipOverCheck = false;
 
+    // \u2500\u2500 Device-influence state \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+    // External device scripts write these flags; SearchForCheckpoints reads them.
+
+    /// <summary>When >= 0, car is forced to this speed instead of speedLimit.</summary>
+    [HideInInspector] public int overrideSpeedLimit = -1;   // -1 = no override
+
+    /// <summary>When true, car brakes to a full stop regardless of overrideSpeedLimit.</summary>
+    [HideInInspector] public bool forceStop = false;
+
     private void FixedUpdate()
     {
         WheelUpdate(frontRight, frontRightCollider);
@@ -78,7 +87,7 @@ public class CarAIController : MonoBehaviour
 
         SearchForCheckpoints();
 
-        if(despawnForFlippingOver && !flipOverCheck)
+        if (despawnForFlippingOver && !flipOverCheck)
         {
             flipOverCheck = true;
             StartCoroutine(CheckForFlippingOver());
@@ -92,16 +101,16 @@ public class CarAIController : MonoBehaviour
 
         if (deleteCar)
         {
-            for(int i = 0; i < 10; i++)
+            for (int i = 0; i < 10; i++)
             {
-                if(!isCarFlipedOver())
+                if (!isCarFlipedOver())
                 {
                     deleteCar = false;
                 }
                 yield return new WaitForSeconds(1);
             }
 
-            if(deleteCar)
+            if (deleteCar)
             {
                 UnityEngine.Debug.Log("Car " + gameObject.name + " destroyed for flipping over.");
                 Destroy(gameObject);
@@ -118,7 +127,7 @@ public class CarAIController : MonoBehaviour
     private bool isCarFlipedOver()
     {
 
-        if(transform.rotation.eulerAngles.z > 30f || transform.rotation.eulerAngles.z < -30f)
+        if (transform.rotation.eulerAngles.z > 30f || transform.rotation.eulerAngles.z < -30f)
         {
             return true;
         }
@@ -166,7 +175,7 @@ public class CarAIController : MonoBehaviour
 
     private void CalculateKMH()
     {
-        if(stopwatch.IsRunning)
+        if (stopwatch.IsRunning)
         {
             stopwatch.Stop();
 
@@ -225,36 +234,36 @@ public class CarAIController : MonoBehaviour
 
             int objectInFront = 0;
 
-            for(int i = 0; i < checks.Count; i++)
+            for (int i = 0; i < checks.Count; i++)
             {
                 checks[i].localRotation = Quaternion.Euler(-xangle, steerAngle, 0);
                 bool isObjectInFront = Physics.Raycast(checks[i].position, checks[i].forward, out carHit, maxDistance, seenLayers, QueryTriggerInteraction.Ignore);
 
-                #if UNITY_EDITOR
+#if UNITY_EDITOR
                 UnityEngine.Debug.DrawRay(checks[i].position, checks[i].forward * maxDistance, Color.green);
-                #endif
-                
-                if(isObjectInFront == true)
+#endif
+
+                if (isObjectInFront == true)
                     objectInFront++;
             }
-           
-            if (objectInFront > 0)
+
+            if (objectInFront > 0 || forceStop)
             {
                 SetSpeed(0);
-                objectDetected = true;
+                objectDetected = objectInFront > 0;
             }
             else
             {
                 objectDetected = false;
-                int speed = speedLimit + recklessnessThreshold;
-                if(speedLimit == 0)
-                {
-                    speed = 0;
-                }
-                if(speed == 0)
-                {
-                    speed = speedLimit;
-                }
+
+                // Device scripts may cap the speed via overrideSpeedLimit.
+                int effectiveLimit = (overrideSpeedLimit >= 0)
+                    ? Mathf.Min(speedLimit, overrideSpeedLimit)
+                    : speedLimit;
+
+                int speed = effectiveLimit + recklessnessThreshold;
+                if (effectiveLimit == 0) speed = 0;
+                if (speed == 0) speed = effectiveLimit;
                 SetSpeed(speed);
             }
         }

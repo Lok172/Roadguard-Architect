@@ -67,6 +67,7 @@ public class SafetyRecordManager : MonoBehaviour
 
         PopulatePlayerCard();
         SetupDropdown();
+        ClearLeaderboard();   // show nothing until a successful fetch
 
         refreshButton.onClick.AddListener(OnRefreshClicked);
 
@@ -91,7 +92,8 @@ public class SafetyRecordManager : MonoBehaviour
         _playerId = user.userId;
 
         if (playerNameText != null) playerNameText.text = user.username;
-        if (playerIdText != null) playerIdText.text = user.userId.ToString("D6");
+        if (playerIdText != null && user.userId > 0) playerIdText.text = user.userId.ToString("D6");
+        if(user.userId == 0) playerIdText.text = "No ID";
     }
 
     private void SetupDropdown()
@@ -139,6 +141,7 @@ public class SafetyRecordManager : MonoBehaviour
         // Reset player card to defaults before each fetch
         SetNoRecord(bestScoreText);
         SetNoRecord(playerRankText);
+        ClearLeaderboard();   // hide rows while fetching; re-populated only on success
 
         bool anyError = false;
 
@@ -151,8 +154,13 @@ public class SafetyRecordManager : MonoBehaviour
         // ── 3. Top-10 leaderboard ────────────────────────────────
         yield return StartCoroutine(FetchTop10(ok => { if (!ok) anyError = true; }));
 
+        bool nowConnected = !anyError;
         SetStatus(anyError ? "Status: Disconnect" : "Status: Connected",
                   anyError ? ColDisconnect : ColConnected);
+
+        // If we ended up disconnected, wipe the board so stale data is never shown.
+        if (!nowConnected)
+            ClearLeaderboard();
 
         _isFetching = false;
     }
@@ -300,6 +308,14 @@ public class SafetyRecordManager : MonoBehaviour
 
         foreach (var entry in entries)
             ConfigureRow(Instantiate(rankingRowPrefab, rankingParent), entry);
+    }
+
+    /// <summary>Removes all spawned leaderboard rows, leaving the table empty.</summary>
+    private void ClearLeaderboard()
+    {
+        if (rankingParent == null) return;
+        foreach (Transform child in rankingParent)
+            Destroy(child.gameObject);
     }
 
     private void ConfigureRow(GameObject row, LeaderboardEntry entry)

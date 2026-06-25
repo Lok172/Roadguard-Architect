@@ -121,6 +121,14 @@ public class LevelResultsManager : MonoBehaviour
         PopulateDeviceTable(payload.deviceEffectiveness);
         DrawAccidentTrend(payload.accidentSnapshots, PlayerPrefs.GetInt("StartAccidentRate", -1));
 
+        // FIX: invalidate MusicManager's scene cache so that when the player
+        // navigates away from this screen (back to main menu), MusicManager
+        // detects the scene change and re-attaches button sounds + correct BGM.
+        // Without this, _currentScene stayed as the level scene name and the
+        // main menu was treated as "already visited" — silencing buttons and
+        // keeping BGM2 playing.
+        MusicManager.Instance?.InvalidateSceneCache();
+
         if (ShouldUploadResult() && ApiClient.Instance != null && UserSession.IsLoggedIn)
             StartCoroutine(UploadLevelResult(payload));
     }

@@ -339,15 +339,18 @@ MonoBehaviour:
     panelRoot: {fileID: 531481759}
     selectButton: {fileID: 1603291499}
     lockedOverlay: {fileID: 747437135}
+    sceneName: Environment
   - level: 2
     panelRoot: {fileID: 2035055157}
     selectButton: {fileID: 1346413668}
     lockedOverlay: {fileID: 747437135}
+    sceneName: Environment
   - level: 3
     panelRoot: {fileID: 1639234794}
     selectButton: {fileID: 1458147224}
     lockedOverlay: {fileID: 1218851570}
-  developerMode: 0
+    sceneName: Environment
+  developerMode: 1
 --- !u!1 &747437135
 GameObject:
   m_ObjectHideFlags: 0
@@ -1694,7 +1697,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2304010200593794347, guid: e0320a7c2181dbf489feb2903dc72028, type: 3}
       propertyPath: navigationTargets.Array.data[1].sceneName
-      value: LV1
+      value: Tutorial
       objectReference: {fileID: 0}
     - target: {fileID: 2304010200593794347, guid: e0320a7c2181dbf489feb2903dc72028, type: 3}
       propertyPath: navigationTargets.Array.data[2].sceneName

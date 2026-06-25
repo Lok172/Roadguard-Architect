@@ -948,7 +948,7 @@ MonoBehaviour:
     deviceType: 3
   - clickableObject: {fileID: 694289043}
     deviceType: 2
-  citySceneName: LvUI & Manager
+  citySceneName: City
   stopSignSprite: {fileID: 21300000, guid: 788598ec40ba3e84090ebff421706846, type: 3}
   speedBumpSprite: {fileID: 21300000, guid: cc9a1f854e10ea14bbd57338dcc057c1, type: 3}
   trafficLightSprite: {fileID: 21300000, guid: 7f06a7210d97f484384fc08440661fa5, type: 3}
@@ -3470,20 +3470,23 @@ MonoBehaviour:
     startAccidentRate: 10
     startHappiness: 80
   - level: 2
-    startCapitalRM: 10000
+    startCapitalRM: 5500
     startAccidentRate: 15
     startHappiness: 80
   - level: 3
-    startCapitalRM: 15000
+    startCapitalRM: 10000
     startAccidentRate: 25
     startHappiness: 60
   levelResultSceneName: LevelResult
   secondsPerDay: 2
-  totalDays: 1000
+  totalDays: 90
   safetyThreshold: 3
   safetyMultiplier: 2
-  baseTaxPerDay: 250
+  baseTaxPerDay: 300
   baselineDecayPerDay: 1
+  rampAccidentGainMin: 0.1
+  rampAccidentGainMax: 1
+  rampDurationDays: 30
   lowAccidentThreshold: 3
   lowAccidentStreakRequired: 5
   lowAccidentBonusInterval: 3
@@ -3502,6 +3505,7 @@ MonoBehaviour:
   _daysPassed: 0
   _gameRunning: 1
   _consecutiveLowAccidentDays: 0
+  carSpawners: []
   OnCapitalChanged:
     m_PersistentCalls:
       m_Calls: []

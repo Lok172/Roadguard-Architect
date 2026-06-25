@@ -32,13 +32,26 @@ public static class LevelProgress
 
     /// <summary>
     /// Records local unlock AND submits the full result to the backend.
-    /// Called by GameManager on both victory and game-over.
+    /// Called by GameManager on VICTORY only — unlocks the next level.
     /// </summary>
     public static void MarkLevelCleared(int level, LevelResultPayload payload)
     {
         PlayerPrefs.SetInt(KEY_PREFIX + level, 1);
         PlayerPrefs.Save();
 
+        if (ApiClient.Instance != null && UserSession.IsLoggedIn)
+            CoroutineRunner.Instance.Run(SubmitResult(payload));
+        else
+            Debug.LogWarning("[LevelProgress] ApiClient or UserSession not ready — result not submitted.");
+    }
+
+    /// <summary>
+    /// Submits the result to the backend WITHOUT marking the level cleared locally.
+    /// Called by GameManager on GAME OVER — records stats but does NOT unlock next level.
+    /// </summary>
+    public static void SubmitResultOnly(int level, LevelResultPayload payload)
+    {
+        // Local progress intentionally NOT written — level stays locked.
         if (ApiClient.Instance != null && UserSession.IsLoggedIn)
             CoroutineRunner.Instance.Run(SubmitResult(payload));
         else

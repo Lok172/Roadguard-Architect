@@ -257,11 +257,8 @@ public class TileOverlay : MonoBehaviour
         {
             case TrafficDeviceType.StopSign:
                 if (_tile.segmentType != TileSegmentType.End) return false;
-                // REQ 4: all four corners are correct on End tiles.
-                return corner == TileCorner.NorthWest
-                    || corner == TileCorner.NorthEast
-                    || corner == TileCorner.SouthEast
-                    || corner == TileCorner.SouthWest;
+                // Must match IsSlotCorrect: far-end corners only.
+                return _tile.IsAtFarEnd(corner);
 
             case TrafficDeviceType.TrafficLight:
                 if (_tile.segmentType == TileSegmentType.End)

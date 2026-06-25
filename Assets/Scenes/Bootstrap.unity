@@ -290,7 +290,7 @@ MonoBehaviour:
     panEndPosition: {x: 0, y: 0, z: 0}
     zoomMultiplier: 50
     minZoom: 20
-    maxZoom: 64
+    maxZoom: 72
     initialZoom: 1
     autoTransitionOnStart: 1
     transitionDuration: 2
@@ -416,6 +416,7 @@ MonoBehaviour:
   masterPermanentScenes:
   - Environment
   - Bootstrap
+  - City
   uiSceneGroups:
   - uiSceneName: MainMenu
     additionalScenes:
@@ -530,6 +531,7 @@ MonoBehaviour:
     - LevelSelect
     - User Select
     - LevelResult
+    - Tutorial
   - clip: {fileID: 8300000, guid: 528e80c8fd7bf0b4d925a26acbbed277, type: 3}
     sceneNames:
     - LvUI & Manager
@@ -549,6 +551,7 @@ MonoBehaviour:
     - LV3
     - LvUI & Manager
     - LevelResult
+    - Tutorial
   sliderClip: {fileID: 8300000, guid: 8ab1589089c332a40b0b72c1c3b34d19, type: 3}
   sliderSceneNames:
   - Settings

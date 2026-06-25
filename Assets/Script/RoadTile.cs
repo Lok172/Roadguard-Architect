@@ -66,12 +66,12 @@ public class PlacedSlot
 //
 //  CHANGES (this version):
 //    • Req 3 — TrafficLight limit on End tiles raised from 1 → 2.
-//    • Req 4 — StopSign limit on End tiles raised from 2 → 4,
-//      and IsSlotCorrect now accepts ALL four corners (not just the
-//      far-end pair) for stop signs, so every corner placement is
-//      scored as correct.
+//    • Req 4 — StopSign limit on End tiles raised from 2 → 4.
 //    • maxDevices default raised to 5 to accommodate 4 corner devices
 //      + 1 center device without hitting the hard cap.
+//    • Stop Sign on End tiles now requires far-end corners (same rule
+//      as TrafficLight), matching real-world stop-sign placement at
+//      the approach end of a segment.
 // ─────────────────────────────────────────────────────────────────
 
 [RequireComponent(typeof(BoxCollider))]
@@ -207,8 +207,8 @@ public class RoadTile : MonoBehaviour
             TileCorner.NorthEast => new Vector3(center.x + hx, y, center.z + hz),
             TileCorner.SouthEast => new Vector3(center.x + hx, y, center.z - hz),
             TileCorner.SouthWest => new Vector3(center.x - hx, y, center.z - hz),
-            TileCorner.Center    => new Vector3(center.x,      y, center.z),
-            _                    => new Vector3(center.x,      y, center.z),
+            TileCorner.Center => new Vector3(center.x, y, center.z),
+            _ => new Vector3(center.x, y, center.z),
         };
     }
 
@@ -220,11 +220,11 @@ public class RoadTile : MonoBehaviour
         BoxCollider col = GetComponent<BoxCollider>();
         Vector3 c = col != null ? col.center : Vector3.zero;
 
-        bool east  = (local.x - c.x) >= 0f;
+        bool east = (local.x - c.x) >= 0f;
         bool north = (local.z - c.z) >= 0f;
 
         if (north && !east) return TileCorner.NorthWest;
-        if (north &&  east) return TileCorner.NorthEast;
+        if (north && east) return TileCorner.NorthEast;
         if (!north && east) return TileCorner.SouthEast;
         return TileCorner.SouthWest;
     }
@@ -239,10 +239,10 @@ public class RoadTile : MonoBehaviour
     /// <summary>The "correct" count cap per (segment, device) pair.</summary>
     public int GetCorrectCountLimit(TrafficDeviceType d) => (segmentType, d) switch
     {
-        (TileSegmentType.Middle,       TrafficDeviceType.SpeedBump)    => 1,
-        (TileSegmentType.End,          TrafficDeviceType.StopSign)     => 4,   // REQ 4: was 2
-        (TileSegmentType.End,          TrafficDeviceType.SpeedBump)    => 1,
-        (TileSegmentType.End,          TrafficDeviceType.TrafficLight) => 2,   // REQ 3: was 1
+        (TileSegmentType.Middle, TrafficDeviceType.SpeedBump) => 1,
+        (TileSegmentType.End, TrafficDeviceType.StopSign) => 4,   // REQ 4: was 2
+        (TileSegmentType.End, TrafficDeviceType.SpeedBump) => 1,
+        (TileSegmentType.End, TrafficDeviceType.TrafficLight) => 2,   // REQ 3: was 1
         (TileSegmentType.Intersection, TrafficDeviceType.TrafficLight) => 4,
         _ => 0
     };
@@ -281,11 +281,18 @@ public class RoadTile : MonoBehaviour
 
             case TrafficDeviceType.StopSign:
                 if (segmentType != TileSegmentType.End) return false;
-                // REQ 4: any of the four corners is correct on an End tile.
-                return slot.corner == TileCorner.NorthWest
-                    || slot.corner == TileCorner.NorthEast
-                    || slot.corner == TileCorner.SouthEast
-                    || slot.corner == TileCorner.SouthWest;
+                // Stop Signs must be placed at far-end corners (same rule as Traffic Lights),
+                // so they face oncoming traffic approaching the end of the road segment.
+                if (!IsAtFarEnd(slot.corner)) return false;
+                // Ensure no earlier stop sign is at the same corner.
+                foreach (var earlier in _slots)
+                {
+                    if (earlier == slot) break;
+                    if (earlier.deviceType == TrafficDeviceType.StopSign
+                        && earlier.corner == slot.corner)
+                        return false;
+                }
+                return true;
 
             case TrafficDeviceType.TrafficLight:
                 if (segmentType == TileSegmentType.End)
@@ -458,8 +465,8 @@ public class RoadTile : MonoBehaviour
 
         PlacedSlot slot = new PlacedSlot
         {
-            corner       = corner,
-            deviceType   = device,
+            corner = corner,
+            deviceType = device,
             deviceObject = deviceObject
         };
         _slots.Add(slot);
@@ -481,6 +488,9 @@ public class RoadTile : MonoBehaviour
 
         bool isCorrect = IsSlotCorrect(slot);
         PlacementResult finalResult = isCorrect ? PlacementResult.Success : PlacementResult.PoorPlacement;
+
+        // Activate the traffic-device behaviour zone for this placement.
+        ActivateDeviceZone(device, deviceObject);
 
         OnDevicePlaced?.Invoke(this, !isCorrect);
         RefreshOverlay(TrafficDeviceType.None);
@@ -516,6 +526,37 @@ public class RoadTile : MonoBehaviour
 
     public void RemoveDevice() => RemoveAllDevices();
 
+    // \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+    //  DEVICE ZONE ACTIVATION
+    // \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+
+    /// <summary>
+    /// Called after a device is successfully placed on this tile.
+    /// Adds the matching zone MonoBehaviour to this tile's GameObject so it
+    /// can detect cars passing through the tile's trigger collider.
+    /// </summary>
+    private void ActivateDeviceZone(TrafficDeviceType device, GameObject deviceObject)
+    {
+        switch (device)
+        {
+            case TrafficDeviceType.StopSign:
+                if (GetComponent<StopSignZone>() == null)
+                    gameObject.AddComponent<StopSignZone>();
+                break;
+
+            case TrafficDeviceType.SpeedBump:
+                if (GetComponent<SpeedBumpZone>() == null)
+                    gameObject.AddComponent<SpeedBumpZone>();
+                break;
+
+            case TrafficDeviceType.TrafficLight:
+                if (GetComponent<TrafficLightZone>() == null)
+                    gameObject.AddComponent<TrafficLightZone>();
+                break;
+        }
+    }
+
+
     // ─────────────────────────────────────────
     //  GIZMOS
     // ─────────────────────────────────────────
@@ -528,10 +569,10 @@ public class RoadTile : MonoBehaviour
 
         Color baseColor = segmentType switch
         {
-            TileSegmentType.Middle       => new Color(0.6f, 0.6f, 0.6f, 0.20f),
-            TileSegmentType.End          => new Color(0.2f, 0.6f, 1.0f, 0.25f),
+            TileSegmentType.Middle => new Color(0.6f, 0.6f, 0.6f, 0.20f),
+            TileSegmentType.End => new Color(0.2f, 0.6f, 1.0f, 0.25f),
             TileSegmentType.Intersection => new Color(1.0f, 0.6f, 0.2f, 0.25f),
-            _                            => new Color(0.5f, 0.5f, 0.5f, 0.20f)
+            _ => new Color(0.5f, 0.5f, 0.5f, 0.20f)
         };
 
         Gizmos.matrix = transform.localToWorldMatrix;
@@ -545,11 +586,11 @@ public class RoadTile : MonoBehaviour
                              TileCorner.SouthEast,  TileCorner.SouthWest };
         foreach (var c in all)
         {
-            // REQ 4: all corners are valid for stop signs, so show them all
-            // as green dots (not just far-end) to match the new correctness rule.
+            // Stop Signs now require far-end corners (same as Traffic Lights),
+            // so far-end corners are bright green, near-end are dimmer.
             Gizmos.color = IsAtFarEnd(c)
                 ? new Color(0f, 1f, 0f, 0.9f)
-                : new Color(0f, 0.8f, 0.4f, 0.7f);   // was red — now teal to reflect allowed
+                : new Color(0.6f, 0.6f, 0.6f, 0.5f);
             Gizmos.DrawSphere(GetCornerLocalPosition(c), 0.15f);
         }
 

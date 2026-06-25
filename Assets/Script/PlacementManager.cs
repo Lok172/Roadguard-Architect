@@ -217,6 +217,7 @@ public class PlacementManager : MonoBehaviour
 
         _selectedDevice = deviceType;
         _isDragging = true;
+        SetCarMovement(false);
         _hoveredCorner = TileCorner.None;
 
         ShowPlacementOverlays(deviceType);
@@ -326,11 +327,8 @@ public class PlacementManager : MonoBehaviour
 
             case TrafficDeviceType.StopSign:
                 if (tile.segmentType != TileSegmentType.End) return false;
-                // REQ 4: any corner is correct on End tiles.
-                return corner == TileCorner.NorthWest
-                    || corner == TileCorner.NorthEast
-                    || corner == TileCorner.SouthEast
-                    || corner == TileCorner.SouthWest;
+                // Mirrors RoadTile.IsSlotCorrect: far-end corners only.
+                return tile.IsAtFarEnd(corner);
 
             case TrafficDeviceType.TrafficLight:
                 if (tile.segmentType == TileSegmentType.End)
@@ -411,6 +409,7 @@ public class PlacementManager : MonoBehaviour
     private void ConfirmPlacement()
     {
         _isDragging = false;
+        SetCarMovement(true);
 
         if (GameManager.Instance != null)
             GameManager.Instance.ResumeDayTick();
@@ -481,6 +480,7 @@ public class PlacementManager : MonoBehaviour
     public void CancelPlacement()
     {
         _isDragging = false;
+        SetCarMovement(true);
 
         if (GameManager.Instance != null)
             GameManager.Instance.ResumeDayTick();
@@ -528,4 +528,12 @@ public class PlacementManager : MonoBehaviour
         TrafficDeviceType.TrafficLight => trafficLightSprite,
         _ => null
     };
+
+    private void SetCarMovement(bool enabled)
+    {
+        if(!enabled)
+            Time.timeScale = 0f;
+        else
+            Time.timeScale = 1f;
+    }
 }

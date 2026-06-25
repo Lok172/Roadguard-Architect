@@ -137,7 +137,7 @@ public class AuthManager : MonoBehaviour
     private void ShowNameEntry()
     {
         nameEntryPanel?.SetActive(true);
-        if(nameEntryPanel!=null)
+        if (nameEntryPanel != null)
             MusicManager.Instance?.HookPanel(nameEntryPanel);
         nameErrorPanel?.SetActive(false);
     }
@@ -196,6 +196,13 @@ public class AuthManager : MonoBehaviour
         UserDto newUser = new UserDto { userId = 0, username = _pendingName };
         UserSession.Login(newUser);
         Debug.Log($"[AuthManager] New profile created: '{_pendingName}'");
+
+        // Mark tutorial as unread so the Tutorial scene hides the Skip button
+        // and forces the new player to go through every panel.
+        PlayerPrefs.SetInt(TutorialManager.TUTORIAL_IS_READ_KEY, 0);
+        PlayerPrefs.Save();
+        Debug.Log("[AuthManager] TutorialIsRead reset to false for new account.");
+
         OnProfileReady(isReturning: false);
     }
 
@@ -252,7 +259,7 @@ public class AuthManager : MonoBehaviour
                 if (welcomePanel != null)
                 {
                     welcomePanel.SetActive(true);
-                    if(welcomePanel!=null)
+                    if (welcomePanel != null)
                         MusicManager.Instance?.HookPanel(welcomePanel);
                     UpdateWelcomeText();
                 }

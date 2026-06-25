@@ -31,11 +31,35 @@ public class RoadManager : MonoBehaviour
     [Tooltip("Accident rate every section gains each in-game day.")]
     public float dailyAccidentGain = 2f;
 
-    [Tooltip("Accident rate removed per CORRECT device per section per day (before complexity).")]
+    [Tooltip("Accident rate removed per CORRECT device per section per day (before complexity). " +
+             "Each device type has its own value — see 'Per-Device Accident Reduction' below.")]
+    [System.Obsolete("Use perDeviceAccidentReduction instead.")]
     public float perCorrectDeviceReduction = 2f;
 
     [Tooltip("Happiness lost per +1 of a section's accident rate, per day.")]
     public float happinessPerAccidentRate = 3f;
+
+    // ── Per-Device Accident Reduction ─────────
+    [Header("Per-Device Accident Reduction (per correct device, per section, per day — before complexity)")]
+    [Tooltip("Accident rate reduction per correct Stop Sign.")]
+    [Min(0f)] public float reductionStopSign = 0.5f;
+
+    [Tooltip("Accident rate reduction per correct Speed Bump.")]
+    [Min(0f)] public float reductionSpeedBump = 1f;
+
+    [Tooltip("Accident rate reduction per correct Traffic Light.")]
+    [Min(0f)] public float reductionTrafficLight = 4f;
+
+    // ── Per-Device Placement Happiness Bonus ──
+    [Header("Per-Device Placement Happiness Bonus (awarded on each CORRECT placement)")]
+    [Tooltip("Happiness gained when a Stop Sign is placed correctly.")]
+    [Min(0f)] public float placementHappinessStopSign = 2f;
+
+    [Tooltip("Happiness gained when a Speed Bump is placed correctly.")]
+    [Min(0f)] public float placementHappinessSpeedBump = 4f;
+
+    [Tooltip("Happiness gained when a Traffic Light is placed correctly.")]
+    [Min(0f)] public float placementHappinessTrafficLight = 10f;
 
     // ── Runtime ───────────────────────────────
     [Header("Runtime (read-only)")]
@@ -91,25 +115,99 @@ public class RoadManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────
+    //  PLACEMENT HAPPINESS
+    // ─────────────────────────────────────────
+
+    /// <summary>
+    /// Returns the happiness bonus awarded when the given device type
+    /// is placed correctly. Returns 0 for incorrect/unknown types.
+    /// </summary>
+    public float GetPlacementHappiness(TrafficDeviceType device) => device switch
+    {
+        TrafficDeviceType.StopSign => placementHappinessStopSign,
+        TrafficDeviceType.SpeedBump => placementHappinessSpeedBump,
+        TrafficDeviceType.TrafficLight => placementHappinessTrafficLight,
+        _ => 0f
+    };
+
+    // ─────────────────────────────────────────
     //  DAILY TICK  (called by GameManager)
     // ─────────────────────────────────────────
 
     /// <summary>
     /// Advances every child section by one day.
     /// Returns the total happiness delta (always &lt;= 0).
+    ///
+    /// Per-device accident reduction is applied by computing a weighted
+    /// effective reduction per section (sum of correct-device counts ×
+    /// their individual reduction values × complexityMultiplier), then
+    /// passing that single value to RoadSection.TickDay so the existing
+    /// RoadSection contract is preserved.
     /// </summary>
     public float TickAllSections()
     {
-        float effectiveReduction = perCorrectDeviceReduction * complexityMultiplier;
         float totalDelta = 0f;
 
         foreach (var s in _sections)
         {
             if (s == null) continue;
-            totalDelta += s.TickDay(dailyAccidentGain, effectiveReduction, happinessPerAccidentRate);
+
+            // Count correct devices by type across all tiles in this section.
+            int correctStopSigns = 0;
+            int correctSpeedBumps = 0;
+            int correctTrafficLights = 0;
+
+            foreach (var tile in s.ChildTiles)
+            {
+                if (tile == null) continue;
+                foreach (var slot in tile.Slots)
+                {
+                    if (!tile.IsSlotCorrect(slot)) continue;
+                    switch (slot.deviceType)
+                    {
+                        case TrafficDeviceType.StopSign: correctStopSigns++; break;
+                        case TrafficDeviceType.SpeedBump: correctSpeedBumps++; break;
+                        case TrafficDeviceType.TrafficLight: correctTrafficLights++; break;
+                    }
+                }
+            }
+
+            // Weighted effective reduction for this section.
+            float effectiveReduction =
+                (correctStopSigns * reductionStopSign +
+                 correctSpeedBumps * reductionSpeedBump +
+                 correctTrafficLights * reductionTrafficLight)
+                * complexityMultiplier;
+
+            totalDelta += s.TickDay(GetRampedAccidentGain(), effectiveReduction, happinessPerAccidentRate);
         }
 
         return totalDelta;
+    }
+
+    // ─────────────────────────────────────────
+    //  ACCIDENT GAIN RAMP
+    // ─────────────────────────────────────────
+
+    /// <summary>
+    /// Returns the effective dailyAccidentGain for the current day.
+    /// Linearly interpolates from GameManager.rampAccidentGainMin to
+    /// rampAccidentGainMax over rampDurationDays, then locks at max.
+    /// Falls back to the local dailyAccidentGain field if GameManager
+    /// is unavailable.
+    /// </summary>
+    private float GetRampedAccidentGain()
+    {
+        var gm = GameManager.Instance;
+        if (gm == null) return dailyAccidentGain;
+
+        int day = gm.DaysPassed;
+        int rampDays = gm.RampDurationDays;
+        float min = gm.RampAccidentGainMin;
+        float max = gm.RampAccidentGainMax;
+
+        if (day >= rampDays) return max;
+        return Mathf.Lerp(min, max, (float)day / rampDays);
     }
 
     // ─────────────────────────────────────────
