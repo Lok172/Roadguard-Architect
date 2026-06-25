@@ -6,8 +6,6 @@ using System.Collections;
 //  Attach to: the same GameObject as RoadTile (auto-added by
 //  RoadTileGenerator — add it to the generator's tile setup).
 //
-//  Registers / unregisters this tile with GameManager automatically.
-//  Keeps RoadTile clean (no GameManager dependency inside RoadTile).
 // ─────────────────────────────────────────────────────────────────
 
 [RequireComponent(typeof(RoadTile))]

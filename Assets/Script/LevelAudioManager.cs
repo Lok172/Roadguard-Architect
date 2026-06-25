@@ -3,26 +3,14 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  LEVEL AUDIO MANAGER  (v2 — deferred game-start sounds)
-//
-//  FIX (Req 1): PlayGameStart and PlayCarDriving are now called via
-//  PlayGameStartDeferred / PlayCarDrivingDeferred which wait one extra frame
-//  after Start() so that the MusicManager singleton is fully initialised and
-//  the BGM cross-fade has settled before SFX are triggered.  This prevents
-//  the "ghost" sound that fired during the loading frame and then disappeared.
-//
-//  Everything else is identical to v1.
-// ─────────────────────────────────────────────────────────────────────────────
+
 
 public class LevelAudioManager : MonoBehaviour
 {
     // ── Singleton ────────────────────────────────────────────────────────────
     public static LevelAudioManager Instance { get; private set; }
 
-    // =========================================================================
-    //  Data class — one sound → many clickable objects
-    // =========================================================================
+
 
     [System.Serializable]
     public class LevelSoundEntry

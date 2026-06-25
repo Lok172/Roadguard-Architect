@@ -4574,7 +4574,7 @@ MonoBehaviour:
   happinessPerAccidentRate: 1
   reductionStopSign: 0.5
   reductionSpeedBump: 1
-  reductionTrafficLight: 2
+  reductionTrafficLight: 6
   placementHappinessStopSign: 2
   placementHappinessSpeedBump: 4
   placementHappinessTrafficLight: 10

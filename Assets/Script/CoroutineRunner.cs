@@ -8,7 +8,6 @@ using UnityEngine;
 //  LevelProgress) fire coroutines without being a MonoBehaviour
 //  themselves.
 //
-//  Place on a DontDestroyOnLoad GameObject in the Main / Boot scene.
 // ─────────────────────────────────────────────────────────────────
 
 public class CoroutineRunner : MonoBehaviour

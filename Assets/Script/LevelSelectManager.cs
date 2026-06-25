@@ -10,10 +10,6 @@ using UnityEditor;
 // ─────────────────────────────────────────────────────────────────
 //  LEVEL SELECT MANAGER
 //
-//  Place on the "LevelSelect" Canvas (or any parent of LevelPanel 1/2/3).
-//  Locks each level's Select button until the previous level has been
-//  cleared (tracked via LevelProgress / PlayerPrefs).
-//
 //  Setup per entry in the Inspector:
 //    level         → 1, 2, 3 …
 //    panelRoot     → the LevelPanel 1 / 2 / 3 GameObject

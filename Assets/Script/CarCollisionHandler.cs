@@ -2,15 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// Attach to a car (manually or via AreaTargetManager.PickTargetCar()).
-/// On any physics collision this component:
-///   3. Spawns a smoke prefab at the car centre.
-///   4. After fadeDelay seconds, shrinks + fades the car to nothing.
-///   5. Sets the linked StopScript.stop = true (box-corridor stopper).
-///
-/// The component cleans itself up if the car is already being destroyed.
-/// </summary>
+
 [RequireComponent(typeof(CarAIController))]
 public class CarCollisionHandler : MonoBehaviour
 {

@@ -350,7 +350,7 @@ MonoBehaviour:
     selectButton: {fileID: 1458147224}
     lockedOverlay: {fileID: 1218851570}
     sceneName: Environment
-  developerMode: 1
+  developerMode: 0
 --- !u!1 &747437135
 GameObject:
   m_ObjectHideFlags: 0

@@ -150,7 +150,6 @@ GameObject:
   - component: {fileID: 2378854591972900930}
   - component: {fileID: 515351354158587127}
   - component: {fileID: 4974163104922404367}
-  - component: {fileID: 7781512453000172021}
   - component: {fileID: 8291564713439072062}
   m_Layer: 5
   m_Name: Ranking
@@ -181,7 +180,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 1155, y: -684.74}
-  m_SizeDelta: {x: 0, y: 0}
+  m_SizeDelta: {x: 1785.4, y: 75}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &515351354158587127
 CanvasRenderer:
@@ -221,20 +220,6 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &7781512453000172021
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2863674751063106628}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3245ec927659c4140ac4f8d17403cc18, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.ContentSizeFitter
-  m_HorizontalFit: 2
-  m_VerticalFit: 2
 --- !u!114 &8291564713439072062
 MonoBehaviour:
   m_ObjectHideFlags: 0

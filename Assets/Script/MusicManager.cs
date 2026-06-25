@@ -21,7 +21,7 @@ using UnityEngine.UI;
 //  ─────────────────────────────────────────────
 //    _bgmSource   – looping background music   (affected by master + music)
 //    _sfxSource   – one-shot SFX               (affected by master + sfx)
-//    _sliderSource– plays while slider is held  (affected by master + sfx)
+//    _sliderSource – plays while slider is held  (affected by master + sfx)
 // ─────────────────────────────────────────────────────────────────────────────
 
 public class MusicManager : MonoBehaviour

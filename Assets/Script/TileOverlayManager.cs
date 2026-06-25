@@ -1,7 +1,7 @@
 using UnityEngine;
 
 // ─────────────────────────────────────────────────────────────────
-//  TileOverlayManager  (v6 — no prefab/shader slots)
+//  TileOverlayManager 
 //
 //  All transparency is handled in code by TileOverlay.BuildCube().
 //  This manager only exposes what needs to be tunable in the Inspector:

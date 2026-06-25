@@ -7,7 +7,6 @@ using UnityEditor;
 
 // ─────────────────────────────────────────────────────────────────
 //  RoadTileGenerator
-//  Attach to any empty GameObject in your scene.
 //  Configure in the Inspector, then click "Generate Tiles".
 //  All tiles are parented under this GameObject.
 // ─────────────────────────────────────────────────────────────────

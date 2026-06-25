@@ -3469,24 +3469,27 @@ MonoBehaviour:
     startCapitalRM: 1000
     startAccidentRate: 10
     startHappiness: 80
+    baseTaxPerDay: 300
   - level: 2
-    startCapitalRM: 5500
+    startCapitalRM: 2500
     startAccidentRate: 15
     startHappiness: 80
+    baseTaxPerDay: 700
   - level: 3
-    startCapitalRM: 10000
+    startCapitalRM: 3500
     startAccidentRate: 25
-    startHappiness: 60
+    startHappiness: 80
+    baseTaxPerDay: 800
   levelResultSceneName: LevelResult
   secondsPerDay: 2
   totalDays: 90
   safetyThreshold: 3
   safetyMultiplier: 2
-  baseTaxPerDay: 300
   baselineDecayPerDay: 1
   rampAccidentGainMin: 0.1
   rampAccidentGainMax: 1
   rampDurationDays: 30
+  loseScoreDivisor: 5
   lowAccidentThreshold: 3
   lowAccidentStreakRequired: 5
   lowAccidentBonusInterval: 3
@@ -3505,6 +3508,7 @@ MonoBehaviour:
   _daysPassed: 0
   _gameRunning: 1
   _consecutiveLowAccidentDays: 0
+  _baseTaxPerDay: 0
   carSpawners: []
   OnCapitalChanged:
     m_PersistentCalls:

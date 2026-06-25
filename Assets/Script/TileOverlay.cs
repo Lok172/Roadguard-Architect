@@ -3,20 +3,9 @@ using UnityEngine;
 using UnityEngine.Rendering;
 
 // ─────────────────────────────────────────────────────────────────
-//  TileOverlay  (v9 — corner-aware correctness colouring)
+//  TileOverlay 
 //
-//  REQ 2 FIX: EvaluateAndApply now mirrors the same corner-checking
-//  logic that IsSlotCorrect uses so the overlay colour matches what
-//  the placement system will actually score.
-//
-//  Old behaviour:
-//    • Suitable = "tile has any free corner slot"
-//    • Occupied = "cursor is on an already-occupied corner"
-//    The overlay ignored whether the hovered corner would be CORRECT
-//    for the dragged device type, so it glowed green even when the
-//    placement was going to be scored as PoorPlacement.
-//
-//  New behaviour (matched to IsSlotCorrect):
+//  
 //    • Suitable  = free slot AND the target corner is correct for
 //                  this device on this tile type.
 //    • NotSuitable = tile type / segment type doesn't accept the
@@ -24,9 +13,6 @@ using UnityEngine.Rendering;
 //    • Occupied  = that specific corner is already taken, or the
 //                  correct-count limit is already reached.
 //
-//  The TileOverlay now receives the hovered corner from PlacementManager
-//  via SetDragState (corner parameter added), so it can evaluate exactly
-//  which corner the user is hovering.
 // ─────────────────────────────────────────────────────────────────
 
 public enum OverlayState

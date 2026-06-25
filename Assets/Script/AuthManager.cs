@@ -4,7 +4,7 @@ using UnityEngine.UI;
 using TMPro;
 
 // ─────────────────────────────────────────────────────────────────
-//  AUTH MANAGER  (v4 — confirmation panel, restructured inspector)
+//  AUTH MANAGER 
 //
 //  Flow
 //  ────

@@ -2,22 +2,14 @@ using System.Collections;
 using Unity.VisualScripting;
 using UnityEngine;
 
-// ─────────────────────────────────────────────────────────────────
-//  LEVEL PROGRESS  (v3)
-//
-//  CHANGES vs v2:
-//    • LevelResultPayload: totalBudgetSpent removed;
-//      overallDeviceEffectiveness (float, 0–100) added.
-//    • SubmitResult endpoint unchanged ("api/levelresult/submit").
-//    • Everything else (unlock logic, daily snapshots, reset) unchanged.
-// ─────────────────────────────────────────────────────────────────
+
 
 public static class LevelProgress
 {
     private const string KEY_PREFIX = "RoadguardArchitect_LevelCleared_";
     private const int MAX_TRACKED_LEVELS = 20;
 
-    // ── Level unlock ─────────────────────────────────────────────
+    // ── Level unlock 
 
     public static bool IsLevelCleared(int level) =>
         PlayerPrefs.GetInt(KEY_PREFIX + level, 0) == 1;

@@ -8,31 +8,17 @@ using UnityEditor;
 #endif
 
 // ─────────────────────────────────────────────────────────────────
-//  GAME MANAGER (v8)
-//
-//  CHANGES vs v7:
-//    • Added levelResultSceneName (public string) below Level Configuration.
-//      On end-game, after FinaliseAndSubmitPayload(), the game opens the
-//      Level Results scene via PageManager.ChangeUI(levelResultSceneName)
-//      or falls back to SceneManager.LoadScene().
-//    • Safety Score formula changed to three weighted factors:
+//    • Safety Score formula based on three weighted factors:
 //        Accident Rate       40%
 //        Device Effectiveness 30%
 //        Happiness           30%
-//    • _totalBudgetSpent and TotalBudgetSpent removed (no longer needed).
-//    • FinaliseAndSubmitPayload now computes overallDeviceEffectiveness
-//      from RoadManager before scoring, then writes it to the payload.
-//    • CalculateFinalScore(float) signature updated to
-//      CalculateFinalScore(float accidentRate, float deviceEff, float happiness).
-//    • SpendCapital no longer tracks _totalBudgetSpent.
-//    • Custom Inspector live stat "Budget Spent" line removed.
 // ─────────────────────────────────────────────────────────────────
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
-    // ── Level Configuration ───────────────────────────────────────
+    // ── Level Configuration 
     [Header("Level Configuration")]
     public int currentLevel = 1;
 
@@ -43,13 +29,15 @@ public class GameManager : MonoBehaviour
         public float startCapitalRM;
         public int startAccidentRate;
         [Range(0, 100)] public float startHappiness;
+        [Tooltip("Base tax revenue per in-game day for this level (before happiness and safety multipliers).")]
+        [Min(0f)] public float baseTaxPerDay;
     }
 
     public LevelConfig[] levelConfigs = new LevelConfig[]
     {
-        new LevelConfig { level = 1, startCapitalRM = 1000f,  startAccidentRate = 10, startHappiness = 100f },
-        new LevelConfig { level = 2, startCapitalRM = 2500f,  startAccidentRate = 15, startHappiness = 80f  },
-        new LevelConfig { level = 3, startCapitalRM = 3500f,  startAccidentRate = 25, startHappiness = 60f  }
+        new LevelConfig { level = 1, startCapitalRM = 1000f, startAccidentRate = 10, startHappiness = 100f, baseTaxPerDay = 30f },
+        new LevelConfig { level = 2, startCapitalRM = 2500f, startAccidentRate = 15, startHappiness = 80f,  baseTaxPerDay = 50f },
+        new LevelConfig { level = 3, startCapitalRM = 3500f, startAccidentRate = 25, startHappiness = 60f,  baseTaxPerDay = 80f }
     };
 
     [Tooltip("Name of the UI page / scene to open when a level ends. " +
@@ -62,7 +50,6 @@ public class GameManager : MonoBehaviour
     public int totalDays = 90;
     public int safetyThreshold = 3;
     public float safetyMultiplier = 1.5f;
-    public float baseTaxPerDay = 50f;
 
     [Header("Baseline Accident Decay")]
     [Tooltip("How much the baseline accident rate decreases each in-game day.")]
@@ -77,6 +64,9 @@ public class GameManager : MonoBehaviour
 
     [Tooltip("Number of in-game days to linearly ramp from min to max. After this, max is locked in.")]
     [Min(1)] public int rampDurationDays = 30;
+
+    [Tooltip("Score is divided by this value when the player loses. Set to 1 to disable the penalty.")]
+    [Min(1f)] public float loseScoreDivisor = 5f;
 
     // ── Ramp accessors (read by RoadManager) ──────────────────────
     public float RampAccidentGainMin => rampAccidentGainMin;
@@ -122,6 +112,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private int _daysPassed;
     [SerializeField] private bool _gameRunning;
     [SerializeField] private int _consecutiveLowAccidentDays;
+    [SerializeField] private float _baseTaxPerDay;
     private bool _dayTickPaused;
 
     // ── Public accessors ─────────────────────────────────────────
@@ -208,6 +199,7 @@ public class GameManager : MonoBehaviour
         _baselineAccidentRate = cfg.startAccidentRate;
         _accidentRate = _baselineAccidentRate;
         _happiness = Mathf.Clamp(cfg.startHappiness, 0f, 100f);
+        _baseTaxPerDay = cfg.baseTaxPerDay;
         _daysPassed = 0;
         _gameRunning = true;
         _dayTickPaused = false;
@@ -410,7 +402,7 @@ public class GameManager : MonoBehaviour
     private float CalculateDailyTaxRevenue()
     {
         float happinessFactor = _happiness / 100f;
-        float tax = baseTaxPerDay * happinessFactor;
+        float tax = _baseTaxPerDay * happinessFactor;
         if (_accidentRate < safetyThreshold) tax *= safetyMultiplier;
         return tax;
     }
@@ -605,7 +597,7 @@ public class GameManager : MonoBehaviour
         // Compute overall device effectiveness: total correct / total placed * 100.
         float overallDeviceEff = ComputeOverallDeviceEffectiveness(_payload.deviceEffectiveness);
 
-        int score = CalculateFinalScore(_accidentRate, overallDeviceEff, _happiness);
+        int score = CalculateFinalScore(_accidentRate, overallDeviceEff, _happiness, won);
 
         _payload.daysUsed = _daysPassed;
         _payload.finalAccidentRate = _accidentRate;
@@ -654,13 +646,15 @@ public class GameManager : MonoBehaviour
     ///   30% overall device effectiveness (0–100)
     ///   30% final happiness              (0–100)
     /// </summary>
-    public int CalculateFinalScore(float accidentRate, float deviceEffectiveness, float happiness)
+    public int CalculateFinalScore(float accidentRate, float deviceEffectiveness, float happiness, bool won = true)
     {
         float accidentScore = Mathf.Clamp(100f - accidentRate * 4f, 0f, 100f);
         float raw = accidentScore * 0.40f
                   + deviceEffectiveness * 0.30f
                   + happiness * 0.30f;
-        return Mathf.Clamp(Mathf.RoundToInt(raw * 100f), 1, 10000);
+        int score = Mathf.Clamp(Mathf.RoundToInt(raw * 100f), 1, 10000);
+        if (!won) score = Mathf.Max(1, Mathf.RoundToInt(score / loseScoreDivisor));
+        return score;
     }
 
     // ─────────────────────────────────────────

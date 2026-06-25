@@ -2,21 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-// ─────────────────────────────────────────────────────────────────
-//  ROAD MANAGER
-//
-//  Attach to a parent GameObject (named "RoadManager") whose
-//  children include all RoadSection objects.
-//
-//  Owns the global daily-accident-mechanic parameters and the
-//  complexity multiplier.  Each in-game day, GameManager calls
-//  TickAllSections(), which iterates every child section with:
-//
-//      rate += dailyAccidentGain
-//      rate -= perCorrectDeviceReduction * correctCount * complexityMultiplier
-//
-//  and sums the resulting happiness penalties.
-// ─────────────────────────────────────────────────────────────────
 
 public class RoadManager : MonoBehaviour
 {

@@ -5,35 +5,11 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-// ─────────────────────────────────────────────────────────────────
-//  CRASH SCENE  (v3 — CarAIController, no CarManager/RoadGraph)
-//
-//  COMPATIBILITY LAYER
-//  ───────────────────
-//  CarManager still assigns the old CarAgent / RoadSegment /
-//  RoadIntersection fields (lines 883-887).  Those fields are kept
-//  as [HideInInspector] stubs so CarManager compiles without any
-//  change.  Build() reads carA/carB via GetComponent<CarAIController>
-//  on the same GameObject so the new pause/stop logic works with
-//  the CarAIController system.
-//
-//  REMOVED (dead code — scripts deleted):
-//    • RoadSegment  segment / blockedSegments  — routing handled by
-//      checkpoint network; no longer unblocked at cleanup.
-//    • RoadIntersection blockedTowards         — same.
-//    • CarManager.IsDragging                   — replaced by
-//      PauseMenuController.IsPaused.
-//
-//  NEW (Req 1 — cars pause/resume with the pause panel):
-//    • Build() finds PauseMenuController via FindObjectOfType.
-//    • HandlePauseState() freezes / restores both CarAIControllers
-//      on every coroutine frame, tracking the transition edge so
-//      the call fires exactly once per pause/resume event.
-// ─────────────────────────────────────────────────────────────────
+
 
 public class CrashScene : MonoBehaviour
 {
-    // ── Set by CarManager before Build() ──────────────────────────
+    // ── Set by CarManager before Build() 
     // CarAgent stubs kept for CarManager compile-compatibility.
     [HideInInspector] public CarAgent carA;               // rear  car
     [HideInInspector] public CarAgent carB;               // front car

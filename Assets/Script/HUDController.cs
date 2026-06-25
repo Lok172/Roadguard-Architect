@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 // ─────────────────────────────────────────────────────────────────
-//  HUD CONTROLLER  (v2 — HappinessBarUI merged in)
+//  HUD CONTROLLER 
 //
 //  Manages all HUD elements based on GameManager events.
 //
@@ -17,7 +17,7 @@ using UnityEngine.UI;
 
 public class HUDController : MonoBehaviour
 {
-    // ── Accident Rate ──────────────────────────────────────────────
+    // ── Accident Rate 
     [Header("Accident Rate")]
     [SerializeField] private TextMeshProUGUI accidentText;
 

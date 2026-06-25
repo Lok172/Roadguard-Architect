@@ -5,8 +5,6 @@ using TMPro;
 // ─────────────────────────────────────────────────────────────────
 //  PAUSE MENU CONTROLLER
 //
-//  Place on the gear/settings icon's GameObject (or any object that
-//  can see both the settings button and the Pause Panel).
 //
 //  • Pause Panel starts INACTIVE.
 //  • Clicking the settings icon activates it and sets Time.timeScale = 0,
@@ -16,21 +14,10 @@ using TMPro;
 //  • Clicking Resume (or the settings icon again, if wired) deactivates
 //    the panel and restores Time.timeScale = 1.
 //
-//  FIX (Req 3): SFX (including the car driving loop) are muted while
-//  the pause panel is open via LevelAudioManager.SetSFXPaused. BGM
-//  continues unaffected.
-//
-//  FIX (Req 4): On open, MusicManager.HookPausePanel is called so that
-//  every Button and volume Slider inside the panel gets a click sound
-//  and the sliders drive the correct volume + percentage labels.
-//
+//  
 //  Wiring options:
 //    A) Drag settingsButton / resumeButton into the Inspector slots —
 //       this script wires their OnClick automatically in Awake().
-//    B) Leave them empty and instead hook a button's OnClick() (in the
-//       Inspector) directly to PauseMenuController.OpenPause() /
-//       ClosePause() — useful if the settings icon uses ClickProxy
-//       instead of a Button.
 // ─────────────────────────────────────────────────────────────────
 
 public class PauseMenuController : MonoBehaviour

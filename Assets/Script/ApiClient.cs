@@ -13,9 +13,6 @@ using UnityEngine.Networking;
 //  Base URL is set in the Inspector on the GameObject that holds
 //  ApiClient, or simply change the constant below for quick testing.
 //
-//  All public methods are coroutines that accept Action<T, string>
-//  callbacks:  (result, errorMessage).  errorMessage is null on
-//  success; result is default(T) on failure.
 // ─────────────────────────────────────────────────────────────────
 
 public class ApiClient : MonoBehaviour

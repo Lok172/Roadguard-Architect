@@ -5,9 +5,7 @@ using UnityEngine.Networking;
 using UnityEngine.UI;
 
 // ─────────────────────────────────────────────────────────────────
-//  SETTINGS CONNECTION MANAGER  (v2)
-//
-//  Attach to any GameObject inside your Settings panel.
+//  SETTINGS CONNECTION MANAGER 
 //
 //  INSPECTOR SETUP:
 //    • connectionButton → "Test Connection" button
@@ -17,9 +15,6 @@ using UnityEngine.UI;
 //    • userNameText     → (optional) shows logged-in username
 //    • userIdText       → (optional) shows logged-in user ID
 //
-//  Uses ApiClient.baseUrl as the single source of truth for the
-//  server address.  Uses UserSession for the player profile.
-//  Pings GET baseUrl/api/health — expects any HTTP 200 response.
 // ─────────────────────────────────────────────────────────────────
 
 public class SettingsConnectionManager : MonoBehaviour

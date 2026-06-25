@@ -2,7 +2,7 @@ using System.IO;
 using UnityEngine;
 
 // ─────────────────────────────────────────────────────────────────
-//  USER SESSION  (v2 — offline-first, local JSON profile)
+//  USER SESSION  
 //
 //  Design
 //  ──────
@@ -16,7 +16,6 @@ using UnityEngine;
 //    back to the local file.
 //  • Subsequent launches load the saved profile immediately.
 //
-//  Used by: AuthManager, GameManager, LevelProgress, LevelResultsManager
 // ─────────────────────────────────────────────────────────────────
 
 public static class UserSession

@@ -336,7 +336,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AreaTargetManager
   targetAreas:
   - {fileID: 481814779}
-  - {fileID: 0}
+  - {fileID: 1466776565}
+  - {fileID: 1741831347}
+  - {fileID: 609095172}
+  - {fileID: 653167980}
   boostedRecklessness: 50
   smokePrefab: {fileID: 2900496037033356032, guid: ffb552a29a2a90f4ea5388f288497631, type: 3}
   fadeDelay: 3
@@ -898,6 +901,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 82e3efd0e52c64749be096ca1185158e, type: 3}
+--- !u!65 &609095172 stripped
+BoxCollider:
+  m_CorrespondingSourceObject: {fileID: 2789510842608155335, guid: 82e3efd0e52c64749be096ca1185158e, type: 3}
+  m_PrefabInstance: {fileID: 609095171}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &622793560
 GameObject:
   m_ObjectHideFlags: 0
@@ -1010,6 +1018,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 82e3efd0e52c64749be096ca1185158e, type: 3}
+--- !u!65 &653167980 stripped
+BoxCollider:
+  m_CorrespondingSourceObject: {fileID: 2789510842608155335, guid: 82e3efd0e52c64749be096ca1185158e, type: 3}
+  m_PrefabInstance: {fileID: 653167979}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &673616368
 GameObject:
   m_ObjectHideFlags: 0
@@ -2396,11 +2409,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RoadManager
   complexityMultiplier: 1
   dailyAccidentGain: 1
-  perCorrectDeviceReduction: 0.75
+  perCorrectDeviceReduction: 1
   happinessPerAccidentRate: 1
   reductionStopSign: 0.5
   reductionSpeedBump: 1
-  reductionTrafficLight: 4
+  reductionTrafficLight: 6
   placementHappinessStopSign: 2
   placementHappinessSpeedBump: 4
   placementHappinessTrafficLight: 10
@@ -2755,6 +2768,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 82e3efd0e52c64749be096ca1185158e, type: 3}
+--- !u!65 &1466776565 stripped
+BoxCollider:
+  m_CorrespondingSourceObject: {fileID: 2789510842608155335, guid: 82e3efd0e52c64749be096ca1185158e, type: 3}
+  m_PrefabInstance: {fileID: 1466776564}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1542106754
 GameObject:
   m_ObjectHideFlags: 0
@@ -3447,6 +3465,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 82e3efd0e52c64749be096ca1185158e, type: 3}
+--- !u!65 &1741831347 stripped
+BoxCollider:
+  m_CorrespondingSourceObject: {fileID: 2789510842608155335, guid: 82e3efd0e52c64749be096ca1185158e, type: 3}
+  m_PrefabInstance: {fileID: 1741831346}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1824796475
 GameObject:
   m_ObjectHideFlags: 0

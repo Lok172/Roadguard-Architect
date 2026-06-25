@@ -4,14 +4,14 @@ using UnityEngine;
 using TMPro;
 
 // ─────────────────────────────────────────────────────────────────
-//  LEVEL RESULTS MANAGER  (v7 — uses SimpleLineChart.cs)
+//  LEVEL RESULTS MANAGER  
 //
 //  SimpleLineChart must be in its own file in the same project.
 //
 //  INSPECTOR SETUP:
-//   • chartContainer   → the RectTransform of your chart panel
+//   • chartContainer   → the RectTransform of chart panel
 //   • axisLabelPrefab  → prefab with only RectTransform + TMP_Text
-//   • axisLabelParent  → same RectTransform as chartContainer (or any canvas parent)
+//   • axisLabelParent  → same RectTransform as chartContainer 
 //   • All other label/style fields are on the SimpleLineChart component
 //     that gets added automatically to chartContainer at runtime.
 // ─────────────────────────────────────────────────────────────────

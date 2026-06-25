@@ -13,8 +13,6 @@ using UnityEngine.UI;
 //    • Player card     — name, ID, personal best score, personal rank
 //    • Top-10 table    — spawns / refreshes ranking row prefabs
 //
-//  Depends on: UserSession (profile), ApiClient (HTTP singleton)
-//  NOTE: baseUrl is owned by ApiClient — do NOT duplicate it here.
 // ─────────────────────────────────────────────────────────────────
 
 public class SafetyRecordManager : MonoBehaviour

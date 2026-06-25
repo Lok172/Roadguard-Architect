@@ -3,7 +3,6 @@ using UnityEngine;
 // ─────────────────────────────────────────────────────────────────
 //  BILLBOARD SPRITE
 //
-//  Attach to any world-space GameObject with a SpriteRenderer.
 //  LateUpdate rotates the object so its XY plane always faces the
 //  active camera (perpendicular to the view direction).
 // ─────────────────────────────────────────────────────────────────

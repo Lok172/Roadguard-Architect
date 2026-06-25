@@ -2,11 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// Place this on any GameObject. Assign box-collider cubes to "targetAreas" in the Inspector.
-/// Call PickTargetCar() from a UI button or another script to randomly select a car
-/// inside one of those areas and apply recklessness + accident behaviour to it.
-/// </summary>
+
 public class AreaTargetManager : MonoBehaviour
 {
     [Header("Area Selection")]

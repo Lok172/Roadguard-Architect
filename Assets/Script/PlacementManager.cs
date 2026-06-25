@@ -6,7 +6,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 // ─────────────────────────────────────────────────────────────────
-//  PlacementProxy — unchanged.
+//  PlacementProxy 
 // ─────────────────────────────────────────────────────────────────
 
 public class PlacementProxy : MonoBehaviour, IPointerDownHandler
@@ -15,7 +15,7 @@ public class PlacementProxy : MonoBehaviour, IPointerDownHandler
 
     public void OnPointerDown(PointerEventData _)
     {
-        // Respect Button.interactable so locked panels stay locked (Issue 1 fix).
+       
         Button btn = GetComponent<Button>();
         if (btn != null && !btn.interactable) return;
         onDown?.Invoke();
