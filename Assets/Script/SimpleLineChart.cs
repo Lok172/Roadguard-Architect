@@ -67,9 +67,8 @@ public class SimpleLineChart : Graphic
     }
 
     // Lets Inspector changes (grid color, line color etc.) reflect live
-    protected override void OnValidate()
+    protected void OnValidate()
     {
-        base.OnValidate();
         color = Color.white; // keep base color white always
         SetVerticesDirty();
         if (Application.isPlaying)

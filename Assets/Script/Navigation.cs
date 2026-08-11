@@ -66,6 +66,10 @@ public class Navigation : MonoBehaviour, IPointerClickHandler
             }
         }
     }
+    public void OnExitClicked()
+    {
+        PageManager.Instance.QuitApplication();
+    }
 
     private void TriggerNavigation(string targetScene)
     {

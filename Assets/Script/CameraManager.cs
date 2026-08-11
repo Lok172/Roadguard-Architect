@@ -122,7 +122,11 @@ public class CameraManager : MonoBehaviour
 
     private void Update()
     {
-        if (cameraTransform == null) return;
+        if (cameraTransform == null)
+        {
+            InitialiseCamera();
+            if (cameraTransform == null) return;
+        }
 
         DetectAndApplyCurrentUI();
 
