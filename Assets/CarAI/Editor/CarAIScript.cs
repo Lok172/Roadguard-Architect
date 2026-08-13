@@ -31,6 +31,9 @@ public class CarAIEditorScript : EditorWindow
     private Transform check;
     private int count = 0;
 
+    // Number of checkpoints to create when spawning between two selected checkpoints.
+    private int checkpointsBetweenCount = 1;
+
     //Intersection creator
     private int stops = 0;
 
@@ -55,16 +58,16 @@ public class CarAIEditorScript : EditorWindow
             setupcar = false;
             createintersection = false;
         }
-        else if(GUILayout.Button("Create intersection"))
+        else if (GUILayout.Button("Create intersection"))
         {
             createintersection = true;
             setupcar = false;
             spawncheckpoints = false;
         }
-        else if(GUILayout.Button("Spawn if block"))
+        else if (GUILayout.Button("Spawn if block"))
         {
             GameObject p = new GameObject("If block");
-            
+
             GameObject stopper = GameObject.CreatePrimitive(PrimitiveType.Cube);
             stopper.name = "Stopper";
             stopper.transform.localScale = Vector3.one;
@@ -92,7 +95,7 @@ public class CarAIEditorScript : EditorWindow
         {
             SpawnCheckpoints();
         }
-        else if(createintersection)
+        else if (createintersection)
         {
             CreateIntersection();
         }
@@ -237,15 +240,15 @@ public class CarAIEditorScript : EditorWindow
             controller.acceleration = acceleration;
             controller.breaking = breaking;
             controller.speedLimit = speedLimit;
-            if(controller.checks[0] == null)
+            if (controller.checks[0] == null)
             {
-                controller.checks[0] = check; 
+                controller.checks[0] = check;
             }
         }
     }
 
     void SpawnCheckpoints()
-    {   
+    {
         GUILayout.Label("Spawn checkpoint and press on it. You will find instructions there.", EditorStyles.boldLabel);
 
         if (GUILayout.Button("Spawn checkpoint"))
@@ -254,70 +257,92 @@ public class CarAIEditorScript : EditorWindow
             CheckpointScript script = new CheckpointScript();
             spawnCheckpoint(Vector3.zero, Vector3.one, parent.transform, ref script);
         }
-        else if(GUILayout.Button("Connect selected checkpoints"))
+        else if (GUILayout.Button("Connect selected checkpoints"))
         {
             GameObject[] selected = Selection.gameObjects;
-            
+
             bool canConnect = true;
 
-            for(int i = 0; i + 1 < selected.Length; i++)
+            for (int i = 0; i + 1 < selected.Length; i++)
             {
                 CheckpointScript script = selected[i].GetComponent<CheckpointScript>();
-                if(!script || isAlreadyConnected(script.nextCheckpoints, selected[i + 1].transform))
+                if (!script || isAlreadyConnected(script.nextCheckpoints, selected[i + 1].transform))
                 {
                     canConnect = false;
                     break;
                 }
             }
 
-            if(canConnect)
+            if (canConnect)
             {
-                for(int i = 0; i + 1 < selected.Length; i++)
+                for (int i = 0; i + 1 < selected.Length; i++)
                 {
                     CheckpointScript script = selected[i].GetComponent<CheckpointScript>();
-                    script.nextCheckpoints.Add(selected[i+1].transform);
+                    script.nextCheckpoints.Add(selected[i + 1].transform);
                 }
             }
         }
-        else if(GUILayout.Button("Disconnect selected checkpoints"))
+        else if (GUILayout.Button("Disconnect selected checkpoints"))
         {
             GameObject[] selected = Selection.gameObjects;
 
-            for(int i = 0; i + 1 < selected.Length; i++)
+            for (int i = 0; i + 1 < selected.Length; i++)
             {
                 CheckpointScript script = selected[i].GetComponent<CheckpointScript>();
-                if(script)
+                if (script)
                 {
-                    script.nextCheckpoints.Remove(selected[i+1].transform);
+                    script.nextCheckpoints.Remove(selected[i + 1].transform);
                 }
             }
         }
-        else if(GUILayout.Button("Spawn checkpoint between two selected checkpoints"))
+
+        // Number of checkpoints to create along the line between the two
+        // selected checkpoints. 1 = old behaviour (single midpoint).
+        EditorGUILayout.BeginHorizontal();
+        GUILayout.Label("Checkpoints to spawn between", EditorStyles.boldLabel);
+        checkpointsBetweenCount = EditorGUILayout.IntField(checkpointsBetweenCount);
+        EditorGUILayout.EndVertical();
+        if (checkpointsBetweenCount < 1) checkpointsBetweenCount = 1;
+
+        if (GUILayout.Button("Spawn checkpoint between two selected checkpoints"))
         {
             GameObject[] selected = Selection.gameObjects;
 
-            if(selected.Length == 2)
+            if (selected.Length == 2)
             {
-                if(isElementInList(selected[1].GetComponent<CheckpointScript>().nextCheckpoints, selected[0].transform))
+                if (isElementInList(selected[1].GetComponent<CheckpointScript>().nextCheckpoints, selected[0].transform))
                 {
                     GameObject c = selected[1];
                     selected[1] = selected[0];
                     selected[0] = c;
                 }
 
-                if(selected.Length == 2)
+                if (selected.Length == 2)
                 {
-                    CheckpointScript script0 = selected[0].GetComponent<CheckpointScript>(); 
-                    CheckpointScript script1 = selected[1].GetComponent<CheckpointScript>(); 
+                    CheckpointScript script0 = selected[0].GetComponent<CheckpointScript>();
+                    CheckpointScript script1 = selected[1].GetComponent<CheckpointScript>();
 
-                    if(script0 && script1)
+                    if (script0 && script1)
                     {
-                        CheckpointScript middleScript = new CheckpointScript();
-                        GameObject checkpoint = spawnCheckpoint((selected[0].transform.position + selected[1].transform.position) / 2f, Vector3.one, selected[0].transform.parent, ref middleScript);
-
+                        // Remove the direct link between the two endpoints (if any) —
+                        // the new chain of checkpoints replaces it.
                         script0.nextCheckpoints.Remove(selected[1].transform);
-                        script0.nextCheckpoints.Add(checkpoint.transform);
-                        middleScript.nextCheckpoints.Add(selected[1].transform);
+
+                        CheckpointScript previousScript = script0;
+
+                        for (int i = 1; i <= checkpointsBetweenCount; i++)
+                        {
+                            float t = (float)i / (checkpointsBetweenCount + 1);
+                            Vector3 pos = Vector3.Lerp(selected[0].transform.position, selected[1].transform.position, t);
+
+                            CheckpointScript middleScript = new CheckpointScript();
+                            GameObject checkpoint = spawnCheckpoint(pos, Vector3.one, selected[0].transform.parent, ref middleScript);
+
+                            previousScript.nextCheckpoints.Add(checkpoint.transform);
+                            previousScript = middleScript;
+                        }
+
+                        previousScript.nextCheckpoints.Add(selected[1].transform);
                     }
                 }
             }
@@ -326,9 +351,9 @@ public class CarAIEditorScript : EditorWindow
 
     private bool isElementInList(List<Transform> list, Transform element)
     {
-        for(int i = 0; i < list.Count; i++)
+        for (int i = 0; i < list.Count; i++)
         {
-            if(list[i] == element)
+            if (list[i] == element)
             {
                 return true;
             }
@@ -347,13 +372,13 @@ public class CarAIEditorScript : EditorWindow
         EditorGUILayout.EndVertical();
 
 
-        if(GUILayout.Button("Spawn intersection") && stops != 0)
+        if (GUILayout.Button("Spawn intersection") && stops != 0)
         {
             GameObject intersection = new GameObject("Intersection");
 
             IntersectionScript intersectionScript = intersection.AddComponent<IntersectionScript>();
 
-            for(int i = 1; i <= stops; i++)
+            for (int i = 1; i <= stops; i++)
             {
                 GameObject stop = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 stop.name = "Stop" + i.ToString();
@@ -376,9 +401,9 @@ public class CarAIEditorScript : EditorWindow
     {
         bool result = false;
 
-        for(int i = 0; i < nextCheckpoints.Count; i++)
+        for (int i = 0; i < nextCheckpoints.Count; i++)
         {
-            if(nextCheckpoints[i] == checkpoint)
+            if (nextCheckpoints[i] == checkpoint)
             {
                 result = true;
                 break;
@@ -397,7 +422,7 @@ public class CarAIEditorScript : EditorWindow
         checkpoint.GetComponent<BoxCollider>().isTrigger = true;
         count++;
 
-        if(parent != null)
+        if (parent != null)
         {
             checkpoint.transform.SetParent(parent);
         }

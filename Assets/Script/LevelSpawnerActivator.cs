@@ -6,14 +6,24 @@ using UnityEngine.SceneManagement;
 /// <summary>
 /// LevelSpawnerActivator
 ///
-/// Simple, self-contained spawner activator.
-/// Assign one entry per level scene, drag in its spawner GameObjects.
+/// Simple, self-contained spawner (and now checkpoint) activator.
+/// Assign one entry per level scene, drag in its spawner GameObjects
+/// AND its checkpoint GameObjects.
 /// Call Activate(sceneName) from PageManager after a scene switch.
 ///
 /// SETUP:
 ///   1. Attach to any persistent GameObject in your Bootstrap/City scene.
 ///   2. Expand "Level Groups" in the Inspector.
-///   3. For each level, set Scene Name and drag in its Car Spawner GameObjects.
+///   3. For each level, set Scene Name and drag in its Car Spawner
+///      GameObjects AND its Checkpoint GameObjects.
+///
+/// NOTE: This gating is only needed for spawners/checkpoints that live in
+/// a SHARED/persistent scene (like your spawners currently do). If a set
+/// of checkpoints instead lives inside a level-specific scene (LV1, LV2,
+/// LV3) that PageManager loads/unloads on its own, Unity already removes
+/// them when that scene unloads — you don't need to list those here too.
+/// Only list checkpoints that sit in a scene that stays loaded across
+/// levels and would otherwise stay active/interfering with the wrong level.
 /// </summary>
 public class LevelSpawnerActivator : MonoBehaviour
 {
@@ -28,6 +38,9 @@ public class LevelSpawnerActivator : MonoBehaviour
 
         [Tooltip("All Car Spawner GameObjects that belong to this level")]
         public List<GameObject> spawners = new List<GameObject>();
+
+        [Tooltip("All Checkpoint GameObjects that belong to this level")]
+        public List<GameObject> checkpoints = new List<GameObject>();
     }
 
     [Header("Level Groups")]
@@ -44,7 +57,8 @@ public class LevelSpawnerActivator : MonoBehaviour
 
     /// <summary>
     /// Called by PageManager after a scene switch.
-    /// Scans all loaded scenes, activates matching spawners, then tells GameManager to re-init.
+    /// Scans all loaded scenes, activates matching spawners + checkpoints,
+    /// then tells GameManager to re-init.
     /// </summary>
     public void Activate(string loadedSceneName)
     {
@@ -62,7 +76,7 @@ public class LevelSpawnerActivator : MonoBehaviour
 
         if (match == null)
         {
-            Debug.Log($"[LevelSpawnerActivator] No group for scene '{loadedSceneName}' — all spawners off.");
+            Debug.Log($"[LevelSpawnerActivator] No group for scene '{loadedSceneName}' — all spawners/checkpoints off.");
             return;
         }
 
@@ -72,7 +86,14 @@ public class LevelSpawnerActivator : MonoBehaviour
                 spawner.SetActive(true);
         }
 
-        Debug.Log($"[LevelSpawnerActivator] Activated {match.spawners.Count} spawner(s) for '{loadedSceneName}'.");
+        foreach (GameObject checkpoint in match.checkpoints)
+        {
+            if (checkpoint != null)
+                checkpoint.SetActive(true);
+        }
+
+        Debug.Log($"[LevelSpawnerActivator] Activated {match.spawners.Count} spawner(s) and " +
+                  $"{match.checkpoints.Count} checkpoint(s) for '{loadedSceneName}'.");
 
         // Wait a frame then tell GameManager to scan and start them
         StartCoroutine(NotifyGameManager());
@@ -96,8 +117,14 @@ public class LevelSpawnerActivator : MonoBehaviour
     private void DeactivateAll()
     {
         foreach (LevelGroup group in levelGroups)
+        {
             foreach (GameObject spawner in group.spawners)
                 if (spawner != null)
                     spawner.SetActive(false);
+
+            foreach (GameObject checkpoint in group.checkpoints)
+                if (checkpoint != null)
+                    checkpoint.SetActive(false);
+        }
     }
 }

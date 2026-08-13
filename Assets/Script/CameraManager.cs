@@ -130,6 +130,8 @@ public class CameraManager : MonoBehaviour
 
         DetectAndApplyCurrentUI();
 
+        if (PauseMenuController.GameIsPaused) return;
+
         SceneConfig cfg = ActiveConfig;
         if (cfg == null) return;
 

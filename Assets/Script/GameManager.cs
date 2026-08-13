@@ -7,12 +7,8 @@ using UnityEngine.Events;
 using UnityEditor;
 #endif
 
-// ─────────────────────────────────────────────────────────────────
-//    • Safety Score formula based on three weighted factors:
-//        Accident Rate       40%
-//        Device Effectiveness 30%
-//        Happiness           30%
-// ─────────────────────────────────────────────────────────────────
+// Core simulation state is tracked here — capital, happiness, accident rate, and day
+// progression — and level victory/game-over conditions are evaluated.
 
 public class GameManager : MonoBehaviour
 {
@@ -39,10 +35,6 @@ public class GameManager : MonoBehaviour
         new LevelConfig { level = 2, startCapitalRM = 2500f, startAccidentRate = 15, startHappiness = 80f,  baseTaxPerDay = 50f },
         new LevelConfig { level = 3, startCapitalRM = 3500f, startAccidentRate = 25, startHappiness = 60f,  baseTaxPerDay = 80f }
     };
-
-    [Tooltip("Name of the UI page / scene to open when a level ends. " +
-             "Used with PageManager.ChangeUI(); falls back to SceneManager.LoadScene().")]
-    public string levelResultSceneName = "LevelResult";
 
     // ── Game Rules ────────────────────────────────────────────────
     [Header("Game Rules")]
@@ -111,6 +103,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private int _baselineAccidentRate;
     [SerializeField] private int _daysPassed;
     [SerializeField] private bool _gameRunning;
+    [SerializeField] private bool _planningPhaseActive;
     [SerializeField] private int _consecutiveLowAccidentDays;
     [SerializeField] private float _baseTaxPerDay;
     private bool _dayTickPaused;
@@ -122,7 +115,11 @@ public class GameManager : MonoBehaviour
     public int DaysPassed => _daysPassed;
     public int TotalDays => totalDays;
     public bool GameRunning => _gameRunning;
+    /// <summary>True while Levels 1 and 2 are waiting for the player to start the day.</summary>
+    public bool PlanningPhaseActive => _planningPhaseActive;
     public int ConsecutiveLowAccidentDays => _consecutiveLowAccidentDays;
+
+    public LevelResultPayload LastPayload => _payload;
 
     // ── Car Spawners ──────────────────────────────────────────────
     [Header("Car Spawners")]
@@ -144,6 +141,8 @@ public class GameManager : MonoBehaviour
     public UnityEvent<int, int> OnDayChanged;
     public UnityEvent OnGameOver;
     public UnityEvent OnVictory;
+    public UnityEvent OnPlanningPhaseStarted;
+    public UnityEvent OnDayStarted;
 
     // ─────────────────────────────────────────
     //  LIFECYCLE
@@ -182,7 +181,7 @@ public class GameManager : MonoBehaviour
     // ─────────────────────────────────────────
 
     /// <summary>
-    /// Re-initialises the current level. Called by SpawnerManager after it
+    /// Re-initialises the current level. Called by LevelSpawnerActivator after it
     /// activates the correct spawner group, so spawners are guaranteed active
     /// before StartSpawnersNextFrame runs.
     /// </summary>
@@ -202,6 +201,7 @@ public class GameManager : MonoBehaviour
         _baseTaxPerDay = cfg.baseTaxPerDay;
         _daysPassed = 0;
         _gameRunning = true;
+        _planningPhaseActive = UsesPlanningPhase(level);
         _dayTickPaused = false;
         _consecutiveLowAccidentDays = 0;
 
@@ -217,11 +217,21 @@ public class GameManager : MonoBehaviour
         if (devMode) ApplyDevOverrides();
 
         StartCoroutine(BroadcastNextFrame());
-        StartCoroutine(DayTickRoutine());
-        StartCoroutine(AccidentSimulationRoutine());
-        StartCoroutine(StartSpawnersNextFrame());
 
-        Debug.Log($"[GameManager] Level {level} started. Capital=RM{_capital} " +
+        if (_planningPhaseActive)
+        {
+            // Levels 1–2 let the player prepare the road before any vehicle,
+            // accident, or day-tick simulation is allowed to begin.
+            Time.timeScale = 0f;
+            OnPlanningPhaseStarted?.Invoke();
+            Debug.Log($"[GameManager] Level {level} is in Planning Phase.");
+        }
+        else
+        {
+            StartSimulation();
+        }
+
+        Debug.Log($"[GameManager] Level {level} initialized. Capital=RM{_capital} " +
                   $"Baseline={_baselineAccidentRate} DecayPerDay={baselineDecayPerDay}" +
                   (devMode ? " [DEV MODE]" : ""));
     }
@@ -231,6 +241,33 @@ public class GameManager : MonoBehaviour
         yield return null;
         BroadcastState();
     }
+
+    /// <summary>
+    /// Starts the traffic simulation after the standard-level planning phase.
+    /// Safe to bind directly to a UI Button's OnClick event.
+    /// Device placement remains available after this call.
+    /// </summary>
+    public void StartDay() => ConfirmLayout();
+
+    public void ConfirmLayout()
+    {
+        if (!_gameRunning || !_planningPhaseActive) return;
+
+        _planningPhaseActive = false;
+        Time.timeScale = 1f;
+        StartSimulation();
+        OnDayStarted?.Invoke();
+        Debug.Log($"[GameManager] Level {currentLevel} planning confirmed; day started.");
+    }
+
+    private void StartSimulation()
+    {
+        StartCoroutine(DayTickRoutine());
+        StartCoroutine(AccidentSimulationRoutine());
+        StartCoroutine(StartSpawnersNextFrame());
+    }
+
+    private static bool UsesPlanningPhase(int level) => level == 1 || level == 2;
 
     // ─────────────────────────────────────────
     //  CAR SPAWNER CONTROL
@@ -245,7 +282,7 @@ public class GameManager : MonoBehaviour
     {
         yield return null;  // let spawner Start() finish if it ran
 
-        // Always re-scan for active spawners so that SpawnerManager's
+        // Always re-scan for active spawners so that LevelSpawnerActivator's
         // SetActive(true) calls are picked up even if the list was cached.
         carSpawners = new List<carspawnerscript>(
             FindObjectsByType<carspawnerscript>(FindObjectsSortMode.None));
@@ -528,11 +565,9 @@ public class GameManager : MonoBehaviour
             _gameRunning = false;
             StopAllCoroutines();
             Debug.Log("[GameManager] VICTORY — Accident rate = 0!");
-            LevelAudioManager.Instance?.PlayWinGame();
             FinaliseAndSubmitPayload(won: true);
-            OnVictory?.Invoke();
             Time.timeScale = 0f;
-            OpenLevelResultScene();
+            OnVictory?.Invoke();
         }
     }
 
@@ -542,46 +577,9 @@ public class GameManager : MonoBehaviour
         _gameRunning = false;
         StopAllCoroutines();
         Debug.Log("[GameManager] GAME OVER");
-        LevelAudioManager.Instance?.PlayGameOver();
         FinaliseAndSubmitPayload(won: false);
-        OnGameOver?.Invoke();
         Time.timeScale = 0f;
-        OpenLevelResultScene();
-    }
-
-    // ─────────────────────────────────────────
-    //  LEVEL RESULT SCENE
-    // ─────────────────────────────────────────
-
-    /// <summary>
-    /// Opens the Level Results screen via PageManager if available,
-    /// otherwise loads the scene by name.
-    /// </summary>
-    private void OpenLevelResultScene()
-    {
-        if (string.IsNullOrWhiteSpace(levelResultSceneName))
-        {
-            Debug.LogWarning("[GameManager] levelResultSceneName is empty — cannot open Level Results.");
-            return;
-        }
-
-        // CRITICAL: restore timeScale before switching scenes.
-        // GameManager sets it to 0 on win/loss. If we leave it at 0,
-        // MusicManager's CrossFadeBGM (which uses Time.unscaledDeltaTime, fine)
-        // works — but CameraManager's auto-pan and any Start()/OnEnable() code
-        // in the result scene that uses WaitForSeconds will freeze permanently.
-        Time.timeScale = 1f;
-
-        if (PageManager.Instance != null)
-        {
-            PageManager.Instance.ChangeUI(levelResultSceneName);
-            Debug.Log($"[GameManager] Opening Level Results via PageManager: '{levelResultSceneName}'");
-        }
-        else
-        {
-            UnityEngine.SceneManagement.SceneManager.LoadScene(levelResultSceneName);
-            Debug.Log($"[GameManager] Opening Level Results via SceneManager: '{levelResultSceneName}'");
-        }
+        OnGameOver?.Invoke();
     }
 
     // ─────────────────────────────────────────
@@ -608,11 +606,8 @@ public class GameManager : MonoBehaviour
         // Bridge to the Level Results scene.
         LastLevelResult.Set(_payload);
 
-        // Only mark level cleared (unlocks next level) on victory, not on loss.
         if (won)
-            LevelProgress.MarkLevelCleared(currentLevel, _payload);
-        else
-            LevelProgress.SubmitResultOnly(currentLevel, _payload);
+            LevelProgress.MarkLevelCleared(currentLevel);
     }
 
     /// <summary>

@@ -3,22 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
-// ─────────────────────────────────────────────────────────────────
-//  LEVEL RESULTS MANAGER  
-//
-//  SimpleLineChart must be in its own file in the same project.
-//
-//  INSPECTOR SETUP:
-//   • chartContainer   → the RectTransform of chart panel
-//   • axisLabelPrefab  → prefab with only RectTransform + TMP_Text
-//   • axisLabelParent  → same RectTransform as chartContainer 
-//   • All other label/style fields are on the SimpleLineChart component
-//     that gets added automatically to chartContainer at runtime.
-// ─────────────────────────────────────────────────────────────────
+// The level-end results screen is rendered here, including score, summary, device table, and accident chart.
 
 public class LevelResultsManager : MonoBehaviour
 {
-    // ── Result Header ────────────────────────────────────────────
     [Header("Result Header")]
     public TMP_Text levelCompleteLabel;
     public TMP_Text sceneLabel;
@@ -26,18 +14,15 @@ public class LevelResultsManager : MonoBehaviour
     private static readonly Color ColorSuccess = new Color(120f / 255f, 255f / 255f, 0f / 255f);
     private static readonly Color ColorFail = new Color(255f / 255f, 49f / 255f, 0f / 255f);
 
-    // ── Safety Score ─────────────────────────────────────────────
     [Header("Safety Score")]
     public TMP_Text safetyScoreLabel;
 
-    // ── Summary Panel ────────────────────────────────────────────
     [Header("Summary Panel")]
     public TMP_Text devicesPlacedLabel;
     public TMP_Text overallEffectivenessLabel;
     public TMP_Text finalAccidentRateLabel;
     public TMP_Text finalHappinessLabel;
 
-    // ── Device Effectiveness Table ───────────────────────────────
     [Header("Device Effectiveness Table — Stop Sign")]
     public TMP_Text stopSignQuantityLabel;
     public TMP_Text stopSignEffectivenessLabel;
@@ -50,23 +35,16 @@ public class LevelResultsManager : MonoBehaviour
     public TMP_Text trafficLightQuantityLabel;
     public TMP_Text trafficLightEffectivenessLabel;
 
-    // ── Chart ────────────────────────────────────────────────────
     [Header("Chart")]
-    [Tooltip("RectTransform of the chart panel. SimpleLineChart will be added here automatically.")]
     public RectTransform chartContainer;
-
-    [Tooltip("Prefab with only RectTransform + TMP_Text — used for axis tick numbers and titles.")]
     public GameObject axisLabelPrefab;
-
-    [Tooltip("Parent under which axis labels are spawned. Assign chartContainer or any canvas panel.")]
     public RectTransform axisLabelParent;
 
-    // ── Testing ───────────────────────────────────────────────────
     [Header("Testing")]
     public bool testMode = false;
 
-    // ── Private ───────────────────────────────────────────────────
     private SimpleLineChart _lineChart;
+    private LevelResultsViewModel _vm;
 
     private static readonly Dictionary<int, string> LevelSceneNames = new Dictionary<int, string>
     {
@@ -75,24 +53,16 @@ public class LevelResultsManager : MonoBehaviour
         { 3, "Urban 4-way Crossroad" },
     };
 
-    private static readonly string[] AllDeviceTypes = { "StopSign", "SpeedBump", "TrafficLight" };
-
-    // ─────────────────────────────────────────
-    //  LIFECYCLE
-    // ─────────────────────────────────────────
-
     private IEnumerator Start()
     {
-        yield return null; // let Unity finish its own Awake/Start pass
+        yield return null;
 
-        // ── Build / retrieve the chart component ──────────────────
         if (chartContainer != null)
         {
             _lineChart = chartContainer.GetComponent<SimpleLineChart>();
             if (_lineChart == null)
                 _lineChart = chartContainer.gameObject.AddComponent<SimpleLineChart>();
 
-            // Wire up label spawning fields
             _lineChart.axisLabelPrefab = axisLabelPrefab;
             _lineChart.axisLabelParent = axisLabelParent != null ? axisLabelParent : chartContainer;
         }
@@ -101,14 +71,15 @@ public class LevelResultsManager : MonoBehaviour
             Debug.LogError("[LevelResultsManager] chartContainer is not assigned!");
         }
 
-        // ── Populate ──────────────────────────────────────────────
         if (testMode)
         {
             DrawTestGraph();
             yield break;
         }
 
-        LevelResultPayload payload = LastLevelResult.Payload;
+        _vm = new LevelResultsViewModel();
+
+        LevelResultPayload payload = _vm.GetPayload();
         if (payload == null)
         {
             Debug.LogWarning("[LevelResultsManager] No result payload found.");
@@ -121,16 +92,9 @@ public class LevelResultsManager : MonoBehaviour
         PopulateDeviceTable(payload.deviceEffectiveness);
         DrawAccidentTrend(payload.accidentSnapshots, PlayerPrefs.GetInt("StartAccidentRate", -1));
 
-        // FIX: invalidate MusicManager's scene cache so that when the player
-        // navigates away from this screen (back to main menu), MusicManager
-        // detects the scene change and re-attaches button sounds + correct BGM.
-        // Without this, _currentScene stayed as the level scene name and the
-        // main menu was treated as "already visited" — silencing buttons and
-        // keeping BGM2 playing.
         MusicManager.Instance?.InvalidateSceneCache();
 
-        if (ShouldUploadResult() && ApiClient.Instance != null && UserSession.IsLoggedIn)
-            StartCoroutine(UploadLevelResult(payload));
+        _vm.SubmitIfAppropriate(payload);
     }
 
     private void OnValidate()
@@ -138,10 +102,6 @@ public class LevelResultsManager : MonoBehaviour
         if (!Application.isPlaying) return;
         if (testMode) DrawTestGraph();
     }
-
-    // ─────────────────────────────────────────
-    //  CHART
-    // ─────────────────────────────────────────
 
     private void DrawAccidentTrend(List<AccidentSnapshot> snapshots, int startAccidentRate = -1)
     {
@@ -164,13 +124,8 @@ public class LevelResultsManager : MonoBehaviour
         foreach (var snap in snapshots)
             points.Add(new Vector2(snap.day, snap.accidentRate));
 
-        // One call — redraws mesh AND rebuilds axis labels
         _lineChart.SetData(points);
     }
-
-    // ─────────────────────────────────────────
-    //  TEST GRAPH
-    // ─────────────────────────────────────────
 
     private void DrawTestGraph()
     {
@@ -202,17 +157,6 @@ public class LevelResultsManager : MonoBehaviour
         if (overallEffectivenessLabel != null) overallEffectivenessLabel.text = "Overall Device Effectiveness: 83.3%  [TEST]";
         if (finalAccidentRateLabel != null) finalAccidentRateLabel.text = "Final Accident Rate: 0  [TEST]";
         if (finalHappinessLabel != null) finalHappinessLabel.text = "Final Happiness: 78  [TEST]";
-    }
-
-    // ─────────────────────────────────────────
-    //  POPULATE HELPERS
-    // ─────────────────────────────────────────
-
-    private static bool ShouldUploadResult()
-    {
-        if (GameManager.Instance != null && GameManager.Instance.devMode) return false;
-        var lsm = Object.FindFirstObjectByType<LevelSelectManager>();
-        return lsm == null || !lsm.developerMode;
     }
 
     private void PopulateHeader(LevelResultPayload p)
@@ -276,37 +220,4 @@ public class LevelResultsManager : MonoBehaviour
         if (quantityLabel != null) quantityLabel.text = count.ToString();
         if (effectivenessLabel != null) effectivenessLabel.text = $"{eff:F0}";
     }
-
-    // ─────────────────────────────────────────
-    //  UPLOAD
-    // ─────────────────────────────────────────
-
-    private IEnumerator UploadLevelResult(LevelResultPayload p)
-    {
-        var body = new LevelResultRequest
-        {
-            playerId = p.userId,
-            levelNumber = p.level,
-            safetyScore = p.safetyScore,
-            daysUsed = p.daysUsed
-        };
-
-        yield return ApiClient.Instance.Post<LevelResultResponse>(
-            "api/results", body,
-            (response, error) =>
-            {
-                if (error != null)
-                    Debug.LogWarning($"[LevelResultsManager] Upload failed: {error}");
-                else
-                    Debug.Log($"[LevelResultsManager] Uploaded. Server id: {response?.id}");
-            });
-    }
 }
-
-// ─────────────────────────────────────────────────────────────────
-//  DTOs  (keep here or move to their own files)
-// ─────────────────────────────────────────────────────────────────
-
-[System.Serializable] public class LevelResultRequest { public int playerId, levelNumber, safetyScore, daysUsed; }
-[System.Serializable] public class LevelResultResponse { public int id; }
-[System.Serializable] public class PersonalRecordResponse { public int highestScore, rank; }
