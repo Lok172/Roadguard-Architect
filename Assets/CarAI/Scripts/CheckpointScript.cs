@@ -1,9 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
-using Unity.VisualScripting;
 using UnityEngine;
 
+// CheckpointScript defines a single node in a checkpoint network. It stores the possible next
+// checkpoints for a car to follow and applies an optional speed limit when a car passes through
+// it. Visibility of the checkpoint's material is controlled externally by LevelSpawnerActivator,
+// not by this script.
 public class CheckpointScript : MonoBehaviour
 {
     [Tooltip("The speed limit applied to the ai when the car touches the checkpoint. If this value is -1 the script won't modify the speed limit of the car.")]
@@ -11,10 +13,6 @@ public class CheckpointScript : MonoBehaviour
 
     [Tooltip("List of the next checkpoints. If you add more that one checkpoint, the ai will choose one randomly.")]
     public List<Transform> nextCheckpoints = new List<Transform>();
-
-    [Tooltip("If true, this checkpoint's material is visible at runtime. " +
-             "If false, the MeshRenderer on this checkpoint is disabled so it is invisible in-game.")]
-    public bool showCheckpointMaterial = false;
 
     void Awake()
     {
@@ -25,16 +23,8 @@ public class CheckpointScript : MonoBehaviour
                 nextCheckpoints.RemoveAt(i);
             }
         }
-
-        // Hide this checkpoint's mesh at runtime if requested.
-        if (!showCheckpointMaterial)
-        {
-            MeshRenderer mr = GetComponent<MeshRenderer>();
-            if (mr != null) mr.enabled = false;
-        }
     }
 
-    // Update is called once per frame
     void Update()
     {
 

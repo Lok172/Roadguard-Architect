@@ -5,13 +5,13 @@ using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 
+// CarAIEditorScript provides an editor window with tools for car setup, checkpoint creation,
+// checkpoint editing, and intersection creation.
 public class CarAIEditorScript : EditorWindow
 {
     private bool setupcar = false;
     private bool spawncheckpoints = false;
     private bool createintersection = false;
-
-    //Car setup
 
     private GameObject carmodel;
 
@@ -31,10 +31,8 @@ public class CarAIEditorScript : EditorWindow
     private Transform check;
     private int count = 0;
 
-    // Number of checkpoints to create when spawning between two selected checkpoints.
     private int checkpointsBetweenCount = 1;
 
-    //Intersection creator
     private int stops = 0;
 
     [MenuItem("Window/Car AI")]
@@ -114,16 +112,12 @@ public class CarAIEditorScript : EditorWindow
 
         EditorGUILayout.EndHorizontal();
 
-
-
         EditorGUILayout.BeginHorizontal();
 
         GUILayout.Label("Front right wheel transform", EditorStyles.boldLabel);
         frontRight = (Transform)EditorGUILayout.ObjectField(frontRight, typeof(Transform), true);
 
         EditorGUILayout.EndVertical();
-
-
 
         EditorGUILayout.BeginHorizontal();
 
@@ -132,16 +126,12 @@ public class CarAIEditorScript : EditorWindow
 
         EditorGUILayout.EndVertical();
 
-
-
         EditorGUILayout.BeginHorizontal();
 
         GUILayout.Label("Rear right wheel transform", EditorStyles.boldLabel);
         rearRight = (Transform)EditorGUILayout.ObjectField(rearRight, typeof(Transform), true);
 
         EditorGUILayout.EndVertical();
-
-
 
         EditorGUILayout.BeginHorizontal();
 
@@ -150,16 +140,12 @@ public class CarAIEditorScript : EditorWindow
 
         EditorGUILayout.EndVertical();
 
-
-
         EditorGUILayout.BeginHorizontal();
 
         GUILayout.Label("Front right wheel collider", EditorStyles.boldLabel);
         frontRightCollider = (WheelCollider)EditorGUILayout.ObjectField(frontRightCollider, typeof(WheelCollider), true);
 
         EditorGUILayout.EndVertical();
-
-
 
         EditorGUILayout.BeginHorizontal();
 
@@ -168,16 +154,12 @@ public class CarAIEditorScript : EditorWindow
 
         EditorGUILayout.EndVertical();
 
-
-
         EditorGUILayout.BeginHorizontal();
 
         GUILayout.Label("Rear right wheel collider", EditorStyles.boldLabel);
         rearRightCollider = (WheelCollider)EditorGUILayout.ObjectField(rearRightCollider, typeof(WheelCollider), true);
 
         EditorGUILayout.EndVertical();
-
-
 
         EditorGUILayout.BeginHorizontal();
 
@@ -186,16 +168,12 @@ public class CarAIEditorScript : EditorWindow
 
         EditorGUILayout.EndVertical();
 
-
-
         EditorGUILayout.BeginHorizontal();
 
         GUILayout.Label("Acceleration", EditorStyles.boldLabel);
         acceleration = EditorGUILayout.FloatField(acceleration);
 
         EditorGUILayout.EndVertical();
-
-
 
         EditorGUILayout.BeginHorizontal();
 
@@ -204,8 +182,6 @@ public class CarAIEditorScript : EditorWindow
 
         EditorGUILayout.EndVertical();
 
-
-
         EditorGUILayout.BeginHorizontal();
 
         GUILayout.Label("Speed limit", EditorStyles.boldLabel);
@@ -213,15 +189,12 @@ public class CarAIEditorScript : EditorWindow
 
         EditorGUILayout.EndVertical();
 
-
-
         EditorGUILayout.BeginHorizontal();
 
         GUILayout.Label("Check position", EditorStyles.boldLabel);
         check = (Transform)EditorGUILayout.ObjectField(check, typeof(Transform), true);
 
         EditorGUILayout.EndVertical();
-
 
         if (GUILayout.Button("Apply") && !carmodel.GetComponent<CarAIController>())
         {
@@ -296,13 +269,13 @@ public class CarAIEditorScript : EditorWindow
             }
         }
 
-        // Number of checkpoints to create along the line between the two
-        // selected checkpoints. 1 = old behaviour (single midpoint).
         EditorGUILayout.BeginHorizontal();
         GUILayout.Label("Checkpoints to spawn between", EditorStyles.boldLabel);
         checkpointsBetweenCount = EditorGUILayout.IntField(checkpointsBetweenCount);
         EditorGUILayout.EndVertical();
         if (checkpointsBetweenCount < 1) checkpointsBetweenCount = 1;
+
+        GUILayout.Label("First selected checkpoint is the start point, second selected is the end point.", EditorStyles.label);
 
         if (GUILayout.Button("Spawn checkpoint between two selected checkpoints"))
         {
@@ -310,43 +283,102 @@ public class CarAIEditorScript : EditorWindow
 
             if (selected.Length == 2)
             {
-                if (isElementInList(selected[1].GetComponent<CheckpointScript>().nextCheckpoints, selected[0].transform))
-                {
-                    GameObject c = selected[1];
-                    selected[1] = selected[0];
-                    selected[0] = c;
-                }
+                GameObject start = selected[0];
+                GameObject end = selected[1];
 
-                if (selected.Length == 2)
-                {
-                    CheckpointScript script0 = selected[0].GetComponent<CheckpointScript>();
-                    CheckpointScript script1 = selected[1].GetComponent<CheckpointScript>();
+                CheckpointScript script0 = start.GetComponent<CheckpointScript>();
+                CheckpointScript script1 = end.GetComponent<CheckpointScript>();
 
-                    if (script0 && script1)
+                if (script0 && script1)
+                {
+                    script0.nextCheckpoints.Remove(end.transform);
+
+                    CheckpointScript previousScript = script0;
+
+                    for (int i = 1; i <= checkpointsBetweenCount; i++)
                     {
-                        // Remove the direct link between the two endpoints (if any) —
-                        // the new chain of checkpoints replaces it.
-                        script0.nextCheckpoints.Remove(selected[1].transform);
+                        float t = (float)i / (checkpointsBetweenCount + 1);
+                        Vector3 pos = Vector3.Lerp(start.transform.position, end.transform.position, t);
 
-                        CheckpointScript previousScript = script0;
+                        CheckpointScript middleScript = new CheckpointScript();
+                        GameObject checkpoint = spawnCheckpoint(pos, Vector3.one, start.transform.parent, ref middleScript);
 
-                        for (int i = 1; i <= checkpointsBetweenCount; i++)
+                        previousScript.nextCheckpoints.Add(checkpoint.transform);
+                        previousScript = middleScript;
+                    }
+
+                    previousScript.nextCheckpoints.Add(end.transform);
+                }
+            }
+        }
+
+        if (GUILayout.Button("Remove checkpoints between two selected checkpoints"))
+        {
+            GameObject[] selected = Selection.gameObjects;
+
+            if (selected.Length == 2)
+            {
+                GameObject start = selected[0];
+                GameObject end = selected[1];
+
+                CheckpointScript script0 = start.GetComponent<CheckpointScript>();
+                CheckpointScript script1 = end.GetComponent<CheckpointScript>();
+
+                if (script0 && script1)
+                {
+                    List<GameObject> chain = FindLinearChain(start, end);
+
+                    if (chain != null)
+                    {
+                        for (int i = 0; i < chain.Count; i++)
                         {
-                            float t = (float)i / (checkpointsBetweenCount + 1);
-                            Vector3 pos = Vector3.Lerp(selected[0].transform.position, selected[1].transform.position, t);
-
-                            CheckpointScript middleScript = new CheckpointScript();
-                            GameObject checkpoint = spawnCheckpoint(pos, Vector3.one, selected[0].transform.parent, ref middleScript);
-
-                            previousScript.nextCheckpoints.Add(checkpoint.transform);
-                            previousScript = middleScript;
+                            DestroyImmediate(chain[i]);
                         }
 
-                        previousScript.nextCheckpoints.Add(selected[1].transform);
+                        script0.nextCheckpoints.RemoveAll(t => t == null);
+
+                        if (!isElementInList(script0.nextCheckpoints, end.transform))
+                        {
+                            script0.nextCheckpoints.Add(end.transform);
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogWarning("[CarAIEditorScript] No linear checkpoint chain found between the selected checkpoints (start to end must be a single unbranched path).");
                     }
                 }
             }
         }
+    }
+
+    private List<GameObject> FindLinearChain(GameObject start, GameObject end)
+    {
+        List<GameObject> chain = new List<GameObject>();
+        CheckpointScript current = start.GetComponent<CheckpointScript>();
+
+        int safety = 0;
+        while (safety < 10000)
+        {
+            safety++;
+
+            if (current.nextCheckpoints.Count != 1)
+                return null;
+
+            Transform nextTransform = current.nextCheckpoints[0];
+            if (nextTransform == null)
+                return null;
+
+            if (nextTransform.gameObject == end)
+                return chain;
+
+            chain.Add(nextTransform.gameObject);
+
+            current = nextTransform.GetComponent<CheckpointScript>();
+            if (current == null)
+                return null;
+        }
+
+        return null;
     }
 
     private bool isElementInList(List<Transform> list, Transform element)
@@ -371,7 +403,6 @@ public class CarAIEditorScript : EditorWindow
 
         EditorGUILayout.EndVertical();
 
-
         if (GUILayout.Button("Spawn intersection") && stops != 0)
         {
             GameObject intersection = new GameObject("Intersection");
@@ -393,7 +424,6 @@ public class CarAIEditorScript : EditorWindow
             }
 
         }
-
 
     }
 

@@ -6,28 +6,55 @@ using UnityEngine;
 public class LevelResultNavigator : MonoBehaviour
 {
     [SceneName] public string levelResultSceneName = "LevelResult";
+    private GameManager _subscribedGameManager;
 
     private void OnEnable()
     {
-        StartCoroutine(SubscribeWhenReady());
+        StartCoroutine(TrackGameManager());
     }
 
-    private IEnumerator SubscribeWhenReady()
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    private static void EnsureNavigatorExists()
     {
-        while (GameManager.Instance == null)
-            yield return null;
+        if (FindFirstObjectByType<LevelResultNavigator>() != null) return;
 
-        GameManager.Instance.OnVictory.AddListener(OpenLevelResult);
-        GameManager.Instance.OnGameOver.AddListener(OpenLevelResult);
+        GameObject navigator = new GameObject("LevelResultNavigator");
+        DontDestroyOnLoad(navigator);
+        navigator.AddComponent<LevelResultNavigator>();
+    }
+
+    private IEnumerator TrackGameManager()
+    {
+        while (enabled)
+        {
+            GameManager current = GameManager.Instance;
+            if (current != _subscribedGameManager)
+            {
+                Unsubscribe();
+                _subscribedGameManager = current;
+
+                if (_subscribedGameManager != null)
+                {
+                    _subscribedGameManager.OnVictory.AddListener(OpenLevelResult);
+                    _subscribedGameManager.OnGameOver.AddListener(OpenLevelResult);
+                }
+            }
+
+            yield return null;
+        }
     }
 
     private void OnDisable()
     {
-        if (GameManager.Instance != null)
-        {
-            GameManager.Instance.OnVictory.RemoveListener(OpenLevelResult);
-            GameManager.Instance.OnGameOver.RemoveListener(OpenLevelResult);
-        }
+        Unsubscribe();
+    }
+
+    private void Unsubscribe()
+    {
+        if (_subscribedGameManager == null) return;
+        _subscribedGameManager.OnVictory.RemoveListener(OpenLevelResult);
+        _subscribedGameManager.OnGameOver.RemoveListener(OpenLevelResult);
+        _subscribedGameManager = null;
     }
 
     private void OpenLevelResult()

@@ -83,7 +83,8 @@ public class PauseMenuController : MonoBehaviour
 
         // Safety: don't un-freeze a level that already ended (Game Over /
         // Victory) while the pause panel happened to be open.
-        if (GameManager.Instance == null || GameManager.Instance.GameRunning)
+        if (GameManager.Instance == null ||
+            (GameManager.Instance.GameRunning && GameManager.Instance.SimulationStarted))
             Time.timeScale = 1f;
 
         IsPaused = false;

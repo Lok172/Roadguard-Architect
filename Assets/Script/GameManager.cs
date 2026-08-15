@@ -104,6 +104,9 @@ public class GameManager : MonoBehaviour
     [SerializeField] private int _daysPassed;
     [SerializeField] private bool _gameRunning;
     [SerializeField] private bool _planningPhaseActive;
+    [SerializeField] private bool _executionPhaseActive;
+    [SerializeField] private bool _simulationStarted;
+    [SerializeField] private bool _phaseFlowStarted;
     [SerializeField] private int _consecutiveLowAccidentDays;
     [SerializeField] private float _baseTaxPerDay;
     private bool _dayTickPaused;
@@ -117,6 +120,9 @@ public class GameManager : MonoBehaviour
     public bool GameRunning => _gameRunning;
     /// <summary>True while Levels 1 and 2 are waiting for the player to start the day.</summary>
     public bool PlanningPhaseActive => _planningPhaseActive;
+    public bool ExecutionPhaseActive => _executionPhaseActive;
+    public bool SimulationStarted => _simulationStarted;
+    public bool PhaseFlowStarted => _phaseFlowStarted;
     public int ConsecutiveLowAccidentDays => _consecutiveLowAccidentDays;
 
     public LevelResultPayload LastPayload => _payload;
@@ -142,6 +148,8 @@ public class GameManager : MonoBehaviour
     public UnityEvent OnGameOver;
     public UnityEvent OnVictory;
     public UnityEvent OnPlanningPhaseStarted;
+    public UnityEvent OnExecutionPhaseStarted;
+    public UnityEvent OnSimulationStarted;
     public UnityEvent OnDayStarted;
 
     // ─────────────────────────────────────────
@@ -202,6 +210,9 @@ public class GameManager : MonoBehaviour
         _daysPassed = 0;
         _gameRunning = true;
         _planningPhaseActive = UsesPlanningPhase(level);
+        _executionPhaseActive = false;
+        _simulationStarted = false;
+        _phaseFlowStarted = false;
         _dayTickPaused = false;
         _consecutiveLowAccidentDays = 0;
 
@@ -218,18 +229,8 @@ public class GameManager : MonoBehaviour
 
         StartCoroutine(BroadcastNextFrame());
 
-        if (_planningPhaseActive)
-        {
-            // Levels 1–2 let the player prepare the road before any vehicle,
-            // accident, or day-tick simulation is allowed to begin.
-            Time.timeScale = 0f;
-            OnPlanningPhaseStarted?.Invoke();
-            Debug.Log($"[GameManager] Level {level} is in Planning Phase.");
-        }
-        else
-        {
-            StartSimulation();
-        }
+        // Camera reveal must finish before the Planning/Execution flow begins.
+        StartCoroutine(BeginPhaseFlowAfterCameraTransition());
 
         Debug.Log($"[GameManager] Level {level} initialized. Capital=RM{_capital} " +
                   $"Baseline={_baselineAccidentRate} DecayPerDay={baselineDecayPerDay}" +
@@ -242,29 +243,64 @@ public class GameManager : MonoBehaviour
         BroadcastState();
     }
 
+    private IEnumerator BeginPhaseFlowAfterCameraTransition()
+    {
+        // Allow CameraManager to detect the new scene and begin its reveal.
+        yield return null;
+
+        CameraManager cameraManager = FindFirstObjectByType<CameraManager>();
+        cameraManager?.TransitionToMaxZoom();
+        while (cameraManager != null && cameraManager.IsLevelRevealTransitionRunning)
+            yield return null;
+
+        _phaseFlowStarted = true;
+        Time.timeScale = 0f;
+
+        if (_planningPhaseActive)
+        {
+            OnPlanningPhaseStarted?.Invoke();
+            Debug.Log($"[GameManager] Level {currentLevel} is in Planning Phase.");
+        }
+        else
+        {
+            BeginExecutionPhase();
+        }
+    }
+
     /// <summary>
-    /// Starts the traffic simulation after the standard-level planning phase.
-    /// Safe to bind directly to a UI Button's OnClick event.
-    /// Device placement remains available after this call.
+    /// Changes a standard level from Planning to Execution. The phase view
+    /// displays the countdown, then calls StartSimulationAfterCountdown().
     /// </summary>
     public void StartDay() => ConfirmLayout();
 
     public void ConfirmLayout()
     {
-        if (!_gameRunning || !_planningPhaseActive) return;
+        if (!_gameRunning || !_phaseFlowStarted || !_planningPhaseActive) return;
 
         _planningPhaseActive = false;
-        Time.timeScale = 1f;
-        StartSimulation();
+        BeginExecutionPhase();
         OnDayStarted?.Invoke();
-        Debug.Log($"[GameManager] Level {currentLevel} planning confirmed; day started.");
+        Debug.Log($"[GameManager] Level {currentLevel} layout confirmed; execution countdown started.");
     }
 
-    private void StartSimulation()
+    public void StartSimulationAfterCountdown()
     {
+        if (!_gameRunning || _simulationStarted) return;
+
+        Time.timeScale = 1f;
         StartCoroutine(DayTickRoutine());
         StartCoroutine(AccidentSimulationRoutine());
         StartCoroutine(StartSpawnersNextFrame());
+        _simulationStarted = true;
+        OnSimulationStarted?.Invoke();
+        Debug.Log($"[GameManager] Level {currentLevel} simulation started.");
+    }
+
+    private void BeginExecutionPhase()
+    {
+        if (_executionPhaseActive) return;
+        _executionPhaseActive = true;
+        OnExecutionPhaseStarted?.Invoke();
     }
 
     private static bool UsesPlanningPhase(int level) => level == 1 || level == 2;

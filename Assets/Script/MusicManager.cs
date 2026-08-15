@@ -170,7 +170,9 @@ public class MusicManager : MonoBehaviour
                     OnSceneChanged(ui);
                 }
             }
-            yield return new WaitForSeconds(0.1f);
+            // Scene/Settings wiring must continue while Planning or Pause has
+            // set Time.timeScale to zero.
+            yield return new WaitForSecondsRealtime(0.1f);
         }
     }
 

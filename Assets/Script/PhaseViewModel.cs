@@ -4,7 +4,7 @@ using System;
 /// Presentation state for the standard-level planning phase. This contains no
 /// Unity view references, so it can be tested and reused independently of UI.
 /// </summary>
-public sealed class PlanningPhaseViewModel
+public sealed class PhaseViewModel
 {
     public bool IsVisible { get; private set; }
     public event Action<bool> VisibilityChanged;
@@ -19,7 +19,7 @@ public sealed class PlanningPhaseViewModel
         SetVisible(false);
     }
 
-    public void ConfirmLayout()
+    public void StartExecution()
     {
         GameManager.Instance?.ConfirmLayout();
     }
