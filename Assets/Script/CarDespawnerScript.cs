@@ -6,8 +6,6 @@ using UnityEngine;
 [RequireComponent(typeof(Collider))]
 public class CarDespawnerScript : MonoBehaviour
 {
-    public carspawnerscript linkedSpawner;
-
     private void OnTriggerEnter(Collider other)
     {
         CarAIController car = other.GetComponentInParent<CarAIController>();
@@ -17,14 +15,4 @@ public class CarDespawnerScript : MonoBehaviour
 
         Destroy(car.gameObject);
     }
-
-#if UNITY_EDITOR
-    private void OnDrawGizmosSelected()
-    {
-        if (linkedSpawner == null) return;
-
-        Gizmos.color = Color.cyan;
-        Gizmos.DrawLine(transform.position, linkedSpawner.transform.position);
-    }
-#endif
 }

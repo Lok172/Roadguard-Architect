@@ -437,7 +437,9 @@ public class CameraManager : MonoBehaviour
     // ─────────────────────────────────────────────────────────────
     private void HandlePan(SceneConfig cfg)
     {
-        float movement = cfg.movementSpeed * Time.deltaTime * panDirection;
+        // Unscaled: AutoPan is presentation, not simulation — it must keep
+        // moving even while Time.timeScale is 0 during a Planning Phase pause.
+        float movement = cfg.movementSpeed * Time.unscaledDeltaTime * panDirection;
         Vector3 pos = cameraTransform.position;
         pos.x += movement;
 
@@ -570,7 +572,8 @@ public class CameraManager : MonoBehaviour
 
             Vector3 smoothed = Vector3.SmoothDamp(
                 cameraTransform.position, target,
-                ref _positionVelocity, cfg.positionSmoothTime);
+                ref _positionVelocity, cfg.positionSmoothTime,
+                Mathf.Infinity, Time.unscaledDeltaTime);
 
             cameraTransform.position = smoothed;
         }
@@ -590,17 +593,23 @@ public class CameraManager : MonoBehaviour
 
     private void SetCameraZoomSmooth(Camera cam, float targetValue, SceneConfig cfg)
     {
+        // Unscaled: player-driven zoom must keep responding even while
+        // Time.timeScale is 0 during a Planning Phase pause. SmoothDamp's
+        // short-form overload implicitly uses (scaled) Time.deltaTime, so we
+        // pass unscaledDeltaTime explicitly via the full overload.
         if (cam.orthographic)
         {
             cam.orthographicSize = Mathf.SmoothDamp(
                 cam.orthographicSize, targetValue,
-                ref cfg.zoomVelocity, cfg.zoomSmoothTime);
+                ref cfg.zoomVelocity, cfg.zoomSmoothTime,
+                Mathf.Infinity, Time.unscaledDeltaTime);
         }
         else
         {
             cam.fieldOfView = Mathf.SmoothDamp(
                 cam.fieldOfView, targetValue,
-                ref cfg.zoomVelocity, cfg.zoomSmoothTime);
+                ref cfg.zoomVelocity, cfg.zoomSmoothTime,
+                Mathf.Infinity, Time.unscaledDeltaTime);
         }
     }
 

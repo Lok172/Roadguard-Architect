@@ -1,4 +1,4 @@
-using System.Collections;
+ï»¿using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -38,7 +38,7 @@ public class PhaseManager : MonoBehaviour
 
     private IEnumerator Start()
     {
-        // Wiring the button here — not in Awake() — guarantees every other
+        // Wiring the button here ï¿½ not in Awake() ï¿½ guarantees every other
         // script's Awake() (including PauseMenuController's, which may add a
         // RestartLevel listener to this same button by mistake) has already
         // run, so RemoveAllListeners() here is the one that wins.
@@ -52,16 +52,22 @@ public class PhaseManager : MonoBehaviour
             yield return null;
 
         GameManager.Instance.OnPlanningPhaseStarted.AddListener(_vm.Show);
+        GameManager.Instance.OnPlanningPhaseReady.AddListener(EnablePlanningInteraction);
         GameManager.Instance.OnExecutionPhaseStarted.AddListener(ShowExecutionPhase);
 
-        // Handles GameManager being initialized before this view subscribes.
-        if (!GameManager.Instance.PhaseFlowStarted)
-            yield break;
-
+        // Late-subscription safety: GameManager.Start() may already have run
+        // (and already invoked the events above) before this view's Start()
+        // gets here, depending on script execution order.
         if (GameManager.Instance.PlanningPhaseActive)
+        {
             _vm.Show();
-        else if (GameManager.Instance.GameRunning)
+            if (GameManager.Instance.PhaseFlowStarted)
+                EnablePlanningInteraction();
+        }
+        else if (GameManager.Instance.PhaseFlowStarted && GameManager.Instance.GameRunning)
+        {
             ShowExecutionPhase();
+        }
     }
 
     private void OnDestroy()
@@ -72,6 +78,7 @@ public class PhaseManager : MonoBehaviour
         if (GameManager.Instance != null)
         {
             GameManager.Instance.OnPlanningPhaseStarted.RemoveListener(_vm.Show);
+            GameManager.Instance.OnPlanningPhaseReady.RemoveListener(EnablePlanningInteraction);
             GameManager.Instance.OnExecutionPhaseStarted.RemoveListener(ShowExecutionPhase);
         }
 
@@ -102,8 +109,18 @@ public class PhaseManager : MonoBehaviour
         if (simulateButton != null)
         {
             simulateButton.gameObject.SetActive(true);
-            simulateButton.interactable = true;
+            // Disabled until OnPlanningPhaseReady fires (camera reveal done) â€”
+            // the panel/instructions now show before that, so clicking early
+            // would otherwise silently no-op inside GameManager.ConfirmLayout.
+            simulateButton.interactable = false;
         }
+    }
+
+    /// <summary>Called via GameManager.OnPlanningPhaseReady once the camera reveal finishes.</summary>
+    private void EnablePlanningInteraction()
+    {
+        if (simulateButton != null)
+            simulateButton.interactable = true;
     }
 
     private void ShowExecutionPhase()
@@ -148,6 +165,11 @@ public class PhaseManager : MonoBehaviour
                 countdownLabel.text = seconds.ToString();
             yield return new WaitForSecondsRealtime(1f);
         }
+
+        if (countdownLabel != null)
+            countdownLabel.text = "Start!";
+
+        yield return new WaitForSecondsRealtime(0.6f);
 
         if (countdownLabel != null)
             countdownLabel.gameObject.SetActive(false);

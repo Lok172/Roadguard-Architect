@@ -148,6 +148,8 @@ public class GameManager : MonoBehaviour
     public UnityEvent OnGameOver;
     public UnityEvent OnVictory;
     public UnityEvent OnPlanningPhaseStarted;
+    [Tooltip("Fires once the camera reveal finishes and Planning Phase becomes interactable (Simulate button enabled). OnPlanningPhaseStarted fires earlier, immediately at level start, purely to show the panel/instructions.")]
+    public UnityEvent OnPlanningPhaseReady;
     public UnityEvent OnExecutionPhaseStarted;
     public UnityEvent OnSimulationStarted;
     public UnityEvent OnDayStarted;
@@ -229,7 +231,15 @@ public class GameManager : MonoBehaviour
 
         StartCoroutine(BroadcastNextFrame());
 
-        // Camera reveal must finish before the Planning/Execution flow begins.
+        // Show the Planning Phase panel & instructions immediately — the
+        // player shouldn't be staring at a blank screen for the few seconds
+        // the camera takes to reveal the level. The Simulate button starts
+        // disabled and is enabled by OnPlanningPhaseReady once the camera
+        // reveal actually finishes (see BeginPhaseFlowAfterCameraTransition).
+        if (_planningPhaseActive)
+            OnPlanningPhaseStarted?.Invoke();
+
+        // Camera reveal must finish before the Planning/Execution flow becomes interactable.
         StartCoroutine(BeginPhaseFlowAfterCameraTransition());
 
         Debug.Log($"[GameManager] Level {level} initialized. Capital=RM{_capital} " +
@@ -258,7 +268,7 @@ public class GameManager : MonoBehaviour
 
         if (_planningPhaseActive)
         {
-            OnPlanningPhaseStarted?.Invoke();
+            OnPlanningPhaseReady?.Invoke();
             Debug.Log($"[GameManager] Level {currentLevel} is in Planning Phase.");
         }
         else

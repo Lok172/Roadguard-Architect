@@ -4196,6 +4196,9 @@ MonoBehaviour:
   OnPlanningPhaseStarted:
     m_PersistentCalls:
       m_Calls: []
+  OnPlanningPhaseReady:
+    m_PersistentCalls:
+      m_Calls: []
   OnExecutionPhaseStarted:
     m_PersistentCalls:
       m_Calls: []
@@ -4898,7 +4901,6 @@ GameObject:
   - component: {fileID: 1744634065}
   - component: {fileID: 1744634069}
   - component: {fileID: 1744634068}
-  - component: {fileID: 1744634066}
   m_Layer: 5
   m_Name: Phase Panel
   m_TagString: Untagged
@@ -4929,22 +4931,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: -0.5999756}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1744634066
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1744634064}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bfcbcb29de10b5540ba86d9eac84f860, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PauseMenuController
-  settingsButton: {fileID: 974161924}
-  pausePanel: {fileID: 1744634064}
-  resumeButton: {fileID: 0}
-  restartButton: {fileID: 0}
 --- !u!114 &1744634068
 MonoBehaviour:
   m_ObjectHideFlags: 0
