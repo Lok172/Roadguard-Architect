@@ -17,7 +17,7 @@ public class carspawnerscript : MonoBehaviour
     [Tooltip("The first checkpoint that the car(s) will be redirected to.")]
     public Transform startingCheckpoint;
 
-    [Tooltip("The checkpoint assigned to cars spawned into an accident area. Used instead of startingCheckpoint when set.")]
+    [Tooltip("The checkpoint assigned to cars spawned into an accident area. If left empty, this is detected automatically at Start by finding the checkpoint nearest to this spawner that sits inside one of AreaTargetManager's target areas. A manually assigned value here always takes priority over detection.")]
     public Transform accidentAreaCheckpoint;
 
     [Tooltip("Time interval between cars in seconds.")]
@@ -41,6 +41,42 @@ public class carspawnerscript : MonoBehaviour
     {
         if (GameManager.Instance != null)
             GameManager.Instance.RegisterSpawner(this);
+    }
+
+    private void Start()
+    {
+        if (accidentAreaCheckpoint == null)
+            accidentAreaCheckpoint = FindAccidentCheckpoint();
+    }
+
+    private Transform FindAccidentCheckpoint()
+    {
+        AreaTargetManager areaManager = FindFirstObjectByType<AreaTargetManager>();
+        if (areaManager == null || areaManager.targetAreas == null) return null;
+
+        CheckpointScript[] allCheckpoints = FindObjectsByType<CheckpointScript>(FindObjectsSortMode.None);
+
+        Transform closest = null;
+        float closestDistance = float.MaxValue;
+
+        foreach (Collider area in areaManager.targetAreas)
+        {
+            if (area == null) continue;
+
+            foreach (CheckpointScript cp in allCheckpoints)
+            {
+                if (!area.bounds.Contains(cp.transform.position)) continue;
+
+                float distance = Vector3.Distance(transform.position, cp.transform.position);
+                if (distance < closestDistance)
+                {
+                    closestDistance = distance;
+                    closest = cp.transform;
+                }
+            }
+        }
+
+        return closest;
     }
 
     public void ResetAndSpawn()
@@ -115,13 +151,13 @@ public class carspawnerscript : MonoBehaviour
 
     private void OnTriggerStay(Collider other)
     {
-        if (other.GetComponent<CarAIController>())
+        if (other.GetComponentInParent<CarAIController>())
             canSpawn = false;
     }
 
     private void OnTriggerExit(Collider other)
     {
-        if (other.GetComponent<CarAIController>())
+        if (other.GetComponentInParent<CarAIController>())
             canSpawn = true;
     }
 }

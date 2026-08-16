@@ -1879,7 +1879,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LevelAudioManager
   gameStartSound:
     label: Game Start
-    clip: {fileID: 8300000, guid: 611203644b69f0a4a87dab40aa0222d2, type: 3}
+    clip: {fileID: 8300000, guid: 24179bb8aa383b4409709b6ef7a22555, type: 3}
     loop: 0
     clickTargets: []
   carDrivingSound:

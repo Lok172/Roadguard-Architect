@@ -12,7 +12,7 @@ public class StopScript : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        
+
     }
 
     // Update is called once per frame
@@ -28,7 +28,7 @@ public class StopScript : MonoBehaviour
 
     private void OnTriggerStay(Collider other)
     {
-        CarAIController carController = other.gameObject.GetComponent<CarAIController>();
+        CarAIController carController = other.gameObject.GetComponentInParent<CarAIController>();
 
         if (carController != null)
         {
@@ -49,7 +49,7 @@ public class StopScript : MonoBehaviour
 
     private void OnTriggerExit(Collider other)
     {
-        CarAIController carController = other.gameObject.GetComponent<CarAIController>();
+        CarAIController carController = other.gameObject.GetComponentInParent<CarAIController>();
 
         if (carController != null)
         {

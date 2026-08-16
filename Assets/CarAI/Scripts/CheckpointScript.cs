@@ -32,7 +32,7 @@ public class CheckpointScript : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        CarAIController controller = other.GetComponent<CarAIController>();
+        CarAIController controller = other.GetComponentInParent<CarAIController>();
 
         if (controller && controller.nextCheckpoint.gameObject == transform.gameObject)
         {

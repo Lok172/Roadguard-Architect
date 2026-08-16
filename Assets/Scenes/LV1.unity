@@ -148,41 +148,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a4765beca6085847ab676ed7121fb73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadNetworkGenerator
-  generateIntersections: 0
-  generateSegments: 0
-  startLocalPosition: {x: 0, y: 0, z: 0}
-  direction: {x: -1, y: 0, z: 0}
-  nodeCount: 11
-  nodeSpacing: 20
-  intersectionIDPrefix: IntR06
-  segmentIDPrefix: SegR06
-  defaultSpeedLimit: 10
-  defaultBaseRisk: 0.1
-  defaultDensityRisk: 0.02
-  defaultLaneOffset: 4.1
-  generatedIntersections:
-  - {fileID: 394349662}
-  - {fileID: 2123119152}
-  - {fileID: 1847347073}
-  - {fileID: 1684947059}
-  - {fileID: 579435951}
-  - {fileID: 343969821}
-  - {fileID: 182457101}
-  - {fileID: 1327575062}
-  - {fileID: 1413238883}
-  - {fileID: 1629486129}
-  - {fileID: 1949709908}
-  generatedSegments:
-  - {fileID: 258116765}
-  - {fileID: 828411592}
-  - {fileID: 1438122126}
-  - {fileID: 248425528}
-  - {fileID: 1279148112}
-  - {fileID: 876220614}
-  - {fileID: 804161652}
-  - {fileID: 1049593785}
-  - {fileID: 342721080}
-  - {fileID: 1671367178}
 --- !u!4 &8282023
 Transform:
   m_ObjectHideFlags: 0
@@ -250,23 +215,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR04_04
-  intersectionA: {fileID: 1467544590}
-  intersectionB: {fileID: 2041781258}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &15899005
 Transform:
   m_ObjectHideFlags: 0
@@ -368,23 +316,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR03_04
-  intersectionA: {fileID: 624905277}
-  intersectionB: {fileID: 1786579962}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &70059960
 Transform:
   m_ObjectHideFlags: 0
@@ -507,9 +438,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR04_07
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &111114674
 Transform:
   m_ObjectHideFlags: 0
@@ -569,23 +497,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR03_10
-  intersectionA: {fileID: 1657536129}
-  intersectionB: {fileID: 2123119152}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 2.65
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!1 &137509794
 GameObject:
   m_ObjectHideFlags: 0
@@ -615,23 +526,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR04_09
-  intersectionA: {fileID: 2035813666}
-  intersectionB: {fileID: 255404899}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &137509796
 Transform:
   m_ObjectHideFlags: 0
@@ -754,9 +648,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR02_01
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &149046303
 Transform:
   m_ObjectHideFlags: 0
@@ -801,45 +692,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a4765beca6085847ab676ed7121fb73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadNetworkGenerator
-  generateIntersections: 0
-  generateSegments: 0
-  startLocalPosition: {x: 0, y: 0, z: 0}
-  direction: {x: 1, y: 0, z: 0}
-  nodeCount: 13
-  nodeSpacing: 20
-  intersectionIDPrefix: IntR01
-  segmentIDPrefix: SegR01
-  defaultSpeedLimit: 10
-  defaultBaseRisk: 0.1
-  defaultDensityRisk: 0.02
-  defaultLaneOffset: 4.1
-  generatedIntersections:
-  - {fileID: 1565758474}
-  - {fileID: 1681043821}
-  - {fileID: 302014266}
-  - {fileID: 2048912725}
-  - {fileID: 649417131}
-  - {fileID: 1077065831}
-  - {fileID: 301332015}
-  - {fileID: 1287189285}
-  - {fileID: 1769633639}
-  - {fileID: 1435268823}
-  - {fileID: 715248475}
-  - {fileID: 408559586}
-  - {fileID: 0}
-  generatedSegments:
-  - {fileID: 1502705277}
-  - {fileID: 1631753567}
-  - {fileID: 506750294}
-  - {fileID: 792432991}
-  - {fileID: 416251933}
-  - {fileID: 1259881460}
-  - {fileID: 722363760}
-  - {fileID: 2050228340}
-  - {fileID: 1306871429}
-  - {fileID: 492951438}
-  - {fileID: 1508385601}
-  - {fileID: 0}
 --- !u!4 &179802633
 Transform:
   m_ObjectHideFlags: 0
@@ -907,9 +759,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR06_06
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &182457102
 Transform:
   m_ObjectHideFlags: 0
@@ -954,9 +803,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR04_08
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &183796274
 Transform:
   m_ObjectHideFlags: 0
@@ -1079,9 +925,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR02_10
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &238640056
 Transform:
   m_ObjectHideFlags: 0
@@ -1126,23 +969,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR06_03
-  intersectionA: {fileID: 1684947059}
-  intersectionB: {fileID: 579435951}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &248425529
 Transform:
   m_ObjectHideFlags: 0
@@ -1187,9 +1013,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR04_10
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &255404900
 Transform:
   m_ObjectHideFlags: 0
@@ -1234,23 +1057,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR06_00
-  intersectionA: {fileID: 394349662}
-  intersectionB: {fileID: 2123119152}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &258116766
 Transform:
   m_ObjectHideFlags: 0
@@ -1295,23 +1101,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR02_03
-  intersectionA: {fileID: 1356428385}
-  intersectionB: {fileID: 645596998}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &262930417
 Transform:
   m_ObjectHideFlags: 0
@@ -1356,41 +1145,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a4765beca6085847ab676ed7121fb73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadNetworkGenerator
-  generateIntersections: 1
-  generateSegments: 1
-  startLocalPosition: {x: 0, y: 0, z: 0}
-  direction: {x: -1, y: 0, z: 0}
-  nodeCount: 11
-  nodeSpacing: 20
-  intersectionIDPrefix: IntR04
-  segmentIDPrefix: SegR04
-  defaultSpeedLimit: 10
-  defaultBaseRisk: 0.1
-  defaultDensityRisk: 0.02
-  defaultLaneOffset: 4.1
-  generatedIntersections:
-  - {fileID: 1108235714}
-  - {fileID: 1380322073}
-  - {fileID: 871631420}
-  - {fileID: 718755244}
-  - {fileID: 1467544590}
-  - {fileID: 2041781258}
-  - {fileID: 1086005307}
-  - {fileID: 111114673}
-  - {fileID: 183796273}
-  - {fileID: 2035813666}
-  - {fileID: 255404899}
-  generatedSegments:
-  - {fileID: 1078564308}
-  - {fileID: 1424287606}
-  - {fileID: 1846739077}
-  - {fileID: 2075562274}
-  - {fileID: 15899004}
-  - {fileID: 921802629}
-  - {fileID: 789010158}
-  - {fileID: 2059415540}
-  - {fileID: 1490935069}
-  - {fileID: 137509795}
 --- !u!4 &267619134
 Transform:
   m_ObjectHideFlags: 0
@@ -1456,23 +1210,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR02_05
-  intersectionA: {fileID: 1562832207}
-  intersectionB: {fileID: 1705697462}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &276572691
 Transform:
   m_ObjectHideFlags: 0
@@ -1517,23 +1254,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR02_02
-  intersectionA: {fileID: 1648662919}
-  intersectionB: {fileID: 1356428385}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &292227220
 Transform:
   m_ObjectHideFlags: 0
@@ -1578,9 +1298,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR01_06
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &301332016
 Transform:
   m_ObjectHideFlags: 0
@@ -1625,9 +1342,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR01_02
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &302014267
 Transform:
   m_ObjectHideFlags: 0
@@ -1672,23 +1386,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR03_08
-  intersectionA: {fileID: 1391706078}
-  intersectionB: {fileID: 1158521028}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &322855829
 Transform:
   m_ObjectHideFlags: 0
@@ -1801,9 +1498,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR02_08
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &329062266
 Transform:
   m_ObjectHideFlags: 0
@@ -1848,23 +1542,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR06_08
-  intersectionA: {fileID: 1413238883}
-  intersectionB: {fileID: 1629486129}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &342721081
 Transform:
   m_ObjectHideFlags: 0
@@ -1909,9 +1586,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR06_05
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &343969822
 Transform:
   m_ObjectHideFlags: 0
@@ -1961,9 +1635,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR06_00
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &394349663
 Transform:
   m_ObjectHideFlags: 0
@@ -2008,9 +1679,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR01_11
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &408559587
 Transform:
   m_ObjectHideFlags: 0
@@ -2070,23 +1738,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR01_04
-  intersectionA: {fileID: 649417131}
-  intersectionB: {fileID: 1077065831}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!1 &470042157
 GameObject:
   m_ObjectHideFlags: 0
@@ -2116,23 +1767,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR02_04
-  intersectionA: {fileID: 645596998}
-  intersectionB: {fileID: 1562832207}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &470042159
 Transform:
   m_ObjectHideFlags: 0
@@ -2192,23 +1826,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR01_09
-  intersectionA: {fileID: 1435268823}
-  intersectionB: {fileID: 715248475}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!1 &506750292
 GameObject:
   m_ObjectHideFlags: 0
@@ -2253,23 +1870,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR01_02
-  intersectionA: {fileID: 302014266}
-  intersectionB: {fileID: 2048912725}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 1
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!1 &539477332
 GameObject:
   m_ObjectHideFlags: 0
@@ -2299,23 +1899,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR03_01
-  intersectionA: {fileID: 1950504333}
-  intersectionB: {fileID: 1986177659}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &539477334
 Transform:
   m_ObjectHideFlags: 0
@@ -2467,9 +2050,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR02_07
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &562756571
 Transform:
   m_ObjectHideFlags: 0
@@ -2514,23 +2094,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR02_08
-  intersectionA: {fileID: 329062265}
-  intersectionB: {fileID: 1197469052}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &577094203
 Transform:
   m_ObjectHideFlags: 0
@@ -2575,9 +2138,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR06_04
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &579435952
 Transform:
   m_ObjectHideFlags: 0
@@ -2622,23 +2182,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR03_09
-  intersectionA: {fileID: 1158521028}
-  intersectionB: {fileID: 1528746898}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &598645372
 Transform:
   m_ObjectHideFlags: 0
@@ -2683,9 +2226,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR03_04
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &624905278
 Transform:
   m_ObjectHideFlags: 0
@@ -2730,9 +2270,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR02_04
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &645596999
 Transform:
   m_ObjectHideFlags: 0
@@ -2777,23 +2314,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR03_03
-  intersectionA: {fileID: 1099793131}
-  intersectionB: {fileID: 624905277}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &645994487
 Transform:
   m_ObjectHideFlags: 0
@@ -2838,9 +2358,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR01_04
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &649417132
 Transform:
   m_ObjectHideFlags: 0
@@ -2885,9 +2402,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR01_10
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &715248476
 Transform:
   m_ObjectHideFlags: 0
@@ -2932,9 +2446,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR04_03
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &718755245
 Transform:
   m_ObjectHideFlags: 0
@@ -2994,23 +2505,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR01_06
-  intersectionA: {fileID: 301332015}
-  intersectionB: {fileID: 1287189285}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 1
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!1 &725858708
 GameObject:
   m_ObjectHideFlags: 0
@@ -3040,9 +2534,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR03_00
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &725858710
 Transform:
   m_ObjectHideFlags: 0
@@ -3165,23 +2656,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR04_06
-  intersectionA: {fileID: 1086005307}
-  intersectionB: {fileID: 111114673}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &789010159
 Transform:
   m_ObjectHideFlags: 0
@@ -3241,23 +2715,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR01_03
-  intersectionA: {fileID: 2048912725}
-  intersectionB: {fileID: 649417131}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 1
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!1 &804161651
 GameObject:
   m_ObjectHideFlags: 0
@@ -3287,23 +2744,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR06_06
-  intersectionA: {fileID: 182457101}
-  intersectionB: {fileID: 1327575062}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &804161653
 Transform:
   m_ObjectHideFlags: 0
@@ -3348,23 +2788,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR06_01
-  intersectionA: {fileID: 2123119152}
-  intersectionB: {fileID: 1847347073}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &828411593
 Transform:
   m_ObjectHideFlags: 0
@@ -3409,23 +2832,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR03_06
-  intersectionA: {fileID: 1121890522}
-  intersectionB: {fileID: 1869702398}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &868606733
 Transform:
   m_ObjectHideFlags: 0
@@ -3470,9 +2876,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR04_02
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &871631421
 Transform:
   m_ObjectHideFlags: 0
@@ -3517,23 +2920,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR06_05
-  intersectionA: {fileID: 343969821}
-  intersectionB: {fileID: 182457101}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &876220615
 Transform:
   m_ObjectHideFlags: 0
@@ -3578,23 +2964,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR04_05
-  intersectionA: {fileID: 2041781258}
-  intersectionB: {fileID: 1086005307}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &921802630
 Transform:
   m_ObjectHideFlags: 0
@@ -3639,23 +3008,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR03_02
-  intersectionA: {fileID: 1986177659}
-  intersectionB: {fileID: 1099793131}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &977302935
 Transform:
   m_ObjectHideFlags: 0
@@ -3778,23 +3130,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR06_07
-  intersectionA: {fileID: 1327575062}
-  intersectionB: {fileID: 1413238883}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &1049593786
 Transform:
   m_ObjectHideFlags: 0
@@ -3839,9 +3174,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR01_05
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &1077065832
 Transform:
   m_ObjectHideFlags: 0
@@ -3886,23 +3218,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR04_00
-  intersectionA: {fileID: 1108235714}
-  intersectionB: {fileID: 1380322073}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &1078564309
 Transform:
   m_ObjectHideFlags: 0
@@ -3947,9 +3262,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR04_06
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &1086005308
 Transform:
   m_ObjectHideFlags: 0
@@ -3994,23 +3306,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR03_10
-  intersectionA: {fileID: 1528746898}
-  intersectionB: {fileID: 1657536129}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &1095915397
 Transform:
   m_ObjectHideFlags: 0
@@ -4055,9 +3350,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR03_03
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &1099793132
 Transform:
   m_ObjectHideFlags: 0
@@ -4102,9 +3394,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR04_00
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &1108235715
 Transform:
   m_ObjectHideFlags: 0
@@ -4227,9 +3516,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR03_06
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &1121890523
 Transform:
   m_ObjectHideFlags: 0
@@ -4274,9 +3560,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR03_09
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &1158521029
 Transform:
   m_ObjectHideFlags: 0
@@ -4321,9 +3604,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR02_09
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &1197469053
 Transform:
   m_ObjectHideFlags: 0
@@ -4383,23 +3663,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR06_09
-  intersectionA: {fileID: 579435951}
-  intersectionB: {fileID: 408559586}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 3.07
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!1 &1259881458
 GameObject:
   m_ObjectHideFlags: 0
@@ -4444,23 +3707,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR01_05
-  intersectionA: {fileID: 1077065831}
-  intersectionB: {fileID: 301332015}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!1 &1279148111
 GameObject:
   m_ObjectHideFlags: 0
@@ -4490,23 +3736,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR06_04
-  intersectionA: {fileID: 579435951}
-  intersectionB: {fileID: 343969821}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &1279148113
 Transform:
   m_ObjectHideFlags: 0
@@ -4608,9 +3837,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR01_07
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &1287189286
 Transform:
   m_ObjectHideFlags: 0
@@ -4655,23 +3881,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR03_00
-  intersectionA: {fileID: 725858709}
-  intersectionB: {fileID: 1950504333}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &1289446995
 Transform:
   m_ObjectHideFlags: 0
@@ -4731,23 +3940,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR01_08
-  intersectionA: {fileID: 1769633639}
-  intersectionB: {fileID: 1435268823}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!1 &1327575061
 GameObject:
   m_ObjectHideFlags: 0
@@ -4777,9 +3969,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR06_07
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &1327575063
 Transform:
   m_ObjectHideFlags: 0
@@ -4824,9 +4013,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR02_03
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &1356428386
 Transform:
   m_ObjectHideFlags: 0
@@ -4871,9 +4057,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR04_01
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &1380322074
 Transform:
   m_ObjectHideFlags: 0
@@ -4918,45 +4101,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a4765beca6085847ab676ed7121fb73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadNetworkGenerator
-  generateIntersections: 0
-  generateSegments: 0
-  startLocalPosition: {x: 0, y: 0, z: 0}
-  direction: {x: 1, y: 0, z: 0}
-  nodeCount: 12
-  nodeSpacing: 20
-  intersectionIDPrefix: IntR03
-  segmentIDPrefix: SegR03
-  defaultSpeedLimit: 10
-  defaultBaseRisk: 0.1
-  defaultDensityRisk: 0.02
-  defaultLaneOffset: 4.1
-  generatedIntersections:
-  - {fileID: 725858709}
-  - {fileID: 1950504333}
-  - {fileID: 1986177659}
-  - {fileID: 1099793131}
-  - {fileID: 624905277}
-  - {fileID: 1786579962}
-  - {fileID: 1121890522}
-  - {fileID: 1869702398}
-  - {fileID: 1391706078}
-  - {fileID: 1158521028}
-  - {fileID: 1528746898}
-  - {fileID: 1657536129}
-  - {fileID: 0}
-  generatedSegments:
-  - {fileID: 1289446994}
-  - {fileID: 539477333}
-  - {fileID: 977302934}
-  - {fileID: 645994486}
-  - {fileID: 70059959}
-  - {fileID: 1693438532}
-  - {fileID: 868606732}
-  - {fileID: 1618497225}
-  - {fileID: 322855828}
-  - {fileID: 598645371}
-  - {fileID: 1095915396}
-  - {fileID: 0}
 --- !u!4 &1382296104
 Transform:
   m_ObjectHideFlags: 0
@@ -5026,9 +4170,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR03_08
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &1391706079
 Transform:
   m_ObjectHideFlags: 0
@@ -5088,23 +4229,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR06_09
-  intersectionA: {fileID: 408559586}
-  intersectionB: {fileID: 343969821}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 3.07
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!1 &1413238882
 GameObject:
   m_ObjectHideFlags: 0
@@ -5134,9 +4258,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR06_08
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &1413238884
 Transform:
   m_ObjectHideFlags: 0
@@ -5181,23 +4302,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR04_01
-  intersectionA: {fileID: 1380322073}
-  intersectionB: {fileID: 871631420}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &1424287607
 Transform:
   m_ObjectHideFlags: 0
@@ -5242,9 +4346,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR01_09
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &1435268824
 Transform:
   m_ObjectHideFlags: 0
@@ -5289,23 +4390,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR06_02
-  intersectionA: {fileID: 1847347073}
-  intersectionB: {fileID: 1684947059}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &1438122127
 Transform:
   m_ObjectHideFlags: 0
@@ -5428,9 +4512,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR04_04
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &1467544591
 Transform:
   m_ObjectHideFlags: 0
@@ -5475,23 +4556,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR04_08
-  intersectionA: {fileID: 183796273}
-  intersectionB: {fileID: 2035813666}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &1490935070
 Transform:
   m_ObjectHideFlags: 0
@@ -5551,23 +4615,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR01_00
-  intersectionA: {fileID: 1565758474}
-  intersectionB: {fileID: 1681043821}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!1 &1508385599
 GameObject:
   m_ObjectHideFlags: 0
@@ -5612,23 +4659,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR01_10
-  intersectionA: {fileID: 715248475}
-  intersectionB: {fileID: 408559586}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!1 &1528746897
 GameObject:
   m_ObjectHideFlags: 0
@@ -5658,9 +4688,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR03_10
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &1528746899
 Transform:
   m_ObjectHideFlags: 0
@@ -5707,7 +4734,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LevelAudioManager
   gameStartSound:
     label: Game Start
-    clip: {fileID: 8300000, guid: 611203644b69f0a4a87dab40aa0222d2, type: 3}
+    clip: {fileID: 8300000, guid: 24179bb8aa383b4409709b6ef7a22555, type: 3}
     loop: 0
     clickTargets: []
   carDrivingSound:
@@ -5790,9 +4817,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR02_05
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &1562832208
 Transform:
   m_ObjectHideFlags: 0
@@ -5837,9 +4861,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR01_00
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &1565758475
 Transform:
   m_ObjectHideFlags: 0
@@ -5884,23 +4905,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR02_00
-  intersectionA: {fileID: 1994210156}
-  intersectionB: {fileID: 149046302}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &1589482251
 Transform:
   m_ObjectHideFlags: 0
@@ -5945,23 +4949,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR02_01
-  intersectionA: {fileID: 149046302}
-  intersectionB: {fileID: 1648662919}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &1614185486
 Transform:
   m_ObjectHideFlags: 0
@@ -6006,23 +4993,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR03_07
-  intersectionA: {fileID: 1869702398}
-  intersectionB: {fileID: 1391706078}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &1618497226
 Transform:
   m_ObjectHideFlags: 0
@@ -6067,9 +5037,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR06_09
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &1629486130
 Transform:
   m_ObjectHideFlags: 0
@@ -6129,23 +5096,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR01_01
-  intersectionA: {fileID: 1681043821}
-  intersectionB: {fileID: 302014266}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!1 &1631767256
 GameObject:
   m_ObjectHideFlags: 0
@@ -6175,23 +5125,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR02_09
-  intersectionA: {fileID: 1197469052}
-  intersectionB: {fileID: 238640055}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &1631767258
 Transform:
   m_ObjectHideFlags: 0
@@ -6236,9 +5169,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR02_02
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &1648662920
 Transform:
   m_ObjectHideFlags: 0
@@ -6283,9 +5213,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR03_11
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &1657536130
 Transform:
   m_ObjectHideFlags: 0
@@ -6330,23 +5257,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR06_09
-  intersectionA: {fileID: 1629486129}
-  intersectionB: {fileID: 1949709908}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &1671367179
 Transform:
   m_ObjectHideFlags: 0
@@ -6391,9 +5301,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR01_01
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &1681043822
 Transform:
   m_ObjectHideFlags: 0
@@ -6438,9 +5345,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR06_03
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &1684947060
 Transform:
   m_ObjectHideFlags: 0
@@ -6485,23 +5389,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR03_05
-  intersectionA: {fileID: 1786579962}
-  intersectionB: {fileID: 1121890522}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &1693438533
 Transform:
   m_ObjectHideFlags: 0
@@ -6561,23 +5448,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR03_00
-  intersectionA: {fileID: 1648662919}
-  intersectionB: {fileID: 725858709}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!1 &1698332756
 GameObject:
   m_ObjectHideFlags: 0
@@ -6622,23 +5492,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR02_02
-  intersectionA: {fileID: 645596998}
-  intersectionB: {fileID: 1565758474}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 3
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!1 &1705697461
 GameObject:
   m_ObjectHideFlags: 0
@@ -6668,9 +5521,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR02_06
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &1705697463
 Transform:
   m_ObjectHideFlags: 0
@@ -6715,23 +5565,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR02_07
-  intersectionA: {fileID: 562756570}
-  intersectionB: {fileID: 329062265}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &1712240214
 Transform:
   m_ObjectHideFlags: 0
@@ -6854,23 +5687,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR02_06
-  intersectionA: {fileID: 1705697462}
-  intersectionB: {fileID: 562756570}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &1738487858
 Transform:
   m_ObjectHideFlags: 0
@@ -6915,9 +5731,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR01_08
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &1769633640
 Transform:
   m_ObjectHideFlags: 0
@@ -6962,9 +5775,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR03_05
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &1786579963
 Transform:
   m_ObjectHideFlags: 0
@@ -7009,23 +5819,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR04_02
-  intersectionA: {fileID: 871631420}
-  intersectionB: {fileID: 718755244}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &1846739078
 Transform:
   m_ObjectHideFlags: 0
@@ -7070,9 +5863,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR06_02
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &1847347074
 Transform:
   m_ObjectHideFlags: 0
@@ -7117,9 +5907,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR03_07
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &1869702399
 Transform:
   m_ObjectHideFlags: 0
@@ -7242,9 +6029,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR06_10
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &1949709909
 Transform:
   m_ObjectHideFlags: 0
@@ -7289,9 +6073,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR03_01
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &1950504334
 Transform:
   m_ObjectHideFlags: 0
@@ -7644,9 +6425,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR03_02
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &1986177660
 Transform:
   m_ObjectHideFlags: 0
@@ -7691,9 +6469,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR02_00
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &1994210157
 Transform:
   m_ObjectHideFlags: 0
@@ -7743,41 +6518,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a4765beca6085847ab676ed7121fb73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadNetworkGenerator
-  generateIntersections: 0
-  generateSegments: 0
-  startLocalPosition: {x: 0, y: 0, z: 0}
-  direction: {x: -1, y: 0, z: 0}
-  nodeCount: 11
-  nodeSpacing: 20
-  intersectionIDPrefix: IntR02
-  segmentIDPrefix: SegR02
-  defaultSpeedLimit: 10
-  defaultBaseRisk: 0.1
-  defaultDensityRisk: 0.02
-  defaultLaneOffset: 4.1
-  generatedIntersections:
-  - {fileID: 1994210156}
-  - {fileID: 149046302}
-  - {fileID: 1648662919}
-  - {fileID: 1356428385}
-  - {fileID: 645596998}
-  - {fileID: 1562832207}
-  - {fileID: 1705697462}
-  - {fileID: 562756570}
-  - {fileID: 329062265}
-  - {fileID: 1197469052}
-  - {fileID: 238640055}
-  generatedSegments:
-  - {fileID: 1589482250}
-  - {fileID: 1614185485}
-  - {fileID: 292227219}
-  - {fileID: 262930416}
-  - {fileID: 470042158}
-  - {fileID: 276572690}
-  - {fileID: 1738487857}
-  - {fileID: 1712240213}
-  - {fileID: 577094202}
-  - {fileID: 1631767257}
 --- !u!4 &2012332234
 Transform:
   m_ObjectHideFlags: 0
@@ -7845,9 +6585,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR04_09
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &2035813667
 Transform:
   m_ObjectHideFlags: 0
@@ -7892,9 +6629,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR04_05
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &2041781259
 Transform:
   m_ObjectHideFlags: 0
@@ -7939,9 +6673,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR01_03
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &2048912726
 Transform:
   m_ObjectHideFlags: 0
@@ -8001,23 +6732,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR01_07
-  intersectionA: {fileID: 1287189285}
-  intersectionB: {fileID: 1769633639}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 1
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!1 &2050776909
 GameObject:
   m_ObjectHideFlags: 0
@@ -8062,23 +6776,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR02_02
-  intersectionA: {fileID: 1562832207}
-  intersectionB: {fileID: 1565758474}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 3
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!1 &2059415539
 GameObject:
   m_ObjectHideFlags: 0
@@ -8108,23 +6805,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR04_07
-  intersectionA: {fileID: 111114673}
-  intersectionB: {fileID: 183796273}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &2059415541
 Transform:
   m_ObjectHideFlags: 0
@@ -8169,23 +6849,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0115797d531f7bf418eb8891e5d72e0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadSegment
-  segmentID: SegR04_03
-  intersectionA: {fileID: 718755244}
-  intersectionB: {fileID: 1467544590}
-  speedLimit: 10
-  baseRisk: 0.1
-  densityRiskFactor: 0.02
-  intersectionComplexityFactor: 0.01
-  accidentRiskFactor: 0.05
-  accidentMemoryDuration: 60
-  laneOffset: 4.1
-  overrideLength: 0
-  generateCrash: 0
-  _isTurningAB: 0
-  _isTurningBA: 0
-  _linkedTiles: []
-  _blockAB: 0
-  _blockBA: 0
 --- !u!4 &2075562275
 Transform:
   m_ObjectHideFlags: 0
@@ -8308,9 +6971,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4689f4bb27982614fa103682eb7ddc9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadIntersection
-  intersectionID: IntR06_01
-  isJunction: 0
-  _connectedSegments: []
 --- !u!4 &2123119153
 Transform:
   m_ObjectHideFlags: 0

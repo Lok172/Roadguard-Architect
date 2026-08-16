@@ -125,7 +125,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b580432b9550eb84586838e5cb130a5b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CheckpointScript
-  speedLimit: -1
+  speedLimit: 30
   nextCheckpoints:
   - {fileID: 3623992228586615741}
 --- !u!1 &1611126355196094401
@@ -510,8 +510,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CheckpointScript
   speedLimit: -1
-  nextCheckpoints:
-  - {fileID: 2330544691292034939}
+  nextCheckpoints: []
 --- !u!1 &4163608196764214166
 GameObject:
   m_ObjectHideFlags: 0
@@ -906,7 +905,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1720541934905281968}
   m_Layer: 0
-  m_Name: SraightCheckpoints
+  m_Name: LongCPs
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

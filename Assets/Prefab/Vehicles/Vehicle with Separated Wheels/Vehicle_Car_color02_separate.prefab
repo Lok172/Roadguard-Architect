@@ -573,7 +573,7 @@ MonoBehaviour:
     m_Bits: 119
   kmh: 0
   speedLimit: 15
-  distanceFromObjects: 10
+  distanceFromObjects: 6
   recklessnessThreshold: 0
   despawnForFlippingOver: 1
   taxiMode: 0
@@ -598,7 +598,7 @@ MonoBehaviour:
   fadeDelay: 3
   fadeDuration: 1.5
   accidentStopper: {fileID: 0}
-  flipAngleThreshold: 30
+  flipAngleThreshold: 45
   flipCheckInterval: 1
 --- !u!1 &2394243669996166871
 GameObject:

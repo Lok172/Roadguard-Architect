@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 // CarAIEditorScript provides an editor window with tools for car setup, checkpoint creation,
@@ -232,28 +233,7 @@ public class CarAIEditorScript : EditorWindow
         }
         else if (GUILayout.Button("Connect selected checkpoints"))
         {
-            GameObject[] selected = Selection.gameObjects;
-
-            bool canConnect = true;
-
-            for (int i = 0; i + 1 < selected.Length; i++)
-            {
-                CheckpointScript script = selected[i].GetComponent<CheckpointScript>();
-                if (!script || isAlreadyConnected(script.nextCheckpoints, selected[i + 1].transform))
-                {
-                    canConnect = false;
-                    break;
-                }
-            }
-
-            if (canConnect)
-            {
-                for (int i = 0; i + 1 < selected.Length; i++)
-                {
-                    CheckpointScript script = selected[i].GetComponent<CheckpointScript>();
-                    script.nextCheckpoints.Add(selected[i + 1].transform);
-                }
-            }
+            ConnectSelectedCheckpoints();
         }
         else if (GUILayout.Button("Disconnect selected checkpoints"))
         {
@@ -265,6 +245,8 @@ public class CarAIEditorScript : EditorWindow
                 if (script)
                 {
                     script.nextCheckpoints.Remove(selected[i + 1].transform);
+                    EditorUtility.SetDirty(script);
+                    EditorSceneManager.MarkSceneDirty(selected[i].scene);
                 }
             }
         }
@@ -308,6 +290,9 @@ public class CarAIEditorScript : EditorWindow
                     }
 
                     previousScript.nextCheckpoints.Add(end.transform);
+
+                    EditorUtility.SetDirty(script0);
+                    EditorSceneManager.MarkSceneDirty(start.scene);
                 }
             }
         }
@@ -341,6 +326,9 @@ public class CarAIEditorScript : EditorWindow
                         {
                             script0.nextCheckpoints.Add(end.transform);
                         }
+
+                        EditorUtility.SetDirty(script0);
+                        EditorSceneManager.MarkSceneDirty(start.scene);
                     }
                     else
                     {
@@ -427,7 +415,41 @@ public class CarAIEditorScript : EditorWindow
 
     }
 
-    bool isAlreadyConnected(List<Transform> nextCheckpoints, Transform checkpoint)
+    public static void ConnectSelectedCheckpoints()
+    {
+        GameObject[] selected = Selection.gameObjects;
+
+        bool canConnect = true;
+
+        for (int i = 0; i + 1 < selected.Length; i++)
+        {
+            CheckpointScript script = selected[i].GetComponent<CheckpointScript>();
+            if (!script || isAlreadyConnected(script.nextCheckpoints, selected[i + 1].transform))
+            {
+                canConnect = false;
+                break;
+            }
+        }
+
+        if (canConnect)
+        {
+            for (int i = 0; i + 1 < selected.Length; i++)
+            {
+                CheckpointScript script = selected[i].GetComponent<CheckpointScript>();
+                script.nextCheckpoints.Add(selected[i + 1].transform);
+                EditorUtility.SetDirty(script);
+                EditorSceneManager.MarkSceneDirty(selected[i].scene);
+            }
+
+            Debug.Log($"[CarAIEditorScript] Connected {selected.Length} selected checkpoint(s) in sequence.");
+        }
+        else
+        {
+            Debug.LogWarning("[CarAIEditorScript] Could not connect selected checkpoints — one is missing a CheckpointScript, or the connection already exists.");
+        }
+    }
+
+    static bool isAlreadyConnected(List<Transform> nextCheckpoints, Transform checkpoint)
     {
         bool result = false;
 
