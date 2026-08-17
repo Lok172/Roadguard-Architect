@@ -4922,12 +4922,12 @@ MonoBehaviour:
   targetCamera: {fileID: 0}
   overlayCanvasRect: {fileID: 2074687705}
   edgeIndicatorPrefab: {fileID: 2301312658117903504, guid: 8b988a43934803047a9d2a083f63abec, type: 3}
-  crashAlertMarkerPrefab: {fileID: 3879591742659667809, guid: 30f6dc0ee872f5449b207877c1c1d35e, type: 3}
-  crashMarkerHeightOffset: 10
-  crashMarkerDepthOffset: 2
+  crashAlertMarkerPrefab: {fileID: 0}
+  crashMarkerHeightOffset: 2
+  crashMarkerDepthOffset: 0
   exclamationIcon: {fileID: 21300000, guid: aa71daf2bdaf98f4294b307607c548cb, type: 3}
-  exclamationColor: {r: 1, g: 0, b: 0, a: 1}
-  exclamationSize: 5
+  exclamationColor: {r: 1, g: 0.043396115, b: 0.043396115, a: 1}
+  exclamationSize: 1
   bubbleIcon: {fileID: 21300000, guid: ce56662abbf6e73409c4218c3d3c0c03, type: 3}
   bubbleColor: {r: 1, g: 1, b: 1, a: 1}
   bubbleSize: 1

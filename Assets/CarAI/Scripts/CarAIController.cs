@@ -48,6 +48,8 @@ public class CarAIController : MonoBehaviour
     public int recklessnessThreshold = 0;
     [Tooltip("If true the car will despawn if it flips over on the Z axis.")]
     public bool despawnForFlippingOver = true;
+    [Tooltip("How long (seconds) the car must remain continuously flipped over before it is destroyed.")]
+    public float flipOverGracePeriod = 10000f;
     [Tooltip("If true the car will switch to taxi mode, meaning that using the TaxiScript, it will go from a start checkpoint to an end checkpoint. These checkpoints need to be connected in a checkpoint network.")]
     public bool taxiMode = false;
 
@@ -101,13 +103,16 @@ public class CarAIController : MonoBehaviour
 
         if (deleteCar)
         {
-            for (int i = 0; i < 10; i++)
+            float elapsed = 0f;
+            while (elapsed < flipOverGracePeriod)
             {
                 if (!isCarFlipedOver())
                 {
                     deleteCar = false;
+                    break;
                 }
                 yield return new WaitForSeconds(1);
+                elapsed += 1f;
             }
 
             if (deleteCar)
@@ -220,8 +225,11 @@ public class CarAIController : MonoBehaviour
         {
             Vector3 nextCheckpointRelative = transform.InverseTransformPoint(nextCheckpoint.position);
 
-            steerAngle = nextCheckpointRelative.x / nextCheckpointRelative.magnitude;
-            float xangle = nextCheckpointRelative.y / nextCheckpointRelative.magnitude;
+            float mag = nextCheckpointRelative.magnitude;
+            if (mag < 0.01f) mag = 0.01f;
+
+            steerAngle = Mathf.Clamp(nextCheckpointRelative.x / mag, -1f, 1f);
+            float xangle = Mathf.Clamp(nextCheckpointRelative.y / mag, -1f, 1f);
 
             steerAngle = Mathf.Asin(steerAngle) * 180f / 3.14f;
             xangle = Mathf.Asin(xangle) * 180f / 3.14f;

@@ -168,13 +168,13 @@ public class GameManager : MonoBehaviour
     {
         currentLevel = PlayerPrefs.GetInt("CurrentLevel", currentLevel);
 
-        GameObject obj = GameObject.Find("AreaTargetManager");
-        if (obj != null)
-            areaTargetManager = obj.GetComponent<AreaTargetManager>();
-        else
-            Debug.LogWarning("[GameManager] No GameObject named 'AreaTargetManager' found in scene.");
-
-        InitLevel(currentLevel);
+        // Level initialisation (and everything downstream of it — Planning
+        // Phase, the countdown, PlayGameStart audio, etc.) now happens only
+        // when LevelSpawnerActivator actually activates a level scene, not
+        // here. This used to call InitLevel(currentLevel) unconditionally,
+        // which fires the instant GameManager exists — including while the
+        // player is still sitting on the Main Menu, if GameManager lives in
+        // a permanently-loaded scene.
     }
 
     private void LateUpdate()
@@ -201,6 +201,12 @@ public class GameManager : MonoBehaviour
     {
         StopAllCoroutines();
         Time.timeScale = 1f;
+
+        GameObject obj = GameObject.Find("AreaTargetManager");
+        if (obj != null)
+            areaTargetManager = obj.GetComponent<AreaTargetManager>();
+        else
+            Debug.LogWarning("[GameManager] No GameObject named 'AreaTargetManager' found in scene.");
 
         LevelConfig cfg = GetLevelConfig(level);
 
@@ -255,19 +261,44 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator BeginPhaseFlowAfterCameraTransition()
     {
-        // Allow CameraManager to detect the new scene and begin its reveal.
+        // The level scene (and its CameraManager) can still be finishing an
+        // asynchronous load at this point, so wait for it to actually exist
+        // instead of checking only once.
         yield return null;
 
-        CameraManager cameraManager = FindFirstObjectByType<CameraManager>();
+        CameraManager cameraManager = null;
+        float waited = 0f;
+        const float findTimeout = 5f;
+        while (cameraManager == null && waited < findTimeout)
+        {
+            cameraManager = FindFirstObjectByType<CameraManager>();
+            if (cameraManager == null)
+            {
+                yield return null;
+                waited += Time.unscaledDeltaTime;
+            }
+        }
+
         cameraManager?.TransitionToMaxZoom();
-        while (cameraManager != null && cameraManager.IsLevelRevealTransitionRunning)
+
+        // Safety timeout: if the transition never reports finished (e.g. its
+        // coroutine got interrupted elsewhere without resetting its internal
+        // state), don't leave the phase flow stuck waiting forever.
+        waited = 0f;
+        const float transitionTimeout = 6f;
+        while (cameraManager != null && cameraManager.IsLevelRevealTransitionRunning && waited < transitionTimeout)
+        {
             yield return null;
+            waited += Time.unscaledDeltaTime;
+        }
 
         _phaseFlowStarted = true;
-        Time.timeScale = 0f;
 
+        // Only Planning Phase pauses. Execution Phase (including LV3, which
+        // enters it directly) must not — cars should keep moving immediately.
         if (_planningPhaseActive)
         {
+            Time.timeScale = 0f;
             OnPlanningPhaseReady?.Invoke();
             Debug.Log($"[GameManager] Level {currentLevel} is in Planning Phase.");
         }

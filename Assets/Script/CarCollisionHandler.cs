@@ -2,17 +2,26 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-
+// CarCollisionHandler detects a car flipping over or colliding, and on either triggers the
+// accident sequence: playing the accident sound, spawning smoke and a crash alert icon, halting
+// the car, notifying the assigned StopScript, and fading the car out before destroying it.
+//
+// CHANGES:
+//   - Two-car collisions used to spawn TWO CrashAlertMarker instances (one from each car's
+//     OnCollisionEnter), which made the off-screen edge indicator show two bubbles for a single
+//     crash. OnCollisionEnter now deterministically suppresses the marker on one of the two cars
+//     so only one marker is spawned per crash. Flip-over accidents (single car) are unaffected.
+//   - Crash alert spawning (prefab, world-position offset, appearance) moved out of this script
+//     and into CrashAlertIndicatorManager, since that config previously had to be duplicated
+//     identically on every car. This script now just finds the singleton
+//     (CrashAlertIndicatorManager.Instance — there's only ever one in a level) and asks it to
+//     spawn the alert at this car's position.
 [RequireComponent(typeof(CarAIController))]
 public class CarCollisionHandler : MonoBehaviour
 {
-    // ─── State ────────────────────────────────────────────────────────────────
-
     [Header("Runtime State (read-only)")]
     [Tooltip("True once a collision has been detected. Smoke spawns immediately.")]
     public bool colliderCollide = false;
-
-    // ─── Config (set by AreaTargetManager or Inspector) ───────────────────────
 
     [Header("Accident Config")]
     public GameObject smokePrefab;
@@ -20,21 +29,15 @@ public class CarCollisionHandler : MonoBehaviour
     public float fadeDuration = 1.5f;
     public StopScript accidentStopper;
 
-    // ─── Flip Detection Config ────────────────────────────────────────────────
-
     [Header("Flip Detection")]
     [Tooltip("Z-axis rotation degrees beyond which the car counts as flipped.")]
     public float flipAngleThreshold = 30f;
     [Tooltip("How often (seconds) to re-check for a flip while the car is running.")]
     public float flipCheckInterval = 1f;
 
-    // ─── Private ──────────────────────────────────────────────────────────────
-
     private CarAIController _controller;
     private bool _accidentStarted = false;
     private GameObject _smokeInstance;
-
-    // ─── Lifecycle ────────────────────────────────────────────────────────────
 
     private void Awake()
     {
@@ -46,13 +49,6 @@ public class CarCollisionHandler : MonoBehaviour
         StartCoroutine(FlipDetectionLoop());
     }
 
-    /// <summary>
-    /// Polls every flipCheckInterval seconds.
-    /// If the car's Z rotation exceeds flipAngleThreshold, treats it as
-    /// an accident: spawns smoke and plays the accident sound, then fades out.
-    /// Mirrors the flip logic already in CarAIController.despawnForFlippingOver
-    /// but adds the full accident visual + audio sequence.
-    /// </summary>
     private IEnumerator FlipDetectionLoop()
     {
         while (!_accidentStarted)
@@ -61,7 +57,6 @@ public class CarCollisionHandler : MonoBehaviour
             if (_accidentStarted) yield break;
 
             float z = transform.eulerAngles.z;
-            // eulerAngles are always 0-360; normalise to -180..180
             if (z > 180f) z -= 360f;
 
             if (Mathf.Abs(z) > flipAngleThreshold)
@@ -72,7 +67,6 @@ public class CarCollisionHandler : MonoBehaviour
         }
     }
 
-    /// <summary>Called by AreaTargetManager to (re-)configure the handler.</summary>
     public void Configure(GameObject smoke, float delay, float duration, StopScript stopper)
     {
         smokePrefab = smoke;
@@ -80,7 +74,6 @@ public class CarCollisionHandler : MonoBehaviour
         fadeDuration = duration;
         accidentStopper = stopper;
 
-        // Reset state so the handler is ready for a fresh accident
         colliderCollide = false;
         _accidentStarted = false;
 
@@ -91,46 +84,55 @@ public class CarCollisionHandler : MonoBehaviour
         }
     }
 
-    // ─── Collision detection ──────────────────────────────────────────────────
-
-    /// <summary>
-    /// OnCollisionEnter works with non-trigger colliders (the car's body).
-    /// If you prefer trigger-based detection, swap for OnTriggerEnter.
-    /// </summary>
     private void OnCollisionEnter(Collision collision)
     {
-        // Ignore collisions with other CarAIControllers only if you want car-vs-world only.
-        // Leave as-is to trigger on ANY collision (walls, barriers, other cars).
-        TriggerAccident();
+        bool suppressMarker = false;
+
+        // If the thing we hit is also a car with its own CarCollisionHandler, only ONE of the
+        // two cars should spawn the shared crash marker — otherwise a single two-car crash
+        // spawns two markers at two slightly different positions, which the edge-indicator
+        // system then shows as two separate off-screen bubbles.
+        CarCollisionHandler other = collision.collider.GetComponentInParent<CarCollisionHandler>();
+        if (other != null && other != this)
+        {
+            suppressMarker = GetInstanceID() > other.GetInstanceID();
+        }
+
+        TriggerAccident(suppressMarker);
     }
 
-    // ─── Accident sequence ────────────────────────────────────────────────────
-
-    private void TriggerAccident()
+    private void TriggerAccident(bool suppressMarker = false)
     {
-        if (_accidentStarted) return;   // Only trigger once
+        if (_accidentStarted) return;
         _accidentStarted = true;
         colliderCollide = true;
 
         Debug.Log($"[CarCollisionHandler] Accident triggered on {gameObject.name}");
 
-        // 5 – Play accident sound via LevelAudioManager
         LevelAudioManager.Instance?.PlayCarAccident();
 
-        // 3 – Spawn smoke at car centre
         SpawnSmoke();
 
-        // 5 – Tell the stopper immediately
+        if (!suppressMarker)
+        {
+            CrashAlertIndicatorManager manager = CrashAlertIndicatorManager.Instance;
+            if (manager != null)
+            {
+                manager.SpawnCrashAlert(transform.position);
+            }
+            else
+            {
+                Debug.LogWarning($"[CarCollisionHandler] No CrashAlertIndicatorManager found in scene — no crash icon will spawn.");
+            }
+        }
+
         TriggerStopper();
 
-        // 4 – Stop the car, then begin fade after delay
         _controller.CheckPointSearch = false;
         _controller.SetSpeed(0);
 
         StartCoroutine(FadeOutSequence());
     }
-
-    // ─── Step 3: Smoke ────────────────────────────────────────────────────────
 
     private void SpawnSmoke()
     {
@@ -140,17 +142,13 @@ public class CarCollisionHandler : MonoBehaviour
             return;
         }
 
-        // Spawn parented to car so it follows during the shrink phase
         _smokeInstance = Instantiate(smokePrefab, transform.position, Quaternion.identity, transform);
         _smokeInstance.transform.localPosition = Vector3.zero;
         Debug.Log("[CarCollisionHandler] Smoke spawned.");
     }
 
-    // ─── Step 4: Shrink / fade out ────────────────────────────────────────────
-
     private IEnumerator FadeOutSequence()
     {
-        // Wait before starting to shrink
         yield return new WaitForSeconds(fadeDelay);
 
         Debug.Log("[CarCollisionHandler] Starting fade-out.");
@@ -158,12 +156,12 @@ public class CarCollisionHandler : MonoBehaviour
         Vector3 originalScale = transform.localScale;
         float elapsed = 0f;
 
-        // Collect all renderers so we can fade their alpha
         Renderer[] renderers = GetComponentsInChildren<Renderer>();
-        // Cache original materials and enable fade mode
         Dictionary<Material, Color> originalColors = new Dictionary<Material, Color>();
         foreach (Renderer r in renderers)
         {
+            if (r == null) continue;
+
             foreach (Material mat in r.materials)
             {
                 if (!originalColors.ContainsKey(mat))
@@ -180,12 +178,12 @@ public class CarCollisionHandler : MonoBehaviour
             float t = Mathf.Clamp01(elapsed / fadeDuration);
             float eased = 1f - Mathf.SmoothStep(0f, 1f, t);
 
-            // Shrink scale
             transform.localScale = originalScale * eased;
 
-            // Fade alpha on all materials
             foreach (Renderer r in renderers)
             {
+                if (r == null) continue;
+
                 foreach (Material mat in r.materials)
                 {
                     if (originalColors.TryGetValue(mat, out Color baseColor))
@@ -202,14 +200,11 @@ public class CarCollisionHandler : MonoBehaviour
 
         Debug.Log($"[CarCollisionHandler] {gameObject.name} faded out – destroying.");
 
-        // Destroy smoke separately to avoid parenting issue
         if (_smokeInstance != null)
             Destroy(_smokeInstance);
 
         Destroy(gameObject);
     }
-
-    // ─── Step 5: Stopper ──────────────────────────────────────────────────────
 
     private void TriggerStopper()
     {
@@ -223,28 +218,20 @@ public class CarCollisionHandler : MonoBehaviour
         Debug.Log($"[CarCollisionHandler] StopScript '{accidentStopper.gameObject.name}' → stop = true");
     }
 
-    // ─── Material helper ──────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Switches a Standard or URP/Lit material to Transparent/Fade rendering mode
-    /// so that setting color.a actually fades the surface.
-    /// </summary>
     private static void SetMaterialFadeMode(Material mat)
     {
-        // URP Lit
         if (mat.HasProperty("_Surface"))
         {
-            mat.SetFloat("_Surface", 1);   // 1 = Transparent
-            mat.SetFloat("_Blend", 0);     // 0 = Alpha
+            mat.SetFloat("_Surface", 1);
+            mat.SetFloat("_Blend", 0);
             mat.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
             mat.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
             return;
         }
 
-        // Built-in Standard
         if (mat.HasProperty("_Mode"))
         {
-            mat.SetFloat("_Mode", 2);      // 2 = Fade
+            mat.SetFloat("_Mode", 2);
             mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
             mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
             mat.SetInt("_ZWrite", 0);
@@ -255,11 +242,8 @@ public class CarCollisionHandler : MonoBehaviour
         }
     }
 
-    // ─── Cleanup ──────────────────────────────────────────────────────────────
-
     private void OnDestroy()
     {
-        // If car is destroyed externally while smoke is still alive, clean it up
         if (_smokeInstance != null)
             Destroy(_smokeInstance);
     }

@@ -576,6 +576,7 @@ MonoBehaviour:
   distanceFromObjects: 6
   recklessnessThreshold: 0
   despawnForFlippingOver: 1
+  flipOverGracePeriod: 10000
   taxiMode: 0
   acceleration: 10000
   breaking: 100000
@@ -598,6 +599,9 @@ MonoBehaviour:
   fadeDelay: 3
   fadeDuration: 1.5
   accidentStopper: {fileID: 0}
+  crashAlertMarkerPrefab: {fileID: 3879591742659667809, guid: 30f6dc0ee872f5449b207877c1c1d35e, type: 3}
+  crashMarkerHeightOffset: 15
+  crashMarkerDepthOffset: 5
   flipAngleThreshold: 45
   flipCheckInterval: 1
 --- !u!1 &2394243669996166871

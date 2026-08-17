@@ -159,6 +159,10 @@ public class PhaseManager : MonoBehaviour
         if (countdownLabel != null)
             countdownLabel.gameObject.SetActive(true);
 
+        if (countdownLabel != null)
+            countdownLabel.text = "Ready?";
+        yield return new WaitForSecondsRealtime(1f);
+
         for (int seconds = 3; seconds >= 1; seconds--)
         {
             if (countdownLabel != null)
@@ -167,7 +171,7 @@ public class PhaseManager : MonoBehaviour
         }
 
         if (countdownLabel != null)
-            countdownLabel.text = "Start!";
+            countdownLabel.text = "GO!";
 
         yield return new WaitForSecondsRealtime(0.6f);
 
