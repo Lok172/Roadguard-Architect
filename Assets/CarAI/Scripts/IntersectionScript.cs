@@ -71,26 +71,18 @@ public class IntersectionScript : MonoBehaviour
         }
         else
         {
-            // Count down the timer, but bail early if no other stop has cars waiting or passing.
+            // Bail early if THIS stop has no car waiting. Checking whether
+            // OTHER stops have cars (the old condition) is backwards — it
+            // made an empty active stop hold its full green duration simply
+            // because traffic existed elsewhere, delaying whichever stop
+            // actually had a car by a full cycle per empty stop in between.
             float elapsed = 0f;
             while (elapsed < wait)
             {
                 yield return new WaitForSeconds(0.1f);
                 elapsed += 0.1f;
 
-                // Check whether any OTHER stop currently has cars present.
-                bool otherStopHasCars = false;
-                for (int i = 0; i < scripts.Count; i++)
-                {
-                    if (i != index && scripts[i].priority > 0)
-                    {
-                        otherStopHasCars = true;
-                        break;
-                    }
-                }
-
-                // If no other stop is busy, let the current car through immediately.
-                if (!otherStopHasCars)
+                if (scripts[index].priority == 0)
                     break;
             }
         }

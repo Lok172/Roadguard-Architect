@@ -15,14 +15,20 @@ public class PhaseManager : MonoBehaviour
     [SerializeField] private GameObject phasePanel;
     [FormerlySerializedAs("confirmLayoutButton")]
     [SerializeField] private Button simulateButton;
+    [SerializeField] private Image simulateButtonIcon;
     [SerializeField] private TMP_Text confirmButtonLabel;
     [SerializeField] private TMP_Text phaseStatusLabel;
     [SerializeField] private TMP_Text countdownLabel;
-    [SerializeField] private TMP_Text instructionLabel;
 
     [Header("Phase Colours")]
     [SerializeField] private Color planningColour = new Color(1f, 0.74f, 0.18f); // amber
     [SerializeField] private Color executionColour = new Color(0.30f, 0.90f, 0.55f); // green
+
+    [Header("Phase Icons")]
+    [Tooltip("Shown on the Simulate button while in the Planning phase.")]
+    [SerializeField] private Sprite planningIcon; // play
+    [Tooltip("Shown on the Simulate button once the Execution phase starts.")]
+    [SerializeField] private Sprite executionIcon; // pause
 
     private PhaseViewModel _vm;
     private Coroutine _countdownRoutine;
@@ -100,9 +106,6 @@ public class PhaseManager : MonoBehaviour
             phaseStatusLabel.color = planningColour;
         }
 
-        if (instructionLabel != null)
-            instructionLabel.text = "Place traffic infrastructures before simulation.";
-
         if (countdownLabel != null)
             countdownLabel.gameObject.SetActive(false);
 
@@ -114,6 +117,9 @@ public class PhaseManager : MonoBehaviour
             // would otherwise silently no-op inside GameManager.ConfirmLayout.
             simulateButton.interactable = false;
         }
+
+        if (simulateButtonIcon != null && planningIcon != null)
+            simulateButtonIcon.sprite = planningIcon;
     }
 
     /// <summary>Called via GameManager.OnPlanningPhaseReady once the camera reveal finishes.</summary>
@@ -134,11 +140,17 @@ public class PhaseManager : MonoBehaviour
             phaseStatusLabel.color = executionColour;
         }
 
-        if (instructionLabel != null)
-            instructionLabel.text = "Monitor traffic flow and place infrastructures.";
-
         if (confirmButtonLabel != null)
+        {
             confirmButtonLabel.text = "Simulating";
+
+            // Shrink the label's right margin to -66 so it re-centres against
+            // the icon once the button locks into its post-click state.
+            RectTransform labelRect = confirmButtonLabel.rectTransform;
+            Vector2 offsetMax = labelRect.offsetMax;
+            offsetMax.x = 66f; // Inspector "Right" = -offsetMax.x, so this reads as Right = -66
+            labelRect.offsetMax = offsetMax;
+        }
 
         if (simulateButton != null)
         {
@@ -146,6 +158,9 @@ public class PhaseManager : MonoBehaviour
             simulateButton.gameObject.SetActive(true);
             simulateButton.interactable = false;
         }
+
+        if (simulateButtonIcon != null && executionIcon != null)
+            simulateButtonIcon.sprite = executionIcon;
 
         if (!GameManager.Instance.SimulationStarted && _countdownRoutine == null)
             _countdownRoutine = StartCoroutine(CountdownThenStart());

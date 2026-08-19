@@ -1,17 +1,19 @@
 using UnityEngine;
 
 // CrashAlertMarker sits at the location of a car accident and displays the bubble + exclamation
-// icon combo so the crash location is visible on the map. It registers with
-// CrashAlertIndicatorManager while active, which drives the off-screen edge indicator, and
-// removes itself after displayDuration by shrinking to zero scale (matching the same
-// "shrink then disappear" despawn style used for the crashed car).
+// icon combo so the crash location is visible on the map. It removes itself after
+// displayDuration by shrinking to zero scale (matching the same "shrink then disappear" despawn
+// style used for the crashed car).
 //
 // CHANGES:
-//   - Added bubbleRenderer + ApplyAppearance(), called once by CrashAlertIndicatorManager right
-//     after this marker is instantiated. "Icon" now means bubble + exclamation together, so both
-//     renderers get their sprite/colour/size from the manager instead of just the exclamation.
-//   - Removed the old public exclamationIcon field — appearance is now fully owned by
-//     CrashAlertIndicatorManager (single source of truth), not duplicated on the prefab.
+//   - Removed RegisterMarker/UnregisterMarker calls to CrashAlertIndicatorManager. The manager
+//     no longer tracks active markers (the off-screen edge indicator feature it used that
+//     tracking for has been removed), so this marker is now fully self-contained — it just
+//     displays itself and destroys itself, with no manager bookkeeping involved.
+//   - bubbleRenderer + ApplyAppearance() unchanged: still called once by
+//     CrashAlertIndicatorManager right after this marker is instantiated. "Icon" still means
+//     bubble + exclamation together, so both renderers get their sprite/colour/size from the
+//     manager.
 public class CrashAlertMarker : MonoBehaviour
 {
     [Header("Icon References")]
@@ -34,8 +36,6 @@ public class CrashAlertMarker : MonoBehaviour
     private void Start()
     {
         _baseScale = transform.localScale;
-
-        CrashAlertIndicatorManager.Instance?.RegisterMarker(this);
     }
 
     private void Update()
@@ -86,10 +86,5 @@ public class CrashAlertMarker : MonoBehaviour
             bubbleRenderer.color = bubbleColor;
             bubbleRenderer.transform.localScale = Vector3.one * bubbleSize;
         }
-    }
-
-    private void OnDestroy()
-    {
-        CrashAlertIndicatorManager.Instance?.UnregisterMarker(this);
     }
 }

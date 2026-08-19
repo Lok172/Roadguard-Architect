@@ -341,7 +341,7 @@ MonoBehaviour:
   - {fileID: 544308384900115949}
   wait: 2
   WaitIfNoOtherCar: 0
-  showStopMaterial: 1
+  showStopMaterial: 0
 --- !u!1 &5137444434530419817
 GameObject:
   m_ObjectHideFlags: 0

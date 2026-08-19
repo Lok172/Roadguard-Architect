@@ -44,7 +44,7 @@ public class TutorialManager : MonoBehaviour
     [Header("Navigation Target")]
     [Tooltip("Scene or UI page to navigate to when tutorial ends or is skipped.")]
     [SceneName]
-    public string level1SceneName = "Lv1";
+    public string SceneName = "Lv1";
 
     // ── Private State ─────────────────────────────────────────────
 
@@ -99,7 +99,7 @@ public class TutorialManager : MonoBehaviour
         {
             // No more panels - mark as read and navigate to Level Select.
             MarkTutorialRead();
-            PageManager.Instance.ChangeUI(level1SceneName);
+            PageManager.Instance.ChangeUI(SceneName);
         }
     }
 
@@ -163,6 +163,6 @@ public class TutorialManager : MonoBehaviour
 
     private void NavigateAway()
     {
-        PageManager.Instance.ChangeUI(level1SceneName);
+        PageManager.Instance.ChangeUI(SceneName);
     }
 }

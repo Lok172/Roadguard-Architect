@@ -276,11 +276,13 @@ MonoBehaviour:
   - {fileID: 1202198124}
   - {fileID: 2145468840}
   - {fileID: 96100775}
+  - {fileID: 1283271952}
+  - {fileID: 1091398541}
   - {fileID: 1086760411}
   previousButton: {fileID: 1254092476}
   nextButton: {fileID: 513043261}
   skipButton: {fileID: 1593712084}
-  level1SceneName: LV1
+  SceneName: LV1
 --- !u!4 &111828571
 Transform:
   m_ObjectHideFlags: 0
@@ -306,12 +308,14 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1357260862314359006, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 250
+      value: 400
       objectReference: {fileID: 0}
     - target: {fileID: 3964866784630450352, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
       propertyPath: m_text
-      value: Monitor your Calendar and Capital carefully. The daily Revenue is affected
-        by the Happiness which contribute directly to the Capital.
+      value: 'Monitor your Calendar and Capital.
+
+        Happiness affects your
+        daily Revenue and Capital.'
       objectReference: {fileID: 0}
     - target: {fileID: 5027776334361870422, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
       propertyPath: m_Name
@@ -419,11 +423,16 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1595894631}
     m_Modifications:
+    - target: {fileID: 1357260862314359006, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 400
+      objectReference: {fileID: 0}
     - target: {fileID: 3964866784630450352, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
       propertyPath: m_text
-      value: You are a city malor. Your duty is to reduce the Accident Rate in specific
-        areas by placing the correct traffic safety devices in 90 days while maintain
-        the Happiness.
+      value: 'You are the City Mayor.
+
+        Reduce the Accident Rate within 90
+        days while maintaining Happiness.'
       objectReference: {fileID: 0}
     - target: {fileID: 5027776334361870422, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
       propertyPath: m_Name
@@ -433,6 +442,10 @@ PrefabInstance:
       propertyPath: m_Sprite
       value: 
       objectReference: {fileID: 21300000, guid: 8369d37ef66fb1f4bb04f27d774dcbd9, type: 3}
+    - target: {fileID: 6229380198637037825, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_PreserveAspect
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
@@ -642,15 +655,13 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1357260862314359006, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 250
+      value: 400
       objectReference: {fileID: 0}
     - target: {fileID: 3964866784630450352, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
       propertyPath: m_text
-      value: 'When the Accident Rate increase, the Happiness will decreases. Reduce
-        the Accident Rate while maintain the Happiness.  Otherwise, you may lose
-        this hard-earned position as City Mayor.
+      value: 'Keep Accident Rate low.
 
-'
+        Higher Accident Rate reduces Happiness.'
       objectReference: {fileID: 0}
     - target: {fileID: 3964866784630450352, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
       propertyPath: m_HorizontalAlignment
@@ -912,12 +923,14 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1357260862314359006, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 200
+      value: 400
       objectReference: {fileID: 0}
     - target: {fileID: 3964866784630450352, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
       propertyPath: m_text
-      value: "Place the correct Traffic Calming Device in the specific area to reduce
-        the Accident Rate and increases the Happiness.\n "
+      value: 'Place the correct Traffic Infrastructure in appropriate area.
+
+        Reduce
+        Accident Rate and increase Happiness.'
       objectReference: {fileID: 0}
     - target: {fileID: 5027776334361870422, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
       propertyPath: m_Name
@@ -1254,6 +1267,16 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
   m_PrefabInstance: {fileID: 1507621255}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1091398541 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5027776334361870422, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+  m_PrefabInstance: {fileID: 1991779861}
+  m_PrefabAsset: {fileID: 0}
+--- !u!224 &1091398542 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+  m_PrefabInstance: {fileID: 1991779861}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1118716984
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1262,10 +1285,16 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1595894631}
     m_Modifications:
+    - target: {fileID: 1357260862314359006, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 400
+      objectReference: {fileID: 0}
     - target: {fileID: 3964866784630450352, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
       propertyPath: m_text
-      value: 'Good Placement reduce the Accident Rate and increase the Happiness
-        while the Poor Placement will have no effect on the Accident Rate reduction. '
+      value: 'Good Placement reduces Accident Rate and increase Happiness
+
+        Poor
+        Placement has no effect and wasting moeny'
       objectReference: {fileID: 0}
     - target: {fileID: 5027776334361870422, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
       propertyPath: m_Name
@@ -1368,6 +1397,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1595894631}
     m_Modifications:
+    - target: {fileID: 1357260862314359006, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 400
+      objectReference: {fileID: 0}
     - target: {fileID: 3964866784630450352, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
       propertyPath: m_text
       value: 'Blue: Available
@@ -1498,6 +1531,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
+--- !u!1 &1283271952 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5027776334361870422, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+  m_PrefabInstance: {fileID: 1832541538}
+  m_PrefabAsset: {fileID: 0}
+--- !u!224 &1283271953 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+  m_PrefabInstance: {fileID: 1832541538}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1507621255
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1506,15 +1549,22 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1595894631}
     m_Modifications:
+    - target: {fileID: 1357260862314359006, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 400
+      objectReference: {fileID: 0}
     - target: {fileID: 3964866784630450352, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
       propertyPath: m_text
-      value: "Different Road Sections will contribute to the overall Accident Rate
-        simultaneously. \nPlace your traffic calming devices wisely by consider all
-        available Road Sections.\n\nReady ?"
+      value: 'All Road Sections affect the overall Accident Rate.
+
+        Consider
+        every section when placing infrastructure.
+
+        Ready?'
       objectReference: {fileID: 0}
     - target: {fileID: 5027776334361870422, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
       propertyPath: m_Name
-      value: TutorialPanel (7)
+      value: TutorialPanel (9)
       objectReference: {fileID: 0}
     - target: {fileID: 6229380198637037825, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
       propertyPath: m_Sprite
@@ -1664,6 +1714,8 @@ RectTransform:
   - {fileID: 1202198125}
   - {fileID: 2145468841}
   - {fileID: 96100776}
+  - {fileID: 1283271953}
+  - {fileID: 1091398542}
   - {fileID: 1086760412}
   - {fileID: 784687524}
   m_Father: {fileID: 547880436}
@@ -1832,11 +1884,236 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 5027776334361870422, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
   m_PrefabInstance: {fileID: 395528148}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &1832541538
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1595894631}
+    m_Modifications:
+    - target: {fileID: 1357260862314359006, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 400
+      objectReference: {fileID: 0}
+    - target: {fileID: 3964866784630450352, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_text
+      value: Alert appear when car accident appear.
+      objectReference: {fileID: 0}
+    - target: {fileID: 5027776334361870422, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_Name
+      value: TutorialPanel (7)
+      objectReference: {fileID: 0}
+    - target: {fileID: 6229380198637037825, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: ee3c0c14edd1eb543bcde3ade72f9944, type: 3}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_Pivot.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_Pivot.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 1081.9
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 700
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 960
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -540.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
 --- !u!1 &1969079773 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 4524425049906696367, guid: 6e5dbfe1fb4339340a0dbb958dd95f92, type: 3}
   m_PrefabInstance: {fileID: 808339192}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &1991779861
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1595894631}
+    m_Modifications:
+    - target: {fileID: 1357260862314359006, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 400
+      objectReference: {fileID: 0}
+    - target: {fileID: 3964866784630450352, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_text
+      value: 'Phase Change: Planning to Execution
+
+        Planning: Place traffic
+        infrastructure
+
+        Execution: Monitor traffic and add infrastructure
+
+'
+      objectReference: {fileID: 0}
+    - target: {fileID: 5027776334361870422, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_Name
+      value: TutorialPanel (8)
+      objectReference: {fileID: 0}
+    - target: {fileID: 6229380198637037825, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 34d9095016879384ab8004f8876869a6, type: 3}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_Pivot.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_Pivot.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 1081.9
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 700
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 960
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -540.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7984469293693940535, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
 --- !u!1001 &2122380461
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -13,7 +13,10 @@ public class RoadManager : MonoBehaviour
 
     // ── Daily Accident Mechanics ──────────────
     [Header("Daily Accident Mechanics")]
-    [Tooltip("Accident rate every section gains each in-game day.")]
+    [Tooltip("FALLBACK ONLY — used solely if no GameManager exists in the scene. Whenever " +
+             "GameManager IS present (i.e. always during normal play), the actual daily gain " +
+             "comes from GameManager's 'Daily Accident Gain Ramp' section instead " +
+             "(Ramp Accident Gain Min / Max / Ramp Duration Days). Edit those to change gain.")]
     public float dailyAccidentGain = 2f;
 
     [Tooltip("Accident rate removed per CORRECT device per section per day (before complexity). " +
@@ -133,6 +136,19 @@ public class RoadManager : MonoBehaviour
     {
         float totalDelta = 0f;
 
+        // The ramped gain (from GameManager, see GetRampedAccidentGain) represents the TOTAL
+        // daily accident gain across the whole city, not a per-section value. It used to be
+        // applied in FULL to every section independently (so 2 sections each got the full
+        // amount, doubling the intended city-wide gain). It is now split evenly across every
+        // active section, so e.g. a gain of 3 with 2 sections gives each section +1.5/day,
+        // for a city-wide total of +3/day as configured.
+        int activeSectionCount = 0;
+        foreach (var s in _sections)
+            if (s != null) activeSectionCount++;
+
+        float rampedGain = GetRampedAccidentGain();
+        float perSectionGain = activeSectionCount > 0 ? rampedGain / activeSectionCount : 0f;
+
         foreach (var s in _sections)
         {
             if (s == null) continue;
@@ -164,7 +180,7 @@ public class RoadManager : MonoBehaviour
                  correctTrafficLights * reductionTrafficLight)
                 * complexityMultiplier;
 
-            totalDelta += s.TickDay(GetRampedAccidentGain(), effectiveReduction, happinessPerAccidentRate);
+            totalDelta += s.TickDay(perSectionGain, effectiveReduction, happinessPerAccidentRate);
         }
 
         return totalDelta;

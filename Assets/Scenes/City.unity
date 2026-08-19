@@ -13292,11 +13292,11 @@ MonoBehaviour:
     intersections: []
   spawnersVisible: 0
   despawnersVisible: 0
-  checkpointsVisible: 1
+  checkpointsVisible: 0
   intersectionsVisible: 0
   testSpawnOnStart: 0
   testSpawners:
-  - {fileID: 836491876}
+  - {fileID: 0}
   bypassPhaseFlowForTesting: 0
 --- !u!1001 &228255353
 PrefabInstance:
@@ -23658,7 +23658,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6003967327203490689, guid: 889de35561d4f084bb18cb11982bbede, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 103.79
+      value: 110.4
       objectReference: {fileID: 0}
     - target: {fileID: 6003967327203490689, guid: 889de35561d4f084bb18cb11982bbede, type: 3}
       propertyPath: m_LocalPosition.y
@@ -42526,15 +42526,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6003967327203490689, guid: 889de35561d4f084bb18cb11982bbede, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 86.67462
+      value: 64.31
       objectReference: {fileID: 0}
     - target: {fileID: 6003967327203490689, guid: 889de35561d4f084bb18cb11982bbede, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -1.9139808
+      value: -0.39
       objectReference: {fileID: 0}
     - target: {fileID: 6003967327203490689, guid: 889de35561d4f084bb18cb11982bbede, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -23.318481
+      value: -23.55
       objectReference: {fileID: 0}
     - target: {fileID: 6003967327203490689, guid: 889de35561d4f084bb18cb11982bbede, type: 3}
       propertyPath: m_LocalRotation.w
@@ -45536,7 +45536,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &836491877
 Transform:
   m_ObjectHideFlags: 0
@@ -121119,7 +121119,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 759405674774375194, guid: 131904fff3a024f4a964b810e57c8189, type: 3}
       propertyPath: speedLimit
-      value: 45
+      value: 30
       objectReference: {fileID: 0}
     - target: {fileID: 1720541934905281968, guid: 131904fff3a024f4a964b810e57c8189, type: 3}
       propertyPath: m_LocalPosition.x
