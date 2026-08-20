@@ -65,18 +65,6 @@ public class GameManager : MonoBehaviour
     public float RampAccidentGainMax => rampAccidentGainMax;
     public int RampDurationDays => rampDurationDays;
 
-    [Header("Low Accident Streak Bonus")]
-    [Tooltip("Accident rate must stay strictly below this for the streak to count.")]
-    public int lowAccidentThreshold = 3;
-    [Tooltip("Consecutive days below threshold before the first bonus fires.")]
-    public int lowAccidentStreakRequired = 5;
-    [Tooltip("After the first bonus, a new bonus fires every this-many days (while streak holds).")]
-    public int lowAccidentBonusInterval = 3;
-    [Tooltip("Min happiness bonus per trigger.")]
-    public float lowAccidentBonusMin = 3f;
-    [Tooltip("Max happiness bonus per trigger.")]
-    public float lowAccidentBonusMax = 7f;
-
     // ── Developer Cheats ─────────────────────────────────────────
     [Header("Developer Cheats")]
     [Tooltip("When active, happiness is locked, money and days are overridden.")]
@@ -107,7 +95,6 @@ public class GameManager : MonoBehaviour
     [SerializeField] private bool _executionPhaseActive;
     [SerializeField] private bool _simulationStarted;
     [SerializeField] private bool _phaseFlowStarted;
-    [SerializeField] private int _consecutiveLowAccidentDays;
     [SerializeField] private float _baseTaxPerDay;
     private bool _dayTickPaused;
 
@@ -123,7 +110,6 @@ public class GameManager : MonoBehaviour
     public bool ExecutionPhaseActive => _executionPhaseActive;
     public bool SimulationStarted => _simulationStarted;
     public bool PhaseFlowStarted => _phaseFlowStarted;
-    public int ConsecutiveLowAccidentDays => _consecutiveLowAccidentDays;
 
     public LevelResultPayload LastPayload => _payload;
 
@@ -222,7 +208,6 @@ public class GameManager : MonoBehaviour
         _simulationStarted = false;
         _phaseFlowStarted = false;
         _dayTickPaused = false;
-        _consecutiveLowAccidentDays = 0;
 
         PlayerPrefs.SetInt("StartAccidentRate", _baselineAccidentRate);
         PlayerPrefs.Save();
@@ -573,28 +558,7 @@ public class GameManager : MonoBehaviour
             // 4) Record daily accident snapshot for the trend graph.
             LevelProgress.RecordDailyAccidentRate(_payload, _daysPassed, _accidentRate);
 
-            // 5) Low-accident streak bonus.
-            if (_accidentRate < lowAccidentThreshold)
-            {
-                _consecutiveLowAccidentDays++;
-                if (_consecutiveLowAccidentDays >= lowAccidentStreakRequired)
-                {
-                    int daysPastStreak = _consecutiveLowAccidentDays - lowAccidentStreakRequired;
-                    if (daysPastStreak % lowAccidentBonusInterval == 0)
-                    {
-                        float bonus = Random.Range(lowAccidentBonusMin, lowAccidentBonusMax);
-                        ModifyHappiness(bonus);
-                        Debug.Log($"[GameManager] Low-accident streak bonus: +{bonus:F1} happiness " +
-                                  $"(streak day {_consecutiveLowAccidentDays})");
-                    }
-                }
-            }
-            else
-            {
-                _consecutiveLowAccidentDays = 0;
-            }
-
-            // 6) Tax revenue.
+            // 5) Tax revenue.
             float tax = CalculateDailyTaxRevenue();
             ModifyCapital(tax);
 

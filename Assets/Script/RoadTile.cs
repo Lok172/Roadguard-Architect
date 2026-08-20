@@ -476,16 +476,6 @@ public class RoadTile : MonoBehaviour
 
         costSpent = DeviceData.GetCost(device);
 
-        if (_section != null)
-        {
-            float thresholdPenalty = _section.CheckOverThresholdPenalty();
-            if (thresholdPenalty < 0f)
-            {
-                happinessDelta += thresholdPenalty;
-                Debug.Log($"[RoadSection] {_section.name}: over device threshold → happiness {thresholdPenalty:F1}");
-            }
-        }
-
         bool isCorrect = IsSlotCorrect(slot);
         PlacementResult finalResult = isCorrect ? PlacementResult.Success : PlacementResult.PoorPlacement;
 

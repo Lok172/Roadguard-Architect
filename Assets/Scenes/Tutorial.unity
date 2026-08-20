@@ -901,17 +901,17 @@ MonoBehaviour:
     panelRoot: {fileID: 0}
     selectButton: {fileID: 0}
     lockedOverlay: {fileID: 0}
-    sceneName: 
+    sceneName: Bootstrap
   - level: 2
     panelRoot: {fileID: 0}
     selectButton: {fileID: 0}
     lockedOverlay: {fileID: 0}
-    sceneName: 
+    sceneName: Bootstrap
   - level: 3
     panelRoot: {fileID: 0}
     selectButton: {fileID: 0}
     lockedOverlay: {fileID: 0}
-    sceneName: 
+    sceneName: Bootstrap
   developerMode: 0
 --- !u!1001 &578406283
 PrefabInstance:
@@ -1294,7 +1294,7 @@ PrefabInstance:
       value: 'Good Placement reduces Accident Rate and increase Happiness
 
         Poor
-        Placement has no effect and wasting moeny'
+        Placement has no effect and wasting money'
       objectReference: {fileID: 0}
     - target: {fileID: 5027776334361870422, guid: cc80fdcfc61454747b3421ec86a9921a, type: 3}
       propertyPath: m_Name

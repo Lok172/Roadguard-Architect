@@ -16,17 +16,22 @@ public class RankingRowView : MonoBehaviour
     [Header("Medal Badge")]
     [SerializeField] private Image badgeImage;
 
-    private static readonly Color ColBadgeGold   = new Color(0xFF / 255f, 0xF4 / 255f, 0x00 / 255f, 1f);
+    private static readonly Color ColBadgeGold = new Color(0xFF / 255f, 0xF4 / 255f, 0x00 / 255f, 1f);
     private static readonly Color ColBadgeSilver = new Color(0xCB / 255f, 0xCB / 255f, 0xCB / 255f, 1f);
     private static readonly Color ColBadgeBronze = new Color(0xFF / 255f, 0x9E / 255f, 0x00 / 255f, 1f);
 
+    // FIX (Req 1): current player's row is highlighted green so they can spot
+    // themselves in the Top 10 list. Matches the "Connected/Found" green used
+    // elsewhere in the Safety Records screen (0x50FF64).
+    private static readonly Color ColCurrentPlayer = new Color(0x50 / 255f, 0xFF / 255f, 0x64 / 255f, 1f);
+
     private void Awake()
     {
-        if (rankText == null)  rankText  = transform.Find("Rank")?.GetComponent<TMP_Text>();
-        if (nameText == null)  nameText  = transform.Find("Name")?.GetComponent<TMP_Text>();
-        if (idText == null)    idText    = transform.Find("ID")?.GetComponent<TMP_Text>();
+        if (rankText == null) rankText = transform.Find("Rank")?.GetComponent<TMP_Text>();
+        if (nameText == null) nameText = transform.Find("Name")?.GetComponent<TMP_Text>();
+        if (idText == null) idText = transform.Find("ID")?.GetComponent<TMP_Text>();
         if (scoreText == null) scoreText = transform.Find("Safety Score")?.GetComponent<TMP_Text>();
-        if (daysText == null)  daysText  = transform.Find("Days")?.GetComponent<TMP_Text>();
+        if (daysText == null) daysText = transform.Find("Days")?.GetComponent<TMP_Text>();
 
         if (badgeImage == null)
         {
@@ -37,14 +42,15 @@ public class RankingRowView : MonoBehaviour
 
     public void Configure(RankingEntryData entry)
     {
+        Color rowColor = entry.isCurrentPlayer ? ColCurrentPlayer : Color.white;
         foreach (var tmp in GetComponentsInChildren<TMP_Text>())
-            tmp.color = Color.white;
+            tmp.color = rowColor;
 
-        if (rankText != null)  rankText.text  = entry.rank.ToString();
-        if (nameText != null)  nameText.text  = entry.playerName;
-        if (idText != null)    idText.text    = entry.playerId.ToString("D6");
+        if (rankText != null) rankText.text = entry.rank.ToString();
+        if (nameText != null) nameText.text = entry.playerName;
+        if (idText != null) idText.text = entry.playerId.ToString("D6");
         if (scoreText != null) scoreText.text = entry.safetyScore.ToString();
-        if (daysText != null)  daysText.text  = entry.daysUsed.ToString();
+        if (daysText != null) daysText.text = entry.daysUsed.ToString();
 
         if (badgeImage != null)
         {

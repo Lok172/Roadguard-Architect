@@ -15,7 +15,7 @@ public class PlacementProxy : MonoBehaviour, IPointerDownHandler
 
     public void OnPointerDown(PointerEventData _)
     {
-       
+
         Button btn = GetComponent<Button>();
         if (btn != null && !btn.interactable) return;
         onDown?.Invoke();
@@ -195,12 +195,47 @@ public class PlacementManager : MonoBehaviour
         foreach (DeviceClickTarget data in clickTargets)
         {
             if (data.clickableObject == null) continue;
+
+            StripChildInputHandlers(data.clickableObject);
+
             var proxy = data.clickableObject.GetComponent<PlacementProxy>()
                      ?? data.clickableObject.AddComponent<PlacementProxy>();
             TrafficDeviceType type = data.deviceType;
             proxy.onDown = () => BeginDrag(type);
         }
         Debug.Log($"[PlacementManager] Registered {clickTargets.Length} placement targets.");
+    }
+
+    /// <summary>
+    /// Unity's UI input module bubbles a pointer press up from the actual hit
+    /// GameObject to the nearest ancestor implementing IPointerDownHandler —
+    /// but stops at the FIRST one it finds. A child (e.g. the icon) carrying
+    /// its own Button/EventTrigger — usually left over from how the button
+    /// prefab was assembled — intercepts the press there and it never reaches
+    /// this click target's own PlacementProxy. Strip those children and turn
+    /// off their raycastTarget so every part of the button (icon, label,
+    /// background) starts a drag the same way. Never touches clickableObject
+    /// itself, only its children.
+    /// </summary>
+    private static void StripChildInputHandlers(GameObject clickableObject)
+    {
+        foreach (Button childButton in clickableObject.GetComponentsInChildren<Button>(true))
+        {
+            if (childButton.gameObject == clickableObject) continue;
+            Destroy(childButton);
+        }
+
+        foreach (EventTrigger childTrigger in clickableObject.GetComponentsInChildren<EventTrigger>(true))
+        {
+            if (childTrigger.gameObject == clickableObject) continue;
+            Destroy(childTrigger);
+        }
+
+        foreach (Graphic graphic in clickableObject.GetComponentsInChildren<Graphic>(true))
+        {
+            if (graphic.gameObject == clickableObject) continue;
+            graphic.raycastTarget = false;
+        }
     }
 
     public void BeginDrag(TrafficDeviceType deviceType)
@@ -531,7 +566,7 @@ public class PlacementManager : MonoBehaviour
 
     private void SetCarMovement(bool enabled)
     {
-        if(!enabled)
+        if (!enabled)
             Time.timeScale = 0f;
         else
             Time.timeScale = 1f;

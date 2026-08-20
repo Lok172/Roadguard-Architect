@@ -353,21 +353,24 @@ public class MusicManager : MonoBehaviour
 
         if (masterSlider != null)
         {
-            masterSlider.value = _masterVolume;
+            // FIX (Req 6): slider Direction is Right To Left, so its raw value
+            // is mirrored — convert both ways through ToSliderRaw/FromSliderRaw
+            // so rightmost = 100% and leftmost = 0%.
+            masterSlider.value = ToSliderRaw(_masterVolume);
             masterSlider.onValueChanged.RemoveAllListeners();
-            masterSlider.onValueChanged.AddListener(SetMasterVolume);
+            masterSlider.onValueChanged.AddListener(v => SetMasterVolume(FromSliderRaw(v)));
         }
         if (musicSlider != null)
         {
-            musicSlider.value = _musicVolume;
+            musicSlider.value = ToSliderRaw(_musicVolume);
             musicSlider.onValueChanged.RemoveAllListeners();
-            musicSlider.onValueChanged.AddListener(SetMusicVolume);
+            musicSlider.onValueChanged.AddListener(v => SetMusicVolume(FromSliderRaw(v)));
         }
         if (sfxSlider != null)
         {
-            sfxSlider.value = _sfxVolume;
+            sfxSlider.value = ToSliderRaw(_sfxVolume);
             sfxSlider.onValueChanged.RemoveAllListeners();
-            sfxSlider.onValueChanged.AddListener(SetSFXVolume);
+            sfxSlider.onValueChanged.AddListener(v => SetSFXVolume(FromSliderRaw(v)));
         }
 
         // Initialise the percentage labels to match the loaded volumes.
@@ -487,34 +490,37 @@ public class MusicManager : MonoBehaviour
         {
             string n = slider.gameObject.name.ToLower();
 
+            // FIX (Req 6): slider Direction is Right To Left, so its raw value
+            // is mirrored — convert both ways through ToSliderRaw/FromSliderRaw
+            // so rightmost = 100% and leftmost = 0%.
             if (n.Contains("master"))
             {
-                slider.value = _masterVolume;
+                slider.value = ToSliderRaw(_masterVolume);
                 slider.onValueChanged.RemoveAllListeners();
-                slider.onValueChanged.AddListener(SetMasterVolume);
+                slider.onValueChanged.AddListener(v => SetMasterVolume(FromSliderRaw(v)));
                 // Pair label
                 TextMeshProUGUI lbl = FindSiblingLabel(slider);
                 if (lbl != null) UpdatePercentLabel(lbl, _masterVolume);
                 Slider masterRef = slider; TextMeshProUGUI masterLbl = lbl;
-                slider.onValueChanged.AddListener(v => UpdatePercentLabel(masterLbl, v));
+                slider.onValueChanged.AddListener(v => UpdatePercentLabel(masterLbl, FromSliderRaw(v)));
             }
             else if (n.Contains("music"))
             {
-                slider.value = _musicVolume;
+                slider.value = ToSliderRaw(_musicVolume);
                 slider.onValueChanged.RemoveAllListeners();
-                slider.onValueChanged.AddListener(SetMusicVolume);
+                slider.onValueChanged.AddListener(v => SetMusicVolume(FromSliderRaw(v)));
                 TextMeshProUGUI lbl = FindSiblingLabel(slider);
                 if (lbl != null) UpdatePercentLabel(lbl, _musicVolume);
-                slider.onValueChanged.AddListener(v => UpdatePercentLabel(lbl, v));
+                slider.onValueChanged.AddListener(v => UpdatePercentLabel(lbl, FromSliderRaw(v)));
             }
             else if (n.Contains("sfx"))
             {
-                slider.value = _sfxVolume;
+                slider.value = ToSliderRaw(_sfxVolume);
                 slider.onValueChanged.RemoveAllListeners();
-                slider.onValueChanged.AddListener(SetSFXVolume);
+                slider.onValueChanged.AddListener(v => SetSFXVolume(FromSliderRaw(v)));
                 TextMeshProUGUI lbl = FindSiblingLabel(slider);
                 if (lbl != null) UpdatePercentLabel(lbl, _sfxVolume);
-                slider.onValueChanged.AddListener(v => UpdatePercentLabel(lbl, v));
+                slider.onValueChanged.AddListener(v => UpdatePercentLabel(lbl, FromSliderRaw(v)));
             }
         }
     }
@@ -652,4 +658,8 @@ public class MusicManager : MonoBehaviour
         if (label == null) return;
         label.text = $"{Mathf.RoundToInt(volume01 * 100f)}%";
     }
+
+
+    private float ToSliderRaw(float volume01) => 1f - Mathf.Clamp01(volume01);
+    private float FromSliderRaw(float sliderValue) => 1f - Mathf.Clamp01(sliderValue);
 }

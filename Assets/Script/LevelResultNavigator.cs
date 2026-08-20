@@ -6,11 +6,17 @@ using UnityEngine;
 public class LevelResultNavigator : MonoBehaviour
 {
     [SceneName] public string levelResultSceneName = "LevelResult";
-    private GameManager _subscribedGameManager;
+
+    // Was tracking GameManager and listening to OnVictory/OnGameOver directly, which
+    // fired the scene change the instant the level ended — before the player ever saw
+    // the Victory/Lost text. Now tracks PhaseManager instead and waits for
+    // OnResultSequenceComplete, which only fires after PhaseManager's slide-in
+    // animation has played and held on screen (see PhaseManager.ShowResultText).
+    private PhaseManager _subscribedPhaseManager;
 
     private void OnEnable()
     {
-        StartCoroutine(TrackGameManager());
+        StartCoroutine(TrackPhaseManager());
     }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -23,21 +29,18 @@ public class LevelResultNavigator : MonoBehaviour
         navigator.AddComponent<LevelResultNavigator>();
     }
 
-    private IEnumerator TrackGameManager()
+    private IEnumerator TrackPhaseManager()
     {
         while (enabled)
         {
-            GameManager current = GameManager.Instance;
-            if (current != _subscribedGameManager)
+            PhaseManager current = PhaseManager.Instance;
+            if (current != _subscribedPhaseManager)
             {
                 Unsubscribe();
-                _subscribedGameManager = current;
+                _subscribedPhaseManager = current;
 
-                if (_subscribedGameManager != null)
-                {
-                    _subscribedGameManager.OnVictory.AddListener(OpenLevelResult);
-                    _subscribedGameManager.OnGameOver.AddListener(OpenLevelResult);
-                }
+                if (_subscribedPhaseManager != null)
+                    _subscribedPhaseManager.OnResultSequenceComplete.AddListener(OpenLevelResult);
             }
 
             yield return null;
@@ -51,10 +54,9 @@ public class LevelResultNavigator : MonoBehaviour
 
     private void Unsubscribe()
     {
-        if (_subscribedGameManager == null) return;
-        _subscribedGameManager.OnVictory.RemoveListener(OpenLevelResult);
-        _subscribedGameManager.OnGameOver.RemoveListener(OpenLevelResult);
-        _subscribedGameManager = null;
+        if (_subscribedPhaseManager == null) return;
+        _subscribedPhaseManager.OnResultSequenceComplete.RemoveListener(OpenLevelResult);
+        _subscribedPhaseManager = null;
     }
 
     private void OpenLevelResult()
