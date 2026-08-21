@@ -61,18 +61,6 @@ public class PlacedSlot
     public GameObject deviceObject;
 }
 
-// ─────────────────────────────────────────────────────────────────
-//  ROAD TILE
-//
-//  CHANGES (this version):
-//    • Req 3 — TrafficLight limit on End tiles raised from 1 → 2.
-//    • Req 4 — StopSign limit on End tiles raised from 2 → 4.
-//    • maxDevices default raised to 5 to accommodate 4 corner devices
-//      + 1 center device without hitting the hard cap.
-//    • Stop Sign on End tiles now requires far-end corners (same rule
-//      as TrafficLight), matching real-world stop-sign placement at
-//      the approach end of a segment.
-// ─────────────────────────────────────────────────────────────────
 
 [RequireComponent(typeof(BoxCollider))]
 public class RoadTile : MonoBehaviour
@@ -229,20 +217,13 @@ public class RoadTile : MonoBehaviour
         return TileCorner.SouthWest;
     }
 
-    // ─────────────────────────────────────────
-    //  CORRECTNESS TABLE
-    //
-    //  Req 3: End + TrafficLight limit raised from 1 → 2.
-    //  Req 4: End + StopSign limit raised from 2 → 4.
-    // ─────────────────────────────────────────
-
     /// <summary>The "correct" count cap per (segment, device) pair.</summary>
     public int GetCorrectCountLimit(TrafficDeviceType d) => (segmentType, d) switch
     {
         (TileSegmentType.Middle, TrafficDeviceType.SpeedBump) => 1,
-        (TileSegmentType.End, TrafficDeviceType.StopSign) => 4,   // REQ 4: was 2
+        (TileSegmentType.End, TrafficDeviceType.StopSign) => 4,   
         (TileSegmentType.End, TrafficDeviceType.SpeedBump) => 1,
-        (TileSegmentType.End, TrafficDeviceType.TrafficLight) => 2,   // REQ 3: was 1
+        (TileSegmentType.End, TrafficDeviceType.TrafficLight) => 2,  
         (TileSegmentType.Intersection, TrafficDeviceType.TrafficLight) => 4,
         _ => 0
     };
@@ -481,6 +462,11 @@ public class RoadTile : MonoBehaviour
 
         // Activate the traffic-device behaviour zone for this placement.
         ActivateDeviceZone(device, deviceObject);
+
+        // Feedback loop: a correctly placed device reduces city-wide accident
+        // recklessness via AreaTargetManager (2+ correct devices → fully neutralised).
+        if (isCorrect && AreaTargetManager.Instance != null)
+            AreaTargetManager.Instance.NotifyCorrectDevicePlaced();
 
         OnDevicePlaced?.Invoke(this, !isCorrect);
         RefreshOverlay(TrafficDeviceType.None);

@@ -658,7 +658,7 @@ MonoBehaviour:
   tileType: 3
   zoneType: 2
   tileID: ResRoad_01
-  segmentType: 0
+  segmentType: 1
   forwardAxis: 0
   maxDevices: 5
   cornerInsetX: 1.68
@@ -1247,8 +1247,8 @@ MonoBehaviour:
   tileType: 3
   zoneType: 2
   tileID: ResRoad_00
-  segmentType: 0
-  forwardAxis: 0
+  segmentType: 1
+  forwardAxis: 1
   maxDevices: 5
   cornerInsetX: 1.68
   cornerInsetZ: 2.06
@@ -1310,7 +1310,7 @@ MonoBehaviour:
   tileType: 3
   zoneType: 2
   tileID: ResRoad_01
-  segmentType: 0
+  segmentType: 1
   forwardAxis: 0
   maxDevices: 5
   cornerInsetX: 1.68
@@ -1464,15 +1464,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadManager
   complexityMultiplier: 1
-  dailyAccidentGain: 4
-  perCorrectDeviceReduction: 1
   happinessPerAccidentRate: 1
   reductionStopSign: 0.5
   reductionSpeedBump: 1
   reductionTrafficLight: 6
-  placementHappinessStopSign: 2
-  placementHappinessSpeedBump: 4
-  placementHappinessTrafficLight: 10
+  placementHappinessStopSign: 1
+  placementHappinessSpeedBump: 3
+  placementHappinessTrafficLight: 12
   _sections: []
 --- !u!1 &1370845965
 GameObject:
@@ -1818,7 +1816,7 @@ MonoBehaviour:
   tileType: 3
   zoneType: 2
   tileID: ResRoad_01
-  segmentType: 0
+  segmentType: 1
   forwardAxis: 0
   maxDevices: 5
   cornerInsetX: 1.68

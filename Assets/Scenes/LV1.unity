@@ -3802,11 +3802,11 @@ MonoBehaviour:
   perCorrectDeviceReduction: 1
   happinessPerAccidentRate: 1
   reductionStopSign: 0.5
-  reductionSpeedBump: 1
-  reductionTrafficLight: 6
-  placementHappinessStopSign: 2
-  placementHappinessSpeedBump: 4
-  placementHappinessTrafficLight: 10
+  reductionSpeedBump: 1.5
+  reductionTrafficLight: 7.5
+  placementHappinessStopSign: 1
+  placementHappinessSpeedBump: 3
+  placementHappinessTrafficLight: 15
   _sections: []
 --- !u!1 &1287189284
 GameObject:

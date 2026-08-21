@@ -163,57 +163,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &629565082
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 629565084}
-  - component: {fileID: 629565083}
-  m_Layer: 0
-  m_Name: KeyHandler
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &629565083
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 629565082}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f08a883339f403b4b83fff87b77dd0f7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::EscapeKeyHandler
-  pageManager: {fileID: 0}
-  sceneLists:
-  - currentScene: LevelSelect
-    sceneChangeTo: MainMenu
-  - currentScene: Settings
-    sceneChangeTo: MainMenu
-  pauseScene: LvUI & Manager
---- !u!4 &629565084
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 629565082}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 133.95044, y: -0, z: 210.07385}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &801832299
 GameObject:
   m_ObjectHideFlags: 0
@@ -251,10 +200,10 @@ MonoBehaviour:
     movementSpeed: 10
     panEndPosition: {x: 210, y: 70, z: 120}
     zoomMultiplier: 0
-    minZoom: 0
-    maxZoom: 0
+    minZoom: 60
+    maxZoom: 60
     initialZoom: 60
-    autoTransitionOnStart: 0
+    autoTransitionOnStart: 1
     transitionDuration: 2
     postTransitionHold: 2
     zoomSmoothTime: 0
@@ -283,14 +232,14 @@ MonoBehaviour:
     targetZoom: 30
     zoomVelocity: 0.0005
   - sceneName: LV2
-    startPosition: {x: 258, y: 46.2, z: 140}
+    startPosition: {x: 258, y: 46.2, z: 139}
     startRotation: {x: 57, y: -90, z: 0}
     cameraMode: 2
     movementSpeed: 0
     panEndPosition: {x: 0, y: 0, z: 0}
     zoomMultiplier: 50
     minZoom: 20
-    maxZoom: 72
+    maxZoom: 65
     initialZoom: 1
     autoTransitionOnStart: 1
     transitionDuration: 2
@@ -552,6 +501,7 @@ MonoBehaviour:
     - LvUI & Manager
     - LevelResult
     - Tutorial
+    - Tutorial LV3
   sliderClip: {fileID: 8300000, guid: 8ab1589089c332a40b0b72c1c3b34d19, type: 3}
   sliderSceneNames:
   - Settings
@@ -586,6 +536,5 @@ SceneRoots:
   - {fileID: 801832301}
   - {fileID: 1730907750}
   - {fileID: 1404589075}
-  - {fileID: 629565084}
   - {fileID: 1919190643}
   - {fileID: 282503751}

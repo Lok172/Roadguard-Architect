@@ -2204,9 +2204,9 @@ MonoBehaviour:
   reductionStopSign: 0.5
   reductionSpeedBump: 1
   reductionTrafficLight: 6
-  placementHappinessStopSign: 2
-  placementHappinessSpeedBump: 4
-  placementHappinessTrafficLight: 10
+  placementHappinessStopSign: 1
+  placementHappinessSpeedBump: 3
+  placementHappinessTrafficLight: 12
   _sections: []
 --- !u!1 &1341575559
 GameObject:

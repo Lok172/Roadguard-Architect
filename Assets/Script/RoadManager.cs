@@ -13,17 +13,6 @@ public class RoadManager : MonoBehaviour
 
     // ── Daily Accident Mechanics ──────────────
     [Header("Daily Accident Mechanics")]
-    [Tooltip("FALLBACK ONLY — used solely if no GameManager exists in the scene. Whenever " +
-             "GameManager IS present (i.e. always during normal play), the actual daily gain " +
-             "comes from GameManager's 'Daily Accident Gain Ramp' section instead " +
-             "(Ramp Accident Gain Min / Max / Ramp Duration Days). Edit those to change gain.")]
-    public float dailyAccidentGain = 2f;
-
-    [Tooltip("Accident rate removed per CORRECT device per section per day (before complexity). " +
-             "Each device type has its own value — see 'Per-Device Accident Reduction' below.")]
-    [System.Obsolete("Use perDeviceAccidentReduction instead.")]
-    public float perCorrectDeviceReduction = 2f;
-
     [Tooltip("Happiness lost per +1 of a section's accident rate, per day.")]
     public float happinessPerAccidentRate = 3f;
 
@@ -191,16 +180,24 @@ public class RoadManager : MonoBehaviour
     // ─────────────────────────────────────────
 
     /// <summary>
-    /// Returns the effective dailyAccidentGain for the current day.
-    /// Linearly interpolates from GameManager.rampAccidentGainMin to
-    /// rampAccidentGainMax over rampDurationDays, then locks at max.
-    /// Falls back to the local dailyAccidentGain field if GameManager
-    /// is unavailable.
+    /// Returns the effective daily accident gain for the current day, sourced
+    /// entirely from GameManager's Daily Accident Gain Ramp (Ramp Accident
+    /// Gain Min / Max / Ramp Duration Days) — that's the single place to
+    /// tune city-wide difficulty. Linearly interpolates from min to max over
+    /// rampDurationDays, then locks at max.
+    /// If GameManager isn't present yet (e.g. this section ticks before
+    /// registration), gain is 0 for that tick rather than silently using a
+    /// stale local value.
     /// </summary>
     private float GetRampedAccidentGain()
     {
         var gm = GameManager.Instance;
-        if (gm == null) return dailyAccidentGain;
+        if (gm == null)
+        {
+            Debug.LogWarning("[RoadManager] GetRampedAccidentGain: GameManager.Instance is null — " +
+                              "returning 0 for this tick. Gain is now sourced solely from GameManager.");
+            return 0f;
+        }
 
         int day = gm.DaysPassed;
         int rampDays = gm.RampDurationDays;

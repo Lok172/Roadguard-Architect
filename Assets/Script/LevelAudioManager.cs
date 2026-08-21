@@ -127,12 +127,7 @@ public class LevelAudioManager : MonoBehaviour
     //  Named public API
     // =========================================================================
 
-    // ── REQ 1 FIX ──────────────────────────────────────────────────────────
-    // These two are the only sounds that fire automatically at level load.
-    // Deferring them by one frame guarantees MusicManager is ready and the
-    // BGM cross-fade has begun, so the SFX source is initialised properly.
-    // Without the defer they played during the loading frame using an
-    // uninitialised AudioSource and were immediately discarded.
+    
 
     /// <summary>
     /// Call from GameManager.InitLevel (or wherever the level "starts").
@@ -187,7 +182,7 @@ public class LevelAudioManager : MonoBehaviour
         PlayEntry(winGameSound);
     }
 
-    // ── REQ 2 (Pause SFX support, from previous fix) ─────────────────────
+    
     /// <summary>Mutes/unmutes the looping SFX source without stopping it.</summary>
     public void SetSFXPaused(bool paused)
     {

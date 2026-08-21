@@ -22,18 +22,7 @@ public class PlacementProxy : MonoBehaviour, IPointerDownHandler
     }
 }
 
-// ─────────────────────────────────────────────────────────────────
-//  PlacementManager (v8 — corner passed to TileOverlay)
-//
-//  CHANGES vs v7:
-//    • REQ 2: UpdateHoverOverlay and ShowPlacementOverlays now pass
-//      the hovered TileCorner into TileOverlay.SetDragState so the
-//      overlay colour correctly reflects whether that specific corner
-//      is valid for the dragged device (green = correct, orange = not
-//      suitable) instead of just checking if a corner is occupied.
-//    • Issue 1 fix retained: PlacementProxy.OnPointerDown respects
-//      Button.interactable.
-// ─────────────────────────────────────────────────────────────────
+
 
 public class PlacementManager : MonoBehaviour
 {
@@ -388,11 +377,10 @@ public class PlacementManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────
-    //  OVERLAY  (v8 — passes hoveredCorner to SetDragState)
+    //  OVERLAY 
     // ─────────────────────────────────────────
 
     /// <summary>
-    /// REQ 2: Called every Update frame while dragging.
     /// Passes the current hovered tile + corner + occupied flag into each
     /// tile's TileOverlay so it can colour itself based on whether that
     /// specific corner is correct for the dragged device type.
@@ -414,7 +402,6 @@ public class PlacementManager : MonoBehaviour
             TileCorner corner = _hoveredTile.GetNearestCorner(hitPoint, _selectedDevice);
             bool onOccupied = _hoveredTile.IsCornerOccupied(corner);
 
-            // REQ 2: pass the corner so TileOverlay can evaluate per-corner correctness.
             _hoveredTile.Overlay.SetDragState(_selectedDevice, onOccupied, corner);
         }
     }
@@ -424,7 +411,6 @@ public class PlacementManager : MonoBehaviour
         RoadTile[] all = FindObjectsByType<RoadTile>(FindObjectsSortMode.None);
         foreach (RoadTile t in all)
             if (t.Overlay != null)
-                // REQ 2: no corner known yet — pass None so TileOverlay shows
                 // its general suitability state (HasAtLeastOneValidCorner).
                 t.Overlay.SetDragState(device, cursorOnOccupiedCorner: false, TileCorner.None);
     }

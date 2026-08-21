@@ -39,6 +39,9 @@ EditorBuildSettings:
     path: Assets/Scenes/LV2.unity
     guid: 7e1eb8cc54f121746a88353fbaafb1f0
   - enabled: 1
+    path: Assets/Scenes/Tutorial LV3.unity
+    guid: 52ea9bd84a3d8f144a466d036d32de52
+  - enabled: 1
     path: Assets/Scenes/LV3.unity
     guid: 2dd3b2ef5eac85545a6c51c44fe1361e
   - enabled: 1
@@ -47,9 +50,6 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/LevelResult.unity
     guid: 2acbc7da3a4f8294993a3106c430acb6
-  - enabled: 1
-    path: Assets/Scenes/Tutorial LV3.unity
-    guid: 52ea9bd84a3d8f144a466d036d32de52
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

@@ -5,6 +5,8 @@ using UnityEngine;
 
 public class AreaTargetManager : MonoBehaviour
 {
+    public static AreaTargetManager Instance { get; private set; }
+
     [Header("Area Selection")]
     [Tooltip("Assign the cube GameObjects (with Box Colliders set to Is Trigger) that define selectable areas.")]
     public List<Collider> targetAreas = new List<Collider>();
@@ -12,6 +14,11 @@ public class AreaTargetManager : MonoBehaviour
     [Header("Recklessness")]
     [Tooltip("The recklessnessThreshold value applied to the chosen car.")]
     public int boostedRecklessness = 50;
+
+    [Header("Recklessness Mitigation")]
+    [Tooltip("Number of CORRECTLY placed devices (city-wide) needed before the recklessness " +
+             "boost is fully neutralised (reduced to 0). Values in between linearly reduce it.")]
+    [Min(1)] public int correctDevicesToZeroRecklessness = 2;
 
     [Header("Accident Settings")]
     [Tooltip("Smoke/particle prefab spawned at the car's centre on collision.")]
@@ -25,6 +32,43 @@ public class AreaTargetManager : MonoBehaviour
 
     [Tooltip("StopScript whose 'stop' flag will be set true when the accident triggers.")]
     public StopScript accidentStopper;
+
+    // ── Runtime (recklessness mitigation) ───────────────────────────────────
+    private int _baseBoostedRecklessness;
+    private int _correctDeviceCount = 0;
+
+    /// <summary>The car most recently picked by PickTargetCar, if still alive. Its
+    /// recklessnessThreshold is live-updated as correct devices are placed, not
+    /// just future picks.</summary>
+    private CarAIController _currentTarget;
+
+    // ─── Recklessness Mitigation ─────────────────────────────────────────────
+
+    /// <summary>
+    /// Called by RoadTile every time a device is placed CORRECTLY, anywhere in
+    /// the city. Linearly reduces boostedRecklessness toward 0 as correct
+    /// placements accumulate — reaching 0 once correctDevicesToZeroRecklessness
+    /// correct devices are placed (and staying at 0 for any further ones).
+    /// Also live-updates the currently active accident target, if any, so an
+    /// already-boosted car benefits immediately rather than only future picks.
+    /// </summary>
+    public void NotifyCorrectDevicePlaced()
+    {
+        _correctDeviceCount++;
+
+        float t = Mathf.Clamp01((float)_correctDeviceCount / correctDevicesToZeroRecklessness);
+        boostedRecklessness = Mathf.RoundToInt(Mathf.Lerp(_baseBoostedRecklessness, 0f, t));
+
+        Debug.Log($"[AreaTargetManager] Correct devices city-wide: {_correctDeviceCount} → " +
+                  $"boostedRecklessness = {boostedRecklessness}");
+
+        if (_currentTarget != null)
+        {
+            _currentTarget.recklessnessThreshold = boostedRecklessness;
+            Debug.Log($"[AreaTargetManager] Live target '{_currentTarget.name}' recklessnessThreshold " +
+                      $"→ {boostedRecklessness}");
+        }
+    }
 
     // ─── Public API ───────────────────────────────────────────────────────────
 
@@ -47,7 +91,9 @@ public class AreaTargetManager : MonoBehaviour
         CarAIController chosen = candidates[Random.Range(0, candidates.Count)];
         Debug.Log($"[AreaTargetManager] Target selected: {chosen.gameObject.name}");
 
-        // 1 & 2 – Set recklessness
+        _currentTarget = chosen;
+
+        // 1 & 2 – Set recklessness (reflects any correct-device reduction already earned).
         chosen.recklessnessThreshold = boostedRecklessness;
         Debug.Log($"[AreaTargetManager] recklessnessThreshold → {boostedRecklessness}");
 
@@ -62,8 +108,23 @@ public class AreaTargetManager : MonoBehaviour
     // ─── Helpers ─────────────────────────────────────────────────────────────
     private void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Debug.LogWarning("[AreaTargetManager] Duplicate — destroying.");
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+
+        _baseBoostedRecklessness = boostedRecklessness;
+
         if (accidentStopper == null)
             accidentStopper = FindObjectOfType<StopScript>();
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
     }
     private List<CarAIController> GatherCarsInAreas()
     {

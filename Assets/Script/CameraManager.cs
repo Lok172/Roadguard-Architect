@@ -136,6 +136,20 @@ public class CameraManager : MonoBehaviour
         SceneConfig cfg = ActiveConfig;
         if (cfg == null) return;
 
+        // Re-attempt WorkingArea caching if it wasn't found yet. This can
+        // happen right after returning to this scene: PageManager can report
+        // the new currentLoadedUI a frame or two before the additively-loaded
+        // scene has finished registering the "WorkingArea"-tagged object.
+        // If we never retry, _hasWorkingArea stays false for the whole visit,
+        // AutoPan falls through to GetCameraBounds()'s unclamped fallback
+        // (float.MinValue/MaxValue), and the camera pans in one direction
+        // forever instead of bouncing back — which is the "drifts left until
+        // it sees outside the model" symptom.
+        if (!_hasWorkingArea)
+        {
+            CacheWorkingArea();
+        }
+
         switch (cfg.cameraMode)
         {
             case CameraMode.Zoom:
@@ -390,7 +404,19 @@ public class CameraManager : MonoBehaviour
             if (cfg.autoTransitionOnStart)
                 _zoomTransitionCoroutine = StartCoroutine(ZoomTransitionRoutine(cfg, cfg.transitionDuration));
         }
-
+        else // AutoPan
+        {
+            // FOV is a single shared property on this Camera component.
+            // AutoPan scenes don't manage zoom interactively, so without
+            // this, whatever FOV the previous scene (e.g. a Zoom-mode
+            // level) left behind carries straight through — making the
+            // pan look wider/narrower than intended even though position
+            // and rotation get reset correctly. Pin it to this scene's
+            // resting value every time it's applied.
+            cfg.targetZoom = cfg.maxZoom;
+            cfg.zoomVelocity = 0f;
+            SetCameraZoomImmediate(cameraDisplay, cfg.maxZoom);
+        }
 
         Debug.Log($"[CameraManager] Switched to scene: '{cfg.sceneName}'");
     }
@@ -437,15 +463,25 @@ public class CameraManager : MonoBehaviour
     // ─────────────────────────────────────────────────────────────
     private void HandlePan(SceneConfig cfg)
     {
+        bool hasExplicitEnd = cfg.panEndPosition != Vector3.zero;
+
+        // Safety net: with no explicit pan range configured, we depend on
+        // the WorkingArea bounds to know where to turn around. If those
+        // bounds aren't cached yet, freeze in place for this frame rather
+        // than panning with no clamp at all (which is what was pushing the
+        // camera further and further left with no bounce-back).
+        if (!hasExplicitEnd && !_hasWorkingArea) return;
+
         // Unscaled: AutoPan is presentation, not simulation — it must keep
         // moving even while Time.timeScale is 0 during a Planning Phase pause.
         float movement = cfg.movementSpeed * Time.unscaledDeltaTime * panDirection;
         Vector3 pos = cameraTransform.position;
         pos.x += movement;
+        pos.y = cfg.startPosition.y;
+        pos.z = cfg.startPosition.z;
 
         // Determine the X range for this scene.
         float panMinX, panMaxX;
-        bool hasExplicitEnd = cfg.panEndPosition != Vector3.zero;
 
         if (hasExplicitEnd)
         {
@@ -464,6 +500,13 @@ public class CameraManager : MonoBehaviour
 
         pos.x = Mathf.Clamp(pos.x, panMinX, panMaxX);
         cameraTransform.position = pos;
+
+        // Lock rotation every frame rather than relying solely on the
+        // one-time reset in ApplyScene(). If anything else touches this
+        // shared camera's rotation after we hand off (e.g. Level 2's own
+        // camera control still running for a frame), this pulls it back
+        // instead of letting it silently persist into the pan.
+        cameraTransform.rotation = Quaternion.Euler(cfg.startRotation);
     }
 
     // ─────────────────────────────────────────────────────────────

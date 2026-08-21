@@ -40,8 +40,6 @@ public class GameManager : MonoBehaviour
     [Header("Game Rules")]
     public float secondsPerDay = 2f;
     public int totalDays = 90;
-    public int safetyThreshold = 3;
-    public float safetyMultiplier = 1.5f;
 
     [Header("Baseline Accident Decay")]
     [Tooltip("How much the baseline accident rate decreases each in-game day.")]
@@ -97,6 +95,11 @@ public class GameManager : MonoBehaviour
     [SerializeField] private bool _phaseFlowStarted;
     [SerializeField] private float _baseTaxPerDay;
     private bool _dayTickPaused;
+
+    // Baseline accident decay only starts once the player has placed at
+    // least one device — previously it decayed unconditionally from day 1
+    // regardless of player action.
+    [SerializeField] private bool _hasPlacedFirstDevice = false;
 
     // ── Public accessors ─────────────────────────────────────────
     public float Capital => _capital;
@@ -208,6 +211,7 @@ public class GameManager : MonoBehaviour
         _simulationStarted = false;
         _phaseFlowStarted = false;
         _dayTickPaused = false;
+        _hasPlacedFirstDevice = false;
 
         PlayerPrefs.SetInt("StartAccidentRate", _baselineAccidentRate);
         PlayerPrefs.Save();
@@ -449,6 +453,11 @@ public class GameManager : MonoBehaviour
             result == PlacementResult.InsufficientFunds)
             return result;
 
+        // Baseline accident decay is gated behind the player's first real
+        // placement (Success or PoorPlacement both count — the player took
+        // action and spent capital, even if the placement was wrong).
+        _hasPlacedFirstDevice = true;
+
         SpendCapital(costSpent);
 
         if (!Mathf.Approximately(happinessDelta, 0f))
@@ -501,9 +510,7 @@ public class GameManager : MonoBehaviour
     private float CalculateDailyTaxRevenue()
     {
         float happinessFactor = _happiness / 100f;
-        float tax = _baseTaxPerDay * happinessFactor;
-        if (_accidentRate < safetyThreshold) tax *= safetyMultiplier;
-        return tax;
+        return _baseTaxPerDay * happinessFactor;
     }
 
     private void RecomputeCityAccidentRate()
@@ -546,7 +553,10 @@ public class GameManager : MonoBehaviour
             }
 
             // 2) Decay baseline accident rate toward zero.
-            if (baselineDecayPerDay > 0f && _baselineAccidentRate > 0)
+            //    Only once the player has placed at least one device — this
+            //    used to run unconditionally from day 1, decaying the
+            //    baseline even if the player did nothing at all.
+            if (_hasPlacedFirstDevice && baselineDecayPerDay > 0f && _baselineAccidentRate > 0)
             {
                 _baselineAccidentRate -= Mathf.CeilToInt(baselineDecayPerDay);
                 _baselineAccidentRate = Mathf.Max(0, _baselineAccidentRate);

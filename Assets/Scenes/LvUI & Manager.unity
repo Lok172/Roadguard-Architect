@@ -4156,14 +4156,12 @@ MonoBehaviour:
     startCapitalRM: 3500
     startAccidentRate: 25
     startHappiness: 80
-    baseTaxPerDay: 500
+    baseTaxPerDay: 800
   secondsPerDay: 2
   totalDays: 90
-  safetyThreshold: 3
-  safetyMultiplier: 2
   baselineDecayPerDay: 1
   rampAccidentGainMin: 0.1
-  rampAccidentGainMax: 10
+  rampAccidentGainMax: 9
   rampDurationDays: 30
   loseScoreDivisor: 5
   devMode: 0
@@ -4183,6 +4181,7 @@ MonoBehaviour:
   _simulationStarted: 0
   _phaseFlowStarted: 0
   _baseTaxPerDay: 0
+  _hasPlacedFirstDevice: 0
   carSpawners: []
   OnCapitalChanged:
     m_PersistentCalls:

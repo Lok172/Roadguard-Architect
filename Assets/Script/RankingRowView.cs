@@ -20,9 +20,7 @@ public class RankingRowView : MonoBehaviour
     private static readonly Color ColBadgeSilver = new Color(0xCB / 255f, 0xCB / 255f, 0xCB / 255f, 1f);
     private static readonly Color ColBadgeBronze = new Color(0xFF / 255f, 0x9E / 255f, 0x00 / 255f, 1f);
 
-    // FIX (Req 1): current player's row is highlighted green so they can spot
-    // themselves in the Top 10 list. Matches the "Connected/Found" green used
-    // elsewhere in the Safety Records screen (0x50FF64).
+ 
     private static readonly Color ColCurrentPlayer = new Color(0x50 / 255f, 0xFF / 255f, 0x64 / 255f, 1f);
 
     private void Awake()

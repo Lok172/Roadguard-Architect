@@ -353,7 +353,7 @@ public class MusicManager : MonoBehaviour
 
         if (masterSlider != null)
         {
-            // FIX (Req 6): slider Direction is Right To Left, so its raw value
+            // Slider Direction is Right To Left, so its raw value
             // is mirrored — convert both ways through ToSliderRaw/FromSliderRaw
             // so rightmost = 100% and leftmost = 0%.
             masterSlider.value = ToSliderRaw(_masterVolume);
@@ -455,7 +455,6 @@ public class MusicManager : MonoBehaviour
     }
 
     /// <summary>
-    /// FIX (Req 4): Called by PauseMenuController when the pause panel opens.
     /// Wires every Button and volume Slider inside the panel so that:
     ///   • Buttons play the button click sound.
     ///   • Sliders named "master", "music", or "sfx" drive the matching volume
@@ -490,7 +489,6 @@ public class MusicManager : MonoBehaviour
         {
             string n = slider.gameObject.name.ToLower();
 
-            // FIX (Req 6): slider Direction is Right To Left, so its raw value
             // is mirrored — convert both ways through ToSliderRaw/FromSliderRaw
             // so rightmost = 100% and leftmost = 0%.
             if (n.Contains("master"))

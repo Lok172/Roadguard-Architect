@@ -72,7 +72,7 @@ public class IntersectionScript : MonoBehaviour
         else
         {
             // Bail early if THIS stop has no car waiting. Checking whether
-            // OTHER stops have cars (the old condition) is backwards — it
+            // OTHER stops have cars (the old condition) is backwards it
             // made an empty active stop hold its full green duration simply
             // because traffic existed elsewhere, delaying whichever stop
             // actually had a car by a full cycle per empty stop in between.
@@ -88,10 +88,27 @@ public class IntersectionScript : MonoBehaviour
         }
 
         // Wait until the car that was let through has fully cleared the stop.
+        // Deadlock guard: if priority is still stuck above 0 after 2 seconds
+        // (e.g. a car idling right at the trigger edge, or two cars jammed
+        // together), force it to 0 instead of blocking this stop — and the
+        // whole intersection cycle behind it — forever.
+        float clearElapsed = 0f;
         while (scripts[index].priority > 0)
         {
             yield return new WaitForSeconds(0.1f);
+            clearElapsed += 0.1f;
+
+            if (clearElapsed >= 2f)
+            {
+                scripts[index].priority = 0;
+                break;
+            }
         }
+
+        // Extra grace period so the vehicle has time to fully clear the
+        // physical intersection (not just exit the trigger sensor) before
+        // the light switches back to red.
+        yield return new WaitForSeconds(1f);
 
         if (showStopMaterial)
             stops[index].GetComponent<MeshRenderer>().material.color = Color.red;

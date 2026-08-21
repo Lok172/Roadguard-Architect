@@ -206,7 +206,7 @@ public class PhaseManager : MonoBehaviour
     /// <summary>Called via GameManager.OnGameOver when the level is lost.</summary>
     private void ShowGameOverResult()
     {
-        ShowResultText("Lost");
+        ShowResultText("Lost!");
     }
 
     private void ShowResultText(string text)
