@@ -1,11 +1,7 @@
 using UnityEngine;
 
-// ─────────────────────────────────────────────────────────────────
-//  BILLBOARD SPRITE
-//
-//  LateUpdate rotates the object so its XY plane always faces the
-//  active camera (perpendicular to the view direction).
-// ─────────────────────────────────────────────────────────────────
+// This script is used to rotate an object each frame so that it continually
+// faces the active camera.
 
 public class BillboardSprite : MonoBehaviour
 {
@@ -24,7 +20,6 @@ public class BillboardSprite : MonoBehaviour
             if (_cam == null) return;
         }
 
-        // Align the sprite plane perpendicular to the camera view.
         transform.rotation = Quaternion.LookRotation(
             _cam.transform.forward,
             _cam.transform.up);

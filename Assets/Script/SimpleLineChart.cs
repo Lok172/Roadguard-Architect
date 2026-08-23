@@ -46,12 +46,12 @@ public class SimpleLineChart : Graphic
     private List<GameObject> _spawnedLabels = new List<GameObject>();
 
     // ─────────────────────────────────────────────────────────────
-    //  Override the Graphic base color so it doesn't tint our mesh
+    //  Override the Graphic base color 
     // ─────────────────────────────────────────────────────────────
     protected override void Awake()
     {
         base.Awake();
-        // Force the inherited Graphic.color to white so it never tints our vertex colors
+        // Force the inherited Graphic.color to white 
         color = Color.white;
     }
 

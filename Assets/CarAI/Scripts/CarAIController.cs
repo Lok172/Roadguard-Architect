@@ -3,6 +3,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using UnityEngine;
 
+// Drives a car's wheels, steering, and speed toward its next checkpoint using
+// raycasts to detect obstacles ahead. Speed can be further constrained by
+// external device scripts (stop signs, traffic lights) through
+// overrideSpeedLimit and forceStop, which SearchForCheckpoints reads each
+// FixedUpdate.
 public class CarAIController : MonoBehaviour
 {
     //Wheel transforms
@@ -66,8 +71,7 @@ public class CarAIController : MonoBehaviour
     private float steerAngle = 0f;
     private bool flipOverCheck = false;
 
-    // \u2500\u2500 Device-influence state \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-    // External device scripts write these flags; SearchForCheckpoints reads them.
+    // Device-influence state: external device scripts write these flags; SearchForCheckpoints reads them.
 
     /// <summary>When >= 0, car is forced to this speed instead of speedLimit.</summary>
     [HideInInspector] public int overrideSpeedLimit = -1;   // -1 = no override

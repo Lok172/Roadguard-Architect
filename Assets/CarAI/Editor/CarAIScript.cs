@@ -445,7 +445,7 @@ public class CarAIEditorScript : EditorWindow
         }
         else
         {
-            Debug.LogWarning("[CarAIEditorScript] Could not connect selected checkpoints — one is missing a CheckpointScript, or the connection already exists.");
+            Debug.LogWarning("[CarAIEditorScript] Could not connect selected checkpoints â€” one is missing a CheckpointScript, or the connection already exists.");
         }
     }
 

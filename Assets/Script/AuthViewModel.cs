@@ -1,7 +1,9 @@
 using System.Collections;
 using UnityEngine;
 
-// Player profile creation, name validation, and session state are managed here.
+// This script is used to manage player profile creation, name validation,
+// and session state, including confirmation flows and userId synchronization
+// with the backend.
 
 public class AuthViewModel
 {

@@ -3,14 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // ─────────────────────────────────────────────────────────────────
-//  ROAD SECTION
-//
-//  Owns a group of child RoadTiles and tracks this section's
-//  accident rate.  Daily-tick parameters (gain, reduction,
-//  happiness-per-rate) are now held by RoadManager, which calls
-//  TickDay() with the values each in-game day.
-//
-//  Still owns the device-count threshold penalty independently.
+//  This script manages a group of child RoadTiles, tracking the
+//  section's accident rate and the happiness effects that follow
+//  from it. Daily-tick parameters are supplied by RoadManager, and
+//  the device-count threshold penalty is tracked independently.
 // ─────────────────────────────────────────────────────────────────
 
 public class RoadSection : MonoBehaviour

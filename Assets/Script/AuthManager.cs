@@ -2,7 +2,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-// Profile-related UI panels are displayed here in response to AuthViewModel state.
+// This script is used to manage the profile-related UI panels, which are
+// displayed in response to AuthViewModel state.
 
 public class AuthManager : MonoBehaviour
 {

@@ -2,6 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// This script manages the road network's daily simulation — accident-rate ramp-up,
+// per-device accident-rate reduction, placement happiness bonuses, and the aggregate
+// stats (total/correct device counts, device effectiveness) read by GameManager.
 
 public class RoadManager : MonoBehaviour
 {

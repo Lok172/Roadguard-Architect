@@ -4,16 +4,8 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.Networking;
 
-// ─────────────────────────────────────────────────────────────────
-//  API CLIENT
-//
-//  Thin HTTP helper used by AuthManager and LevelProgress (and any
-//  future Unity ↔ ASP.NET Core Web API calls).
-//
-//  Base URL is set in the Inspector on the GameObject that holds
-//  ApiClient, or simply change the constant below for quick testing.
-//
-// ─────────────────────────────────────────────────────────────────
+// This script is used to handle HTTP communication between the game and the
+// backend Web API, including GET and POST requests and response parsing.
 
 public class ApiClient : MonoBehaviour
 {
@@ -29,8 +21,6 @@ public class ApiClient : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
     }
-
-    // ── POST ─────────────────────────────────────────────────────
 
     public IEnumerator Post<TResponse>(string endpoint, object body,
         Action<TResponse, string> callback)
@@ -49,8 +39,6 @@ public class ApiClient : MonoBehaviour
         HandleResponse(req, callback);
     }
 
-    // ── GET ──────────────────────────────────────────────────────
-
     public IEnumerator Get<TResponse>(string endpoint,
         Action<TResponse, string> callback)
     {
@@ -63,8 +51,6 @@ public class ApiClient : MonoBehaviour
 
         HandleResponse(req, callback);
     }
-
-    // ── Internal helper ──────────────────────────────────────────
 
     private void HandleResponse<TResponse>(UnityWebRequest req,
         Action<TResponse, string> callback)

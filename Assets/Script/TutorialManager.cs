@@ -6,18 +6,10 @@ using UnityEngine.UI;
 //  TUTORIAL MANAGER
 //
 //  Controls a list of tutorial panels with Previous / Next navigation.
-//  • Previous button is hidden at index 0.
-//  • Next button becomes a "Finish" button at the last panel.
-//  • On finish, marks tutorial as read in PlayerPrefs ("TutorialIsRead").
-//  • On Start, reads "TutorialIsRead" from PlayerPrefs:
-//      true  → show Skip button
-//      false → hide Skip button
-//
-//  SETUP:
-//    1. Attach to any GameObject in the Tutorial scene.
-//    2. Assign all tutorial panel GameObjects to "Tutorial Panels" list (in order).
-//    3. Wire Previous Button, Next Button, Skip Button, Finish Button in Inspector.
-//    4. Assign the scene/page name to navigate to when Skip or Finish is pressed.
+//  The Previous button is hidden at index 0, and the Next button acts
+//  as a Finish button at the last panel. On finish, the tutorial is
+//  marked as read in PlayerPrefs ("TutorialIsRead"), which controls
+//  whether the Skip button is shown on subsequent runs.
 // ─────────────────────────────────────────────────────────────────
 
 public class TutorialManager : MonoBehaviour

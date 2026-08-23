@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// Sets the stop flag on a list of linked StopScript components whenever a
+// car enters this trigger zone, and clears it again when the car exits.
 public class CheckerScript : MonoBehaviour
 {
     public List<StopScript> stopScripts;

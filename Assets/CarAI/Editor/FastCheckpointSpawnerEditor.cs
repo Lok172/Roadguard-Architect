@@ -4,6 +4,10 @@ using UnityEngine;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 
+// Scene-view helper for building a checkpoint network: R spawns a new
+// checkpoint at the mouse position and links it after the last one placed
+// or selected, and C connects two selected checkpoints using the same logic
+// as CarAIEditorScript's "Connect selected checkpoints" button.
 [CustomEditor(typeof(CheckpointScript))]
 [CanEditMultipleObjects]
 public class FastCheckpointSpawnerEditor : Editor

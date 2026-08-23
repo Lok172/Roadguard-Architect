@@ -3,17 +3,12 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Add to a RoadTile (automatically by RoadTile.ActivateDeviceZone) when a
-/// Speed Bump is placed.
+/// This script manages the speed bump device's effect on car behaviour.
+/// It is added to a RoadTile's GameObject when a Speed Bump is placed on it.
 ///
-/// BEHAVIOUR:
-///   • OnTriggerEnter  — car's overrideSpeedLimit is set to BUMP_SPEED (slow
-///                        crawl) so it brakes before and while crossing.
-///   • OnTriggerExit   — after a short resume delay the override is cleared
-///                        and the car accelerates back to its normal speedLimit.
-///
-/// The resume delay gives a natural feel: the car keeps crawling for one extra
-/// beat after the front wheels clear the bump before picking up speed again.
+/// While a car is inside the trigger zone, its speed is overridden to a slow
+/// crawl. After the car exits, the override is held briefly before being
+/// cleared so the car resumes its normal speed limit smoothly.
 /// </summary>
 public class SpeedBumpZone : MonoBehaviour
 {

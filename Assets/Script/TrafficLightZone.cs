@@ -3,17 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Add to a RoadTile (automatically by RoadTile.ActivateDeviceZone) when a
-/// Traffic Light is placed.
-///
-/// BEHAVIOUR:
-///   OnTriggerEnter — sets forceStop = true on the car so it brakes to a
-///                    complete halt at the light.
-///   After RED_DURATION seconds — clears forceStop so the car resumes.
-///   Cars that exit the zone early (e.g. pushed out) are also cleaned up.
-///
-/// Only one stop sequence runs per car visit.  If the car exits before the
-/// timer fires (unusual but possible), the stop flag is cleared immediately.
+/// Attached to a RoadTile by RoadTile.ActivateDeviceZone when a Traffic
+/// Light is placed. On entering the trigger, a car's forceStop flag is
+/// set so it halts at the light; the flag is cleared after redDuration
+/// seconds, or immediately if the car leaves the zone early. Only one
+/// stop sequence runs per car visit.
 /// </summary>
 public class TrafficLightZone : MonoBehaviour
 {

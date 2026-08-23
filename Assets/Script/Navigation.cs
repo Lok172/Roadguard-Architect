@@ -17,6 +17,9 @@ public class ClickProxy : MonoBehaviour, IPointerClickHandler
     public void OnPointerClick(PointerEventData eventData) => onClickAction?.Invoke();
 }
 
+// This script manages scene-navigation click targets: each entry maps a clickable
+// object to a scene name, and clicking it (directly or via a ClickProxy on another
+// object) tells PageManager to switch to that scene.
 public class Navigation : MonoBehaviour, IPointerClickHandler
 {
     [System.Serializable]

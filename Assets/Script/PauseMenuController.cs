@@ -2,23 +2,11 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-// ─────────────────────────────────────────────────────────────────
-//  PAUSE MENU CONTROLLER
-//
-//
-//  • Pause Panel starts INACTIVE.
-//  • Clicking the settings icon activates it and sets Time.timeScale = 0,
-//    which freezes everything driven by Time.deltaTime / WaitForSeconds:
-//    car movement, crash spawning, the day-tick (capital / happiness /
-//    accident rate stop counting).
-//  • Clicking Resume (or the settings icon again, if wired) deactivates
-//    the panel and restores Time.timeScale = 1.
-//
-//  
-//  Wiring options:
-//    A) Drag settingsButton / resumeButton into the Inspector slots —
-//       this script wires their OnClick automatically in Awake().
-// ─────────────────────────────────────────────────────────────────
+// This script manages the pause menu. Opening the settings icon activates the pause
+// panel and sets Time.timeScale = 0, freezing everything driven by Time.deltaTime /
+// WaitForSeconds — car movement, crash spawning, and the day-tick (capital, happiness,
+// accident rate). Resume restores Time.timeScale = 1 and closes the panel. A restart
+// action is also provided, which fully reloads the current level scene via PageManager.
 
 public class PauseMenuController : MonoBehaviour
 {

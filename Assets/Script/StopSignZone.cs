@@ -2,18 +2,10 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Add to a RoadTile (automatically by RoadTile.ActivateDeviceZone) when a
-/// Stop Sign is placed.
-///
-/// BEHAVIOUR:
-///   While a CarAIController is inside this tile's trigger collider its
-///   overrideSpeedLimit is set to half of its own speedLimit (rounded down).
-///   When it exits the collider the override is cleared.
-///
-/// SETUP (automatic):
-///   RoadTile already has a BoxCollider set to isTrigger = true, so no extra
-///   collider is needed.  This component just listens to Trigger events on
-///   the same GameObject.
+/// Attached to a RoadTile by RoadTile.ActivateDeviceZone when a Stop Sign
+/// is placed. While a CarAIController is inside the tile's trigger
+/// collider, its overrideSpeedLimit is set to half of its own speedLimit
+/// (rounded down); the override is cleared when the car exits.
 /// </summary>
 public class StopSignZone : MonoBehaviour
 {

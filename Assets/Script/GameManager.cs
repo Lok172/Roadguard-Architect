@@ -14,7 +14,7 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
-    // ── Level Configuration 
+    // Level Configuration
     [Header("Level Configuration")]
     public int currentLevel = 1;
 
@@ -36,7 +36,7 @@ public class GameManager : MonoBehaviour
         new LevelConfig { level = 3, startCapitalRM = 3500f, startAccidentRate = 25, startHappiness = 60f,  baseTaxPerDay = 80f }
     };
 
-    // ── Game Rules ────────────────────────────────────────────────
+    // Game Rules
     [Header("Game Rules")]
     public float secondsPerDay = 2f;
     public int totalDays = 90;
@@ -58,12 +58,12 @@ public class GameManager : MonoBehaviour
     [Tooltip("Score is divided by this value when the player loses. Set to 1 to disable the penalty.")]
     [Min(1f)] public float loseScoreDivisor = 5f;
 
-    // ── Ramp accessors (read by RoadManager) ──────────────────────
+    // Ramp accessors (read by RoadManager)
     public float RampAccidentGainMin => rampAccidentGainMin;
     public float RampAccidentGainMax => rampAccidentGainMax;
     public int RampDurationDays => rampDurationDays;
 
-    // ── Developer Cheats ─────────────────────────────────────────
+    // Developer Cheats
     [Header("Developer Cheats")]
     [Tooltip("When active, happiness is locked, money and days are overridden.")]
     public bool devMode = false;
@@ -74,14 +74,14 @@ public class GameManager : MonoBehaviour
     [Tooltip("Total days is set to this value when dev mode is activated.")]
     public int devTotalDays = 1000;
 
-    // ── Accident Simulation ───────────────────────────────────────
+    // Accident Simulation
     [Header("Accident Simulation")]
     [Tooltip("Assign the AreaTargetManager in the scene. If null, accident simulation is skipped.")]
     public AreaTargetManager areaTargetManager;
     [Tooltip("How often (real seconds) GameManager picks a random car and triggers an accident.")]
     [Min(1f)] public float accidentIntervalSeconds = 10f;
 
-    // ── Runtime State ─────────────────────────────────────────────
+    // Runtime State
     [Header("Runtime State (read-only)")]
     [SerializeField] private float _capital;
     [SerializeField] private float _happiness;
@@ -96,12 +96,10 @@ public class GameManager : MonoBehaviour
     [SerializeField] private float _baseTaxPerDay;
     private bool _dayTickPaused;
 
-    // Baseline accident decay only starts once the player has placed at
-    // least one device — previously it decayed unconditionally from day 1
-    // regardless of player action.
+    // Baseline accident decay only starts once the player has placed at least one device.
     [SerializeField] private bool _hasPlacedFirstDevice = false;
 
-    // ── Public accessors ─────────────────────────────────────────
+    // Public accessors
     public float Capital => _capital;
     public float Happiness => _happiness;
     public int AccidentRate => _accidentRate;
@@ -116,19 +114,19 @@ public class GameManager : MonoBehaviour
 
     public LevelResultPayload LastPayload => _payload;
 
-    // ── Car Spawners ──────────────────────────────────────────────
+    // Car Spawners
     [Header("Car Spawners")]
     [Tooltip("Assign all carspawnerscript instances in the scene. GameManager will trigger them on level start.")]
     public List<carspawnerscript> carSpawners = new List<carspawnerscript>();
 
-    // ── Internal registries ───────────────────────────────────────
+    // Internal registries
     private readonly List<RoadTile> _allTiles = new List<RoadTile>();
     private RoadManager _roadManager;
 
-    // ── Result payload built throughout the level ─────────────────
+    // Result payload built throughout the level
     private LevelResultPayload _payload;
 
-    // ── Events ────────────────────────────────────────────────────
+    // Events
     [Header("Events")]
     public UnityEvent<float> OnCapitalChanged;
     public UnityEvent<float> OnHappinessChanged;
@@ -143,9 +141,7 @@ public class GameManager : MonoBehaviour
     public UnityEvent OnSimulationStarted;
     public UnityEvent OnDayStarted;
 
-    // ─────────────────────────────────────────
-    //  LIFECYCLE
-    // ─────────────────────────────────────────
+    // LIFECYCLE
 
     private void Awake()
     {
@@ -157,13 +153,9 @@ public class GameManager : MonoBehaviour
     {
         currentLevel = PlayerPrefs.GetInt("CurrentLevel", currentLevel);
 
-        // Level initialisation (and everything downstream of it — Planning
-        // Phase, the countdown, PlayGameStart audio, etc.) now happens only
-        // when LevelSpawnerActivator actually activates a level scene, not
-        // here. This used to call InitLevel(currentLevel) unconditionally,
-        // which fires the instant GameManager exists — including while the
-        // player is still sitting on the Main Menu, if GameManager lives in
-        // a permanently-loaded scene.
+        // Level initialisation (Planning Phase, the countdown, PlayGameStart audio, etc.)
+        // happens only when LevelSpawnerActivator activates a level scene, not here — so
+        // nothing fires while the player is still on the Main Menu.
     }
 
     private void LateUpdate()
@@ -175,9 +167,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // ─────────────────────────────────────────
-    //  LEVEL INITIALISATION
-    // ─────────────────────────────────────────
+    // LEVEL INITIALISATION
 
     /// <summary>
     /// Re-initialises the current level. Called by LevelSpawnerActivator after it
@@ -335,9 +325,7 @@ public class GameManager : MonoBehaviour
 
     private static bool UsesPlanningPhase(int level) => level == 1 || level == 2;
 
-    // ─────────────────────────────────────────
-    //  CAR SPAWNER CONTROL
-    // ─────────────────────────────────────────
+    // CAR SPAWNER CONTROL
 
     /// <summary>
     /// Waits one frame (so all Awake/Start on spawners have run), then
@@ -373,9 +361,7 @@ public class GameManager : MonoBehaviour
             carSpawners.Add(spawner);
     }
 
-    // ─────────────────────────────────────────
-    //  DEVELOPER CHEATS
-    // ─────────────────────────────────────────
+    // DEVELOPER CHEATS
 
     public void ActivateDevMode()
     {
@@ -404,9 +390,7 @@ public class GameManager : MonoBehaviour
         OnDayChanged?.Invoke(_daysPassed, totalDays);
     }
 
-    // ─────────────────────────────────────────
-    //  TILE / ROAD MANAGER REGISTRY
-    // ─────────────────────────────────────────
+    // TILE / ROAD MANAGER REGISTRY
 
     public void RegisterTile(RoadTile tile)
     {
@@ -426,16 +410,12 @@ public class GameManager : MonoBehaviour
         if (_roadManager == rm) _roadManager = null;
     }
 
-    // ─────────────────────────────────────────
-    //  DAY TICK PAUSE
-    // ─────────────────────────────────────────
+    // DAY TICK PAUSE
 
     public void PauseDayTick() => _dayTickPaused = true;
     public void ResumeDayTick() => _dayTickPaused = false;
 
-    // ─────────────────────────────────────────
-    //  PLACEMENT
-    // ─────────────────────────────────────────
+    // PLACEMENT
 
     public PlacementResult TryPlaceDevice(
         RoadTile tile,
@@ -478,9 +458,7 @@ public class GameManager : MonoBehaviour
         return result;
     }
 
-    // ─────────────────────────────────────────
-    //  BUDGET / ECONOMY
-    // ─────────────────────────────────────────
+    // BUDGET / ECONOMY
 
     /// <summary>Deducts cost from capital. Returns false if insufficient funds.</summary>
     public bool SpendCapital(float cost)
@@ -528,9 +506,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // ─────────────────────────────────────────
-    //  DAY TICK
-    // ─────────────────────────────────────────
+    // DAY TICK
 
     private IEnumerator DayTickRoutine()
     {
@@ -552,10 +528,8 @@ public class GameManager : MonoBehaviour
                     ModifyHappiness(sectionDelta);
             }
 
-            // 2) Decay baseline accident rate toward zero.
-            //    Only once the player has placed at least one device — this
-            //    used to run unconditionally from day 1, decaying the
-            //    baseline even if the player did nothing at all.
+            // 2) Decay baseline accident rate toward zero, only once the player has placed
+            //    at least one device.
             if (_hasPlacedFirstDevice && baselineDecayPerDay > 0f && _baselineAccidentRate > 0)
             {
                 _baselineAccidentRate -= Mathf.CeilToInt(baselineDecayPerDay);
@@ -576,9 +550,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // ─────────────────────────────────────────
-    //  ACCIDENT SIMULATION
-    // ─────────────────────────────────────────
+    // ACCIDENT SIMULATION
 
     /// <summary>
     /// Every accidentIntervalSeconds, picks a random car inside the
@@ -605,9 +577,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // ─────────────────────────────────────────
-    //  WIN / LOSE
-    // ─────────────────────────────────────────
+    // WIN / LOSE
 
     private void CheckVictory()
     {
@@ -633,9 +603,7 @@ public class GameManager : MonoBehaviour
         OnGameOver?.Invoke();
     }
 
-    // ─────────────────────────────────────────
-    //  PAYLOAD FINALISATION
-    // ─────────────────────────────────────────
+    // PAYLOAD FINALISATION
 
     private void FinaliseAndSubmitPayload(bool won)
     {
@@ -682,9 +650,7 @@ public class GameManager : MonoBehaviour
         return totalPlaced > 0 ? (float)totalCorrect / totalPlaced * 100f : 0f;
     }
 
-    // ─────────────────────────────────────────
-    //  SCORE FORMULA
-    // ─────────────────────────────────────────
+    // SCORE FORMULA
 
     /// <summary>
     /// Safety Score (1–10 000) weighted:
@@ -703,9 +669,7 @@ public class GameManager : MonoBehaviour
         return score;
     }
 
-    // ─────────────────────────────────────────
-    //  HELPERS
-    // ─────────────────────────────────────────
+    // HELPERS
 
     private LevelConfig GetLevelConfig(int level)
     {
@@ -729,9 +693,7 @@ public class GameManager : MonoBehaviour
     }
 }
 
-// ─────────────────────────────────────────────────────────────────
-//  LAST LEVEL RESULT
-// ─────────────────────────────────────────────────────────────────
+// LAST LEVEL RESULT
 
 public static class LastLevelResult
 {
@@ -741,9 +703,7 @@ public static class LastLevelResult
     public static void Clear() => Payload = null;
 }
 
-// ─────────────────────────────────────────────────────────────────
-//  CUSTOM INSPECTOR — Developer Cheat Buttons
-// ─────────────────────────────────────────────────────────────────
+// CUSTOM INSPECTOR — Developer Cheat Buttons
 
 #if UNITY_EDITOR
 [CustomEditor(typeof(GameManager))]

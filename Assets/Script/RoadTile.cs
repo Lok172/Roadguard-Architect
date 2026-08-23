@@ -24,29 +24,21 @@ public enum TileCorner { None, NorthWest, NorthEast, SouthEast, SouthWest, Cente
 //  DEVICE DATA
 // ─────────────────────────────────────────────────────────────────
 
+// Holds the RM cost of each traffic device type. Accident-rate reduction and
+// placement happiness bonuses are configured on RoadManager instead, since
+// those values are applied city-wide per section rather than per device.
 public static class DeviceData
 {
-    public struct DeviceStats
+    private static readonly Dictionary<TrafficDeviceType, float> _costRM =
+        new Dictionary<TrafficDeviceType, float>
     {
-        public float costRM;
-        public int accidentReduction;
-        public float happinessDeltaGood;
-        public float happinessDeltaPoor;
-        public bool unsuitableInResidential;
-    }
-
-    private static readonly Dictionary<TrafficDeviceType, DeviceStats> _data =
-        new Dictionary<TrafficDeviceType, DeviceStats>
-    {
-        { TrafficDeviceType.StopSign,     new DeviceStats { costRM = 250f,  accidentReduction = 2, happinessDeltaGood = 5f,  happinessDeltaPoor = -3f,  unsuitableInResidential = false } },
-        { TrafficDeviceType.SpeedBump,    new DeviceStats { costRM = 350f,  accidentReduction = 3, happinessDeltaGood = 7f,  happinessDeltaPoor = -2f,  unsuitableInResidential = false } },
-        { TrafficDeviceType.TrafficLight, new DeviceStats { costRM = 2500f, accidentReduction = 5, happinessDeltaGood = 10f, happinessDeltaPoor = -15f, unsuitableInResidential = true  } }
+        { TrafficDeviceType.StopSign,     250f },
+        { TrafficDeviceType.SpeedBump,    350f },
+        { TrafficDeviceType.TrafficLight, 2500f }
     };
 
-    public static DeviceStats Get(TrafficDeviceType type)
-        => _data.TryGetValue(type, out DeviceStats s) ? s : default;
-
-    public static float GetCost(TrafficDeviceType type) => Get(type).costRM;
+    public static float GetCost(TrafficDeviceType type)
+        => _costRM.TryGetValue(type, out float cost) ? cost : 0f;
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -61,6 +53,11 @@ public class PlacedSlot
     public GameObject deviceObject;
 }
 
+// ─────────────────────────────────────────────────────────────────
+//  This script manages a single road tile: its device slots, the
+//  rules for which device placements count as correct for its
+//  segment type, and the resulting cost and happiness effects.
+// ─────────────────────────────────────────────────────────────────
 
 [RequireComponent(typeof(BoxCollider))]
 public class RoadTile : MonoBehaviour
@@ -221,9 +218,9 @@ public class RoadTile : MonoBehaviour
     public int GetCorrectCountLimit(TrafficDeviceType d) => (segmentType, d) switch
     {
         (TileSegmentType.Middle, TrafficDeviceType.SpeedBump) => 1,
-        (TileSegmentType.End, TrafficDeviceType.StopSign) => 4,   
+        (TileSegmentType.End, TrafficDeviceType.StopSign) => 4,
         (TileSegmentType.End, TrafficDeviceType.SpeedBump) => 1,
-        (TileSegmentType.End, TrafficDeviceType.TrafficLight) => 2,  
+        (TileSegmentType.End, TrafficDeviceType.TrafficLight) => 4,
         (TileSegmentType.Intersection, TrafficDeviceType.TrafficLight) => 4,
         _ => 0
     };
@@ -232,12 +229,6 @@ public class RoadTile : MonoBehaviour
     /// True if this slot is a CORRECT placement: right type, right corner,
     /// and within the count limit.
     ///
-    /// REQ 4 change: StopSign on End tiles is correct at ANY of the four
-    /// corners (not just the far-end pair), because all four corners are now
-    /// valid and the limit is 4.
-    ///
-    /// REQ 3 change: TrafficLight on End tiles accepts the two far-end corners
-    /// as before, but now up to 2 can be placed (one per far-end corner).
     /// </summary>
     public bool IsSlotCorrect(PlacedSlot slot)
     {
@@ -278,7 +269,7 @@ public class RoadTile : MonoBehaviour
             case TrafficDeviceType.TrafficLight:
                 if (segmentType == TileSegmentType.End)
                 {
-                    // REQ 3: up to 2, each must be at a far-end corner and unique.
+
                     if (!IsAtFarEnd(slot.corner)) return false;
                     // Ensure no earlier light is at the same corner.
                     foreach (var earlier in _slots)
@@ -292,16 +283,7 @@ public class RoadTile : MonoBehaviour
                 }
 
                 if (segmentType == TileSegmentType.Intersection)
-                {
-                    foreach (var earlier in _slots)
-                    {
-                        if (earlier == slot) break;
-                        if (earlier.deviceType == TrafficDeviceType.TrafficLight
-                            && earlier.corner == slot.corner)
-                            return false;
-                    }
                     return true;
-                }
                 return false;
         }
 
@@ -406,7 +388,7 @@ public class RoadTile : MonoBehaviour
         if (playerCapital < DeviceData.GetCost(device))
             return PlacementResult.InsufficientFunds;
 
-        // ── REQ 3 / REQ 4 capacity guard ────────────────────────────────────
+
         // If the correct-count limit is already reached for this device type,
         // treat any additional placement as AlreadyOccupied (plays "Failed"
         // sound) rather than PoorPlacement, because the tile is genuinely full
@@ -502,9 +484,9 @@ public class RoadTile : MonoBehaviour
 
     public void RemoveDevice() => RemoveAllDevices();
 
-    // \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+
     //  DEVICE ZONE ACTIVATION
-    // \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+
 
     /// <summary>
     /// Called after a device is successfully placed on this tile.

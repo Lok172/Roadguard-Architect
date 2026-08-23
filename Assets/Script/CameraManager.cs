@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -6,16 +6,14 @@ using System.Collections.Generic;
 using UnityEditor;
 #endif
 
+// This script is used to manage the scene camera, including per-scene
+// positioning, auto-pan and zoom-to-cursor behavior, drag panning, and
+// camera bounds derived from the working area.
+
 public class CameraManager : MonoBehaviour
 {
-    // ─────────────────────────────────────────────────────────────
-    //  Camera mode — only one can be active at a time
-    // ─────────────────────────────────────────────────────────────
     public enum CameraMode { None, AutoPan, Zoom }
 
-    // ─────────────────────────────────────────────────────────────
-    //  Per-scene configuration
-    // ─────────────────────────────────────────────────────────────
     [System.Serializable]
     public class SceneConfig
     {
@@ -27,11 +25,9 @@ public class CameraManager : MonoBehaviour
         public Vector3 startPosition = new Vector3(270f, 70f, 110f);
         public Vector3 startRotation = new Vector3(53f, -90f, 0f);
 
-        // ── Camera Mode ────────────────────────────────────────
         [Header("Camera Mode (Auto Pan or Zoom — pick one)")]
         public CameraMode cameraMode = CameraMode.AutoPan;
 
-        // ── Auto Pan ───────────────────────────────────────────
         [Header("Auto Pan Settings")]
         public float movementSpeed = 5f;
 
@@ -39,7 +35,6 @@ public class CameraManager : MonoBehaviour
                  "Leave at (0,0,0) to fall back to the working-area bounds.")]
         public Vector3 panEndPosition = Vector3.zero;
 
-        // ── Zoom ───────────────────────────────────────────────
         [Header("Zoom Settings")]
         public float zoomMultiplier = 50f;
         public float minZoom = 30f;
@@ -71,50 +66,36 @@ public class CameraManager : MonoBehaviour
                  "Set to 0 to always allow drag regardless of zoom level.")]
         public float dragZoomThreshold = 55f;
 
-        // ── Internal zoom state (not shown in inspector) ───────
         [HideInInspector] public float targetZoom;
         [HideInInspector] public float zoomVelocity;
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  Inspector fields
-    // ─────────────────────────────────────────────────────────────
     [Header("Scene List")]
     [SerializeField] private List<SceneConfig> scenes = new List<SceneConfig>();
 
     [Header("Camera Reference (auto-found if empty)")]
     [SerializeField] private Camera cameraDisplay;
 
-    // ─────────────────────────────────────────────────────────────
-    //  Private state
-    // ─────────────────────────────────────────────────────────────
     private Transform cameraTransform;
     private int panDirection = 1;
     private int activeSceneIndex = -1;
 
-    // ── Drag state ──────────────────────────────────────────────
     private bool _isDragging = false;
     private Vector3 _lastMousePos = Vector3.zero;
 
-    // ── Smooth zoom-toward-cursor state ─────────────────────────
     private Vector3 _preZoomPosition;
     private bool _hasStoredPreZoom = false;
     private Vector3 _targetXZPosition;
     private Vector3 _positionVelocity;
 
-    // ── Zoom transition coroutine handle ────────────────────────
     private Coroutine _zoomTransitionCoroutine;
     public bool IsLevelRevealTransitionRunning => _zoomTransitionCoroutine != null;
 
-    // ── Working-area bounds (tag: "WorkingArea") ────────────────
     private bool _hasWorkingArea;
     private float _waMinX, _waMaxX;
     private float _waMinZ, _waMaxZ;
     private float _waGroundY;
 
-    // ─────────────────────────────────────────────────────────────
-    //  Unity lifecycle
-    // ─────────────────────────────────────────────────────────────
     private void Start()
     {
         InitialiseCamera();
@@ -136,15 +117,6 @@ public class CameraManager : MonoBehaviour
         SceneConfig cfg = ActiveConfig;
         if (cfg == null) return;
 
-        // Re-attempt WorkingArea caching if it wasn't found yet. This can
-        // happen right after returning to this scene: PageManager can report
-        // the new currentLoadedUI a frame or two before the additively-loaded
-        // scene has finished registering the "WorkingArea"-tagged object.
-        // If we never retry, _hasWorkingArea stays false for the whole visit,
-        // AutoPan falls through to GetCameraBounds()'s unclamped fallback
-        // (float.MinValue/MaxValue), and the camera pans in one direction
-        // forever instead of bouncing back — which is the "drifts left until
-        // it sees outside the model" symptom.
         if (!_hasWorkingArea)
         {
             CacheWorkingArea();
@@ -163,9 +135,6 @@ public class CameraManager : MonoBehaviour
         }
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  Helper: is the camera currently zoomed in?
-    // ─────────────────────────────────────────────────────────────
     private bool IsZoomedIn(SceneConfig cfg)
     {
         if (cfg.cameraMode != CameraMode.Zoom) return false;
@@ -177,9 +146,6 @@ public class CameraManager : MonoBehaviour
         return currentZoom < cfg.maxZoom - 1f;
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  PageManager detection
-    // ─────────────────────────────────────────────────────────────
     private string lastDetectedUI = null;
 
     private void DetectAndApplyCurrentUI()
@@ -204,10 +170,6 @@ public class CameraManager : MonoBehaviour
         }
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  Public API
-    // ─────────────────────────────────────────────────────────────
-
     public void SwitchToScene(int index)
     {
         if (index < 0 || index >= scenes.Count)
@@ -230,10 +192,6 @@ public class CameraManager : MonoBehaviour
         SwitchToScene(idx);
     }
 
-    /// <summary>
-    /// Smoothly transitions the camera from initialZoom to maxZoom
-    /// over the given duration (in seconds).
-    /// </summary>
     public void TransitionToMaxZoom(float duration = 2f)
     {
         SceneConfig cfg = ActiveConfig;
@@ -276,8 +234,6 @@ public class CameraManager : MonoBehaviour
 
         while (elapsed < duration)
         {
-            // Planning Phase deliberately uses Time.timeScale = 0. The camera
-            // reveal is presentation-only, so it must use real/unscaled time.
             elapsed += Time.unscaledDeltaTime;
             float t = Mathf.Clamp01(elapsed / duration);
             float smooth = t * t * (3f - 2f * t);
@@ -307,9 +263,6 @@ public class CameraManager : MonoBehaviour
         _zoomTransitionCoroutine = null;
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  Private helpers
-    // ─────────────────────────────────────────────────────────────
     private SceneConfig ActiveConfig =>
         (scenes != null && activeSceneIndex >= 0 && activeSceneIndex < scenes.Count)
             ? scenes[activeSceneIndex]
@@ -331,9 +284,6 @@ public class CameraManager : MonoBehaviour
         cameraTransform = cameraDisplay.transform;
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  Working-area detection
-    // ─────────────────────────────────────────────────────────────
     private void CacheWorkingArea()
     {
         _hasWorkingArea = false;
@@ -404,15 +354,8 @@ public class CameraManager : MonoBehaviour
             if (cfg.autoTransitionOnStart)
                 _zoomTransitionCoroutine = StartCoroutine(ZoomTransitionRoutine(cfg, cfg.transitionDuration));
         }
-        else // AutoPan
+        else
         {
-            // FOV is a single shared property on this Camera component.
-            // AutoPan scenes don't manage zoom interactively, so without
-            // this, whatever FOV the previous scene (e.g. a Zoom-mode
-            // level) left behind carries straight through — making the
-            // pan look wider/narrower than intended even though position
-            // and rotation get reset correctly. Pin it to this scene's
-            // resting value every time it's applied.
             cfg.targetZoom = cfg.maxZoom;
             cfg.zoomVelocity = 0f;
             SetCameraZoomImmediate(cameraDisplay, cfg.maxZoom);
@@ -453,34 +396,18 @@ public class CameraManager : MonoBehaviour
         Debug.Log("[CameraManager] Left configured level → camera reset to resting state.");
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  Auto Pan
-    //
-    //  If panEndPosition is set (non-zero), the camera bounces
-    //  between startPosition.x and panEndPosition.x, clamped to
-    //  whichever is the smaller/larger of the two.
-    //  Otherwise falls back to the working-area X bounds.
-    // ─────────────────────────────────────────────────────────────
     private void HandlePan(SceneConfig cfg)
     {
         bool hasExplicitEnd = cfg.panEndPosition != Vector3.zero;
 
-        // Safety net: with no explicit pan range configured, we depend on
-        // the WorkingArea bounds to know where to turn around. If those
-        // bounds aren't cached yet, freeze in place for this frame rather
-        // than panning with no clamp at all (which is what was pushing the
-        // camera further and further left with no bounce-back).
         if (!hasExplicitEnd && !_hasWorkingArea) return;
 
-        // Unscaled: AutoPan is presentation, not simulation — it must keep
-        // moving even while Time.timeScale is 0 during a Planning Phase pause.
         float movement = cfg.movementSpeed * Time.unscaledDeltaTime * panDirection;
         Vector3 pos = cameraTransform.position;
         pos.x += movement;
         pos.y = cfg.startPosition.y;
         pos.z = cfg.startPosition.z;
 
-        // Determine the X range for this scene.
         float panMinX, panMaxX;
 
         if (hasExplicitEnd)
@@ -501,28 +428,11 @@ public class CameraManager : MonoBehaviour
         pos.x = Mathf.Clamp(pos.x, panMinX, panMaxX);
         cameraTransform.position = pos;
 
-        // Lock rotation every frame rather than relying solely on the
-        // one-time reset in ApplyScene(). If anything else touches this
-        // shared camera's rotation after we hand off (e.g. Level 2's own
-        // camera control still running for a frame), this pulls it back
-        // instead of letting it silently persist into the pan.
         cameraTransform.rotation = Quaternion.Euler(cfg.startRotation);
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  Zoom — zoom-ratio approach for accurate cursor tracking
-    //
-    //  Uses  newZoom / oldZoom  to compute the proportional camera
-    //  shift each scroll step.  This ensures the world-point under
-    //  the cursor stays visually pinned during zoom-in, even when
-    //  starting from max zoom.
-    //
-    //  On zoom-out the target position blends back toward
-    //  startPosition so the camera returns home naturally.
-    // ─────────────────────────────────────────────────────────────
     private void HandleZoom(SceneConfig cfg)
     {
-        // ── Block input during opening transition ────────────────
         if (_zoomTransitionCoroutine != null) return;
 
         float scroll = Input.GetAxis("Mouse ScrollWheel");
@@ -538,14 +448,12 @@ public class CameraManager : MonoBehaviour
 
             float zoomDelta = cfg.targetZoom - prevZoom;
 
-            // Clamped with no actual change — kill residual velocity
             if (Mathf.Approximately(zoomDelta, 0f))
             {
                 _positionVelocity = Vector3.zero;
             }
             else
             {
-                // ── Store pre-zoom position on first zoom-in ─────────
                 if (!_hasStoredPreZoom && zoomDelta < 0f)
                 {
                     _preZoomPosition = cameraTransform.position;
@@ -554,7 +462,6 @@ public class CameraManager : MonoBehaviour
                     _hasStoredPreZoom = true;
                 }
 
-                // ── ZOOM IN → shift target toward cursor ─────────────
                 if (zoomDelta < 0f)
                 {
                     Ray ray = cameraDisplay.ScreenPointToRay(Input.mousePosition);
@@ -565,30 +472,22 @@ public class CameraManager : MonoBehaviour
                     {
                         Vector3 worldCursor = ray.GetPoint(enter);
 
-                        // Zoom-ratio: the fraction of the view that "collapsed"
-                        // toward the cursor this step.  Gives a proportionally
-                        // correct shift regardless of current zoom level.
-                        float zoomRatio = cfg.targetZoom / prevZoom;  // < 1
+                        float zoomRatio = cfg.targetZoom / prevZoom;
                         Vector3 dir = worldCursor - _targetXZPosition;
                         dir.y = 0f;
                         _targetXZPosition += dir * (1f - zoomRatio);
                     }
                 }
-                // ── ZOOM OUT → blend target back toward start ────────
                 else if (_hasStoredPreZoom)
                 {
-                    // How close we are to fully zoomed out (0 = minZoom, 1 = maxZoom)
                     float normalised = Mathf.InverseLerp(cfg.minZoom, cfg.maxZoom, cfg.targetZoom);
 
-                    // Blend strength ramps up as we approach maxZoom so the
-                    // camera arrives at startPosition right when fully zoomed out
                     float blendStrength = normalised * 0.25f;
 
                     _targetXZPosition = Vector3.Lerp(
                         _targetXZPosition, cfg.startPosition, blendStrength);
                 }
 
-                // ── Clamp target to working-area bounds ──────────────
                 if (_hasWorkingArea)
                 {
                     _targetXZPosition.x = Mathf.Clamp(_targetXZPosition.x, _waMinX, _waMaxX);
@@ -597,17 +496,14 @@ public class CameraManager : MonoBehaviour
             }
         }
 
-        // ── Smoothly animate FOV / ortho toward target ───────────
         SetCameraZoomSmooth(cameraDisplay, cfg.targetZoom, cfg);
 
         float currentZoom = cameraDisplay.orthographic
             ? cameraDisplay.orthographicSize
             : cameraDisplay.fieldOfView;
 
-        // ── Animate position toward _targetXZPosition ────────────
         if (_hasStoredPreZoom)
         {
-            // Lock Y to startPosition — zoom never intentionally changes height
             Vector3 target = new Vector3(
                 _targetXZPosition.x,
                 cfg.startPosition.y,
@@ -621,7 +517,6 @@ public class CameraManager : MonoBehaviour
             cameraTransform.position = smoothed;
         }
 
-        // ── Fully zoomed out → snap exactly to start, clear state
         bool targetIsMax = Mathf.Abs(cfg.targetZoom - cfg.maxZoom) < 0.1f;
         bool actualIsMax = Mathf.Abs(currentZoom - cfg.maxZoom) < 0.5f;
 
@@ -636,10 +531,6 @@ public class CameraManager : MonoBehaviour
 
     private void SetCameraZoomSmooth(Camera cam, float targetValue, SceneConfig cfg)
     {
-        // Unscaled: player-driven zoom must keep responding even while
-        // Time.timeScale is 0 during a Planning Phase pause. SmoothDamp's
-        // short-form overload implicitly uses (scaled) Time.deltaTime, so we
-        // pass unscaledDeltaTime explicitly via the full overload.
         if (cam.orthographic)
         {
             cam.orthographicSize = Mathf.SmoothDamp(
@@ -664,9 +555,6 @@ public class CameraManager : MonoBehaviour
             cam.fieldOfView = value;
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  Frustum-inset camera bounds
-    // ─────────────────────────────────────────────────────────────
     private (float minX, float maxX, float minZ, float maxZ) GetCameraBounds(SceneConfig cfg)
     {
         if (!_hasWorkingArea)
@@ -730,12 +618,8 @@ public class CameraManager : MonoBehaviour
         return (clampMinX, clampMaxX, clampMinZ, clampMaxZ);
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  Mouse Drag Pan
-    // ─────────────────────────────────────────────────────────────
     private void HandleMouseDrag(SceneConfig cfg)
     {
-        // ── Block input during opening transition ────────────────
         if (_zoomTransitionCoroutine != null)
         {
             _isDragging = false;
@@ -813,9 +697,6 @@ public class CameraManager : MonoBehaviour
     }
 }
 
-// ─────────────────────────────────────────────────────────────────
-//  Custom Inspector
-// ─────────────────────────────────────────────────────────────────
 #if UNITY_EDITOR
 [CustomEditor(typeof(CameraManager))]
 public class CameraManagerEditor : Editor

@@ -22,7 +22,9 @@ public class PlacementProxy : MonoBehaviour, IPointerDownHandler
     }
 }
 
-
+// This script manages device placement in the City scene — dragging a device from
+// its click target onto a road tile, previewing valid/invalid corners via the tile
+// overlay and ghost tint, and confirming or cancelling the placement.
 
 public class PlacementManager : MonoBehaviour
 {
@@ -111,7 +113,7 @@ public class PlacementManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────
-    //  DEVICE BUTTON AFFORDABILITY  (Issue 4 fix)
+    //  DEVICE BUTTON AFFORDABILITY 
     // ─────────────────────────────────────────
 
     private IEnumerator SubscribeToCapitalChanges()
@@ -358,12 +360,7 @@ public class PlacementManager : MonoBehaviour
                 if (tile.segmentType == TileSegmentType.End)
                     return tile.IsAtFarEnd(corner);
                 if (tile.segmentType == TileSegmentType.Intersection)
-                {
-                    foreach (var s in tile.Slots)
-                        if (s.deviceType == TrafficDeviceType.TrafficLight && s.corner == corner)
-                            return false;
                     return true;
-                }
                 return false;
         }
         return false;
@@ -377,7 +374,7 @@ public class PlacementManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────
-    //  OVERLAY 
+    //  OVERLAY  
     // ─────────────────────────────────────────
 
     /// <summary>
@@ -402,6 +399,7 @@ public class PlacementManager : MonoBehaviour
             TileCorner corner = _hoveredTile.GetNearestCorner(hitPoint, _selectedDevice);
             bool onOccupied = _hoveredTile.IsCornerOccupied(corner);
 
+
             _hoveredTile.Overlay.SetDragState(_selectedDevice, onOccupied, corner);
         }
     }
@@ -411,6 +409,7 @@ public class PlacementManager : MonoBehaviour
         RoadTile[] all = FindObjectsByType<RoadTile>(FindObjectsSortMode.None);
         foreach (RoadTile t in all)
             if (t.Overlay != null)
+                // Pass None so TileOverlay shows
                 // its general suitability state (HasAtLeastOneValidCorner).
                 t.Overlay.SetDragState(device, cursorOnOccupiedCorner: false, TileCorner.None);
     }

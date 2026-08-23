@@ -3,6 +3,11 @@ using UnityEngine.SceneManagement;
 using System.Collections;
 using System.Collections.Generic;
 
+// This script manages UI scene switching. Each UI scene group loads its own set of
+// additional scenes on top of the master permanent scenes, unloading whatever the
+// previous group needed that the new group doesn't, and notifies LevelSpawnerActivator
+// once the switch completes.
+
 [System.Serializable]
 public class UISceneGroup
 {
@@ -105,7 +110,7 @@ public class PageManager : MonoBehaviour
     /// <summary>
     /// Like ChangeUI but forces a full unload + reload even if the target
     /// scene is already the current one. Used by PauseMenuController.RestartLevel
-    /// so the level scene and all its additional scenes (City, LvUI & Manager �)
+    /// so the level scene and all its additional scenes (City, LvUI & Manager)
     /// are torn down and rebuilt from scratch.
     /// </summary>
     public void ForceChangeUI(string targetSceneName)

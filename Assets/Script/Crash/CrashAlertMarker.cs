@@ -1,19 +1,10 @@
 using UnityEngine;
 
-// CrashAlertMarker sits at the location of a car accident and displays the bubble + exclamation
-// icon combo so the crash location is visible on the map. It removes itself after
-// displayDuration by shrinking to zero scale (matching the same "shrink then disappear" despawn
-// style used for the crashed car).
-//
-// CHANGES:
-//   - Removed RegisterMarker/UnregisterMarker calls to CrashAlertIndicatorManager. The manager
-//     no longer tracks active markers (the off-screen edge indicator feature it used that
-//     tracking for has been removed), so this marker is now fully self-contained — it just
-//     displays itself and destroys itself, with no manager bookkeeping involved.
-//   - bubbleRenderer + ApplyAppearance() unchanged: still called once by
-//     CrashAlertIndicatorManager right after this marker is instantiated. "Icon" still means
-//     bubble + exclamation together, so both renderers get their sprite/colour/size from the
-//     manager.
+// Sits at the location of a car accident and displays the bubble + exclamation
+// icon combo so the crash location is visible on the map. Appearance is applied
+// once by CrashAlertIndicatorManager right after the marker is instantiated.
+// The marker removes itself after displayDuration by shrinking to zero scale,
+// matching the despawn style used for the crashed car.
 public class CrashAlertMarker : MonoBehaviour
 {
     [Header("Icon References")]
@@ -67,7 +58,7 @@ public class CrashAlertMarker : MonoBehaviour
 
     /// <summary>
     /// Applies the shared icon look (from CrashAlertIndicatorManager) to this marker's bubble
-    /// and exclamation sprites. Called once, right after this marker is instantiated — before
+    /// and exclamation sprites. Called once, right after this marker is instantiated â€” before
     /// Start() runs, so both renderers are correct on the very first visible frame.
     /// </summary>
     public void ApplyAppearance(Sprite exclamationIcon, Color exclamationColor, float exclamationSize,

@@ -3,16 +3,14 @@ using UnityEngine;
 using UnityEngine.Rendering;
 
 // ─────────────────────────────────────────────────────────────────
-//  TileOverlay 
+//  TILE OVERLAY
 //
-//  
-//    • Suitable  = free slot AND the target corner is correct for
-//                  this device on this tile type.
-//    • NotSuitable = tile type / segment type doesn't accept the
-//                    device at all (GetCorrectCountLimit == 0).
-//    • Occupied  = that specific corner is already taken, or the
-//                  correct-count limit is already reached.
-//
+//  Drives the coloured, pulsing slab shown above a RoadTile to
+//  indicate placement state while a device is being dragged.
+//  Suitable means the slot is free and the target corner is correct
+//  for the device on this tile type; NotSuitable means the tile or
+//  segment type doesn't accept the device at all; Occupied means the
+//  corner is already taken or the correct-count limit is reached.
 // ─────────────────────────────────────────────────────────────────
 
 public enum OverlayState
@@ -45,7 +43,6 @@ public class TileOverlay : MonoBehaviour
     private bool _cursorOnOccupiedCorner = false;
     private TrafficDeviceType _dragDevice = TrafficDeviceType.None;
 
-    // REQ 2: we now track which corner the cursor is over.
     private TileCorner _hoveredCorner = TileCorner.None;
 
     // ── Runtime ───────────────────────────────────────────────────
@@ -111,9 +108,6 @@ public class TileOverlay : MonoBehaviour
 
     /// <summary>
     /// Called every frame while the user is dragging a device.
-    /// REQ 2: now also accepts the corner the cursor is currently
-    /// hovering so the colour reflects whether that specific corner
-    /// is correct for the chosen device.
     /// </summary>
     public void SetDragState(TrafficDeviceType device,
                              bool cursorOnOccupiedCorner,
@@ -143,7 +137,7 @@ public class TileOverlay : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────────────────────
-    //  STATE EVALUATION  (REQ 2 — corner-aware)
+    //  STATE EVALUATION  
     // ─────────────────────────────────────────────────────────────
 
     private void EvaluateAndApply()
@@ -170,7 +164,7 @@ public class TileOverlay : MonoBehaviour
     }
 
     /// <summary>
-    /// REQ 2 core: evaluates the overlay colour using the same rules
+    /// Evaluates the overlay colour using the same rules
     /// that IsSlotCorrect and CanPlace use, so the colour always matches
     /// what the placement system will actually do.
     /// </summary>
@@ -211,8 +205,8 @@ public class TileOverlay : MonoBehaviour
         if (_cursorOnOccupiedCorner)
             return OverlayState.Occupied;
 
-        // 7. REQ 2: check whether the hovered corner would be CORRECT.
-        //    We mirror IsSlotCorrect's per-device corner rules here.
+        // 7. Check whether the hovered corner would be CORRECT.
+        //    Here mirror IsSlotCorrect's per-device corner rules here.
         if (_hoveredCorner != TileCorner.None && _hoveredCorner != TileCorner.Center)
         {
             bool cornerWouldBeCorrect = IsCornerCorrectForDevice(_dragDevice, _hoveredCorner);
@@ -228,7 +222,7 @@ public class TileOverlay : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────────────────────
-    //  CORNER CORRECTNESS HELPERS  (REQ 2)
+    //  CORNER CORRECTNESS HELPERS  
     // ─────────────────────────────────────────────────────────────
 
     /// <summary>
@@ -249,7 +243,6 @@ public class TileOverlay : MonoBehaviour
             case TrafficDeviceType.TrafficLight:
                 if (_tile.segmentType == TileSegmentType.End)
                 {
-                    // REQ 3: up to 2 lights, each at a unique far-end corner.
                     if (!_tile.IsAtFarEnd(corner)) return false;
                     // Check whether this far-end corner is already taken by a light.
                     foreach (var s in _tile.Slots)

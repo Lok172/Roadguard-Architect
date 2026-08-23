@@ -6,8 +6,9 @@ using UnityEngine.Serialization;
 using UnityEngine.Events;
 
 /// <summary>
-/// MVVM view binding for the shared phase panel. Attach this component to an
-/// active Canvas child (not the panel itself), then assign the panel and text.
+/// This script manages the shared phase panel view — planning and execution phase
+/// visibility, the simulate button and its icon/label state, the pre-simulation
+/// countdown, and the Victory/Lost result display with its slide-in animation.
 /// </summary>
 public class PhaseManager : MonoBehaviour
 {
@@ -68,10 +69,7 @@ public class PhaseManager : MonoBehaviour
 
     private IEnumerator Start()
     {
-        // Wiring the button here � not in Awake() � guarantees every other
-        // script's Awake() (including PauseMenuController's, which may add a
-        // RestartLevel listener to this same button by mistake) has already
-        // run, so RemoveAllListeners() here is the one that wins.
+      
         if (simulateButton != null)
         {
             simulateButton.onClick.RemoveAllListeners();
@@ -143,9 +141,6 @@ public class PhaseManager : MonoBehaviour
         if (simulateButton != null)
         {
             simulateButton.gameObject.SetActive(true);
-            // Disabled until OnPlanningPhaseReady fires (camera reveal done) —
-            // the panel/instructions now show before that, so clicking early
-            // would otherwise silently no-op inside GameManager.ConfirmLayout.
             simulateButton.interactable = false;
         }
 
@@ -175,11 +170,9 @@ public class PhaseManager : MonoBehaviour
         {
             confirmButtonLabel.text = "Simulating";
 
-            // Shrink the label's right margin to -66 so it re-centres against
-            // the icon once the button locks into its post-click state.
             RectTransform labelRect = confirmButtonLabel.rectTransform;
             Vector2 offsetMax = labelRect.offsetMax;
-            offsetMax.x = 66f; // Inspector "Right" = -offsetMax.x, so this reads as Right = -66
+            offsetMax.x = 66f; 
             labelRect.offsetMax = offsetMax;
         }
 

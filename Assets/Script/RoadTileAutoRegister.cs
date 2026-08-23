@@ -2,10 +2,9 @@ using UnityEngine;
 using System.Collections;
 
 // ─────────────────────────────────────────────────────────────────
-//  RoadTileAutoRegister
-//  Attach to: the same GameObject as RoadTile (auto-added by
-//  RoadTileGenerator — add it to the generator's tile setup).
-//
+//  This script manages the registration of a RoadTile with the
+//  GameManager, registering it once the manager becomes available
+//  and unregistering it when the tile is destroyed.
 // ─────────────────────────────────────────────────────────────────
 
 [RequireComponent(typeof(RoadTile))]

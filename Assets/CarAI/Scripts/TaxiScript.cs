@@ -2,6 +2,11 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// Computes the shortest checkpoint route from startCheckpoint to endCheckpoint
+// through a connected checkpoint network, branching a coroutine at every fork
+// and keeping the shortest completed route found. Requires taxi mode,
+// isCarControlledByAI, and CheckPointSearch to be enabled on this object's
+// CarAIController for the resulting route to be followed.
 public class TaxiScript : MonoBehaviour
 {
     public Transform startCheckpoint;

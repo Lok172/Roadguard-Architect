@@ -1,17 +1,15 @@
 using System.Collections;
 using UnityEngine;
 
-// Scene navigation to the level-results screen is triggered here in response to GameManager's victory and game-over events.
-
+// This script is used to navigate to the level-results screen once PhaseManager's result
+// sequence (the Victory/Lost text slide-in and hold) has finished playing.
 public class LevelResultNavigator : MonoBehaviour
 {
     [SceneName] public string levelResultSceneName = "LevelResult";
 
-    // Was tracking GameManager and listening to OnVictory/OnGameOver directly, which
-    // fired the scene change the instant the level ended — before the player ever saw
-    // the Victory/Lost text. Now tracks PhaseManager instead and waits for
-    // OnResultSequenceComplete, which only fires after PhaseManager's slide-in
-    // animation has played and held on screen (see PhaseManager.ShowResultText).
+    // Tracks the current PhaseManager and waits for OnResultSequenceComplete, which fires
+    // once its slide-in animation has played and held on screen (see
+    // PhaseManager.ShowResultText).
     private PhaseManager _subscribedPhaseManager;
 
     private void OnEnable()

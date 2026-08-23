@@ -6,9 +6,9 @@ using UnityEditor;
 #endif
 
 // ─────────────────────────────────────────────────────────────────
-//  RoadTileGenerator
-//  Configure in the Inspector, then click "Generate Tiles".
-//  All tiles are parented under this GameObject.
+//  This script manages procedural generation of a run of RoadTiles
+//  along a given direction and spacing, parenting each generated
+//  tile under this GameObject.
 // ─────────────────────────────────────────────────────────────────
 
 public class RoadTileGenerator : MonoBehaviour

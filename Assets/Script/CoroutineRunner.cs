@@ -1,14 +1,8 @@
 using System.Collections;
 using UnityEngine;
 
-// ─────────────────────────────────────────────────────────────────
-//  COROUTINE RUNNER
-//
-//  A persistent MonoBehaviour that lets static classes (like
-//  LevelProgress) fire coroutines without being a MonoBehaviour
-//  themselves.
-//
-// ─────────────────────────────────────────────────────────────────
+// This script is used to run coroutines on behalf of non-MonoBehaviour classes,
+// via a single persistent instance that is kept alive across scenes.
 
 public class CoroutineRunner : MonoBehaviour
 {

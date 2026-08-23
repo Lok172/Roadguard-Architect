@@ -1,8 +1,8 @@
 using UnityEngine;
 
-// CarDespawnerScript removes a CarAIController from the scene when it enters this object's
-// trigger collider. Visibility of the despawner's material is controlled externally by
-// LevelSpawnerActivator, not by this script.
+// This script is used to remove a car from the scene once it enters this
+// object's trigger collider.
+
 [RequireComponent(typeof(Collider))]
 public class CarDespawnerScript : MonoBehaviour
 {

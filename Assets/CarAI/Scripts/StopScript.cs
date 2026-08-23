@@ -2,6 +2,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// Holds a car at speed 0 while it remains in this trigger and stop is true,
+// and releases it back to its speed limit when stop is false or the car
+// exits. priority counts cars present in the trigger and resets every
+// FixedUpdate, used by IntersectionScript to detect when a stop has cleared.
 public class StopScript : MonoBehaviour
 {
     [Tooltip("If true the car that touches the trigger will stop.")]

@@ -3798,15 +3798,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoadManager
   complexityMultiplier: 1
-  dailyAccidentGain: 1
-  perCorrectDeviceReduction: 1
   happinessPerAccidentRate: 1
   reductionStopSign: 0.5
-  reductionSpeedBump: 1.5
-  reductionTrafficLight: 7.5
+  reductionSpeedBump: 1
+  reductionTrafficLight: 6
   placementHappinessStopSign: 1
   placementHappinessSpeedBump: 3
-  placementHappinessTrafficLight: 15
+  placementHappinessTrafficLight: 12
   _sections: []
 --- !u!1 &1287189284
 GameObject:
@@ -6377,6 +6375,7 @@ MonoBehaviour:
   - {fileID: 377735043}
   - {fileID: 1996194663}
   boostedRecklessness: 50
+  correctDevicesToZeroRecklessness: 2
   smokePrefab: {fileID: 2900496037033356032, guid: ffb552a29a2a90f4ea5388f288497631, type: 3}
   fadeDelay: 3
   fadeDuration: 1.5

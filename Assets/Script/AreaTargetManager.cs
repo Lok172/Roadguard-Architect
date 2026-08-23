@@ -2,6 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// This script is used to manage accident-target selection within designated
+// areas, including recklessness boosting and its gradual reduction as correct
+// devices are placed.
 
 public class AreaTargetManager : MonoBehaviour
 {
@@ -33,25 +36,11 @@ public class AreaTargetManager : MonoBehaviour
     [Tooltip("StopScript whose 'stop' flag will be set true when the accident triggers.")]
     public StopScript accidentStopper;
 
-    // ── Runtime (recklessness mitigation) ───────────────────────────────────
     private int _baseBoostedRecklessness;
     private int _correctDeviceCount = 0;
 
-    /// <summary>The car most recently picked by PickTargetCar, if still alive. Its
-    /// recklessnessThreshold is live-updated as correct devices are placed, not
-    /// just future picks.</summary>
     private CarAIController _currentTarget;
 
-    // ─── Recklessness Mitigation ─────────────────────────────────────────────
-
-    /// <summary>
-    /// Called by RoadTile every time a device is placed CORRECTLY, anywhere in
-    /// the city. Linearly reduces boostedRecklessness toward 0 as correct
-    /// placements accumulate — reaching 0 once correctDevicesToZeroRecklessness
-    /// correct devices are placed (and staying at 0 for any further ones).
-    /// Also live-updates the currently active accident target, if any, so an
-    /// already-boosted car benefits immediately rather than only future picks.
-    /// </summary>
     public void NotifyCorrectDevicePlaced()
     {
         _correctDeviceCount++;
@@ -70,13 +59,6 @@ public class AreaTargetManager : MonoBehaviour
         }
     }
 
-    // ─── Public API ───────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Randomly picks one car that is currently inside any of the target areas,
-    /// boosts its recklessness, and wires it up for collision-based accident behaviour.
-    /// Safe to call multiple times – each call targets a freshly chosen car.
-    /// </summary>
     [ContextMenu("Pick Target Car")]
     public void PickTargetCar()
     {
@@ -93,11 +75,9 @@ public class AreaTargetManager : MonoBehaviour
 
         _currentTarget = chosen;
 
-        // 1 & 2 – Set recklessness (reflects any correct-device reduction already earned).
         chosen.recklessnessThreshold = boostedRecklessness;
         Debug.Log($"[AreaTargetManager] recklessnessThreshold → {boostedRecklessness}");
 
-        // 3, 4, 5 – Attach or refresh the collision handler
         CarCollisionHandler handler = chosen.GetComponent<CarCollisionHandler>();
         if (handler == null)
             handler = chosen.gameObject.AddComponent<CarCollisionHandler>();
@@ -105,7 +85,6 @@ public class AreaTargetManager : MonoBehaviour
         handler.Configure(smokePrefab, fadeDelay, fadeDuration, accidentStopper);
     }
 
-    // ─── Helpers ─────────────────────────────────────────────────────────────
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -130,7 +109,6 @@ public class AreaTargetManager : MonoBehaviour
     {
         List<CarAIController> found = new List<CarAIController>();
 
-        // Use OverlapBox for each area collider
         foreach (Collider area in targetAreas)
         {
             if (area == null) continue;
@@ -142,7 +120,6 @@ public class AreaTargetManager : MonoBehaviour
                 continue;
             }
 
-            // World-space centre and half-extents, accounting for scale
             Vector3 worldCenter = box.transform.TransformPoint(box.center);
             Vector3 halfExtents = Vector3.Scale(box.size * 0.5f, box.transform.lossyScale);
             Quaternion orientation = box.transform.rotation;
@@ -158,8 +135,6 @@ public class AreaTargetManager : MonoBehaviour
 
         return found;
     }
-
-    // ─── Editor visualisation ────────────────────────────────────────────────
 
 #if UNITY_EDITOR
     private void OnDrawGizmosSelected()

@@ -2,6 +2,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// Cycles a set of stops through green in turn, holding each green for up to
+// wait seconds (or less, once its stop is clear, when WaitIfNoOtherCar is
+// false), then giving cars time to clear the intersection before returning
+// the stop to red and advancing to the next one.
 public class IntersectionScript : MonoBehaviour
 {
     public List<GameObject> stops = new List<GameObject>();
@@ -71,11 +75,9 @@ public class IntersectionScript : MonoBehaviour
         }
         else
         {
-            // Bail early if THIS stop has no car waiting. Checking whether
-            // OTHER stops have cars (the old condition) is backwards it
-            // made an empty active stop hold its full green duration simply
-            // because traffic existed elsewhere, delaying whichever stop
-            // actually had a car by a full cycle per empty stop in between.
+            // Bail early once this stop has no car waiting, rather than
+            // holding the full green duration while other stops still have
+            // traffic.
             float elapsed = 0f;
             while (elapsed < wait)
             {
@@ -87,18 +89,16 @@ public class IntersectionScript : MonoBehaviour
             }
         }
 
-        // Wait until the car that was let through has fully cleared the stop.
-        // Deadlock guard: if priority is still stuck above 0 after 2 seconds
-        // (e.g. a car idling right at the trigger edge, or two cars jammed
-        // together), force it to 0 instead of blocking this stop — and the
-        // whole intersection cycle behind it — forever.
+        // Deadlock guard: if priority is still above 0 after 1 seconds, force
+        // it to 0 instead of blocking this stop, and the whole intersection
+        // cycle behind it, indefinitely.
         float clearElapsed = 0f;
         while (scripts[index].priority > 0)
         {
             yield return new WaitForSeconds(0.1f);
             clearElapsed += 0.1f;
 
-            if (clearElapsed >= 2f)
+            if (clearElapsed >= 1f)
             {
                 scripts[index].priority = 0;
                 break;

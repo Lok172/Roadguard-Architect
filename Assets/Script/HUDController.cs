@@ -3,25 +3,14 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-// ─────────────────────────────────────────────────────────────────
-//  HUD CONTROLLER 
-//
-//  Manages all HUD elements based on GameManager events.
-//
-//  Happiness bar colour:
-//    >= warningThreshold  → normalColour  (default green)
-//    <  warningThreshold  → warningColour (default orange)
-//
-//  Calendar starts from TODAY's real system date.
-// ─────────────────────────────────────────────────────────────────
-
+// This script is used to manage the HUD elements — Capital, Happiness, Accident Rate, and the
+// calendar — based on GameManager events. The happiness bar shows normalColour at or above
+// warningThreshold and warningColour below it. The calendar starts from today's real system date.
 public class HUDController : MonoBehaviour
 {
-    // ── Accident Rate 
     [Header("Accident Rate")]
     [SerializeField] private TextMeshProUGUI accidentText;
 
-    // ── Happiness ──────────────────────────────────────────────────
     [Header("Happiness")]
     [Tooltip("The Image component used as the fill bar (Image Type → Filled).")]
     [SerializeField] private Image happinessBar;
@@ -40,21 +29,15 @@ public class HUDController : MonoBehaviour
     [Range(0f, 100f)]
     public float warningThreshold = 50f;
 
-    // ── Calendar ───────────────────────────────────────────────────
     [Header("Calendar")]
     [SerializeField] private TextMeshProUGUI dateText;      // "28/5/2026"
     [SerializeField] private TextMeshProUGUI dayText;       // "Day 58/90"
 
-    // ── Capital ────────────────────────────────────────────────────
     [Header("Capital")]
     [SerializeField] private TextMeshProUGUI capitalText;   // "RM1000"
 
     // Captured once in Awake — always "today" when the game launches.
     private System.DateTime _calendarStart;
-
-    // ─────────────────────────────────────────
-    //  LIFECYCLE
-    // ─────────────────────────────────────────
 
     private void Awake()
     {
@@ -70,10 +53,6 @@ public class HUDController : MonoBehaviour
     {
         UnsubscribeFromGameManager();
     }
-
-    // ─────────────────────────────────────────
-    //  SUBSCRIBE / UNSUBSCRIBE
-    // ─────────────────────────────────────────
 
     private void SubscribeToGameManager()
     {
@@ -105,18 +84,12 @@ public class HUDController : MonoBehaviour
         GameManager.Instance.OnDayChanged.RemoveListener(HandleDay);
     }
 
-    // ─────────────────────────────────────────
-    //  EVENT HANDLERS
-    // ─────────────────────────────────────────
-
-    // "RM1000"
     private void HandleCapital(float capital)
     {
         if (capitalText != null)
             capitalText.text = $"RM{Mathf.RoundToInt(capital)}";
     }
 
-    // Progress bar fill + percentage label + bar colour
     private void HandleHappiness(float happiness)
     {
         if (happinessBar != null)
@@ -129,7 +102,6 @@ public class HUDController : MonoBehaviour
             happinessPct.text = $"{Mathf.RoundToInt(happiness)} %";
     }
 
-    // Accident rate counter
     private void HandleAccidentRate(int rate)
     {
         if (accidentText != null)
@@ -137,7 +109,6 @@ public class HUDController : MonoBehaviour
         Debug.Log($"Accident rate updated: {rate}") ;
     }
 
-    // "Day 58/90"  +  "28/5/2026" (today + days elapsed)
     private void HandleDay(int daysPassed, int totalDays)
     {
         if (dayText != null)

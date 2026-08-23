@@ -5,23 +5,24 @@ using UnityEngine;
 using UnityEngine.UI;
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  MUSIC MANAGER  (Singleton — place on a DontDestroyOnLoad GameObject)
+// This script manages background music and UI sound effects across the game (singleton,
+// placed on a DontDestroyOnLoad GameObject).
 //
-//  Responsibilities
-//  ────────────────
-//  • Plays the correct BGM for the currently loaded UI / scene (2-D mapping:
-//    one BGM entry → many scene names).
-//  • Auto-attaches a button-click sound to every ClickProxy / Button in the
-//    scenes listed under each ButtonSoundEntry.
-//  • Exposes SetMasterVolume / SetMusicVolume / SetSFXVolume so your Settings
-//    sliders (and the Pause Panel) can drive all three AudioSources at once.
-//  • Persists volume prefs via PlayerPrefs.
+// Responsibilities
+// ────────────────
+// • Plays the correct BGM for the currently loaded UI / scene (2-D mapping:
+//   one BGM entry → many scene names).
+// • Auto-attaches a button-click sound to every ClickProxy / Button in the
+//   scenes listed under each ButtonSoundEntry.
+// • Exposes SetMasterVolume / SetMusicVolume / SetSFXVolume, driving all three
+//   AudioSources at once for the Settings sliders and Pause Panel.
+// • Persists volume prefs via PlayerPrefs.
 //
-//  AudioSource layout (auto-created if missing)
-//  ─────────────────────────────────────────────
-//    _bgmSource   – looping background music   (affected by master + music)
-//    _sfxSource   – one-shot SFX               (affected by master + sfx)
-//    _sliderSource – plays while slider is held  (affected by master + sfx)
+// AudioSource layout (auto-created if missing)
+// ─────────────────────────────────────────────
+//   _bgmSource    – looping background music   (affected by master + music)
+//   _sfxSource    – one-shot SFX               (affected by master + sfx)
+//   _sliderSource – plays while slider is held  (affected by master + sfx)
 // ─────────────────────────────────────────────────────────────────────────────
 
 public class MusicManager : MonoBehaviour
@@ -142,12 +143,6 @@ public class MusicManager : MonoBehaviour
 
     private IEnumerator PollPageManager()
     {
-        // FIX (Issue 5): skip the very first frame so that GameManager.Start()
-        // and LevelAudioManager deferred coroutines have already run before we
-        // detect the initial scene and kick off a BGM crossfade.  Without this
-        // skip, PollPageManager fired on frame 0, started CrossFadeBGM, which
-        // reset _sfxSource state mid-init — causing the game-start SFX to play
-        // into an uninitialised AudioSource and then silently disappear.
         yield return null;
 
         while (true)
@@ -158,29 +153,17 @@ public class MusicManager : MonoBehaviour
                 string ui = pm.currentLoadedUI;
                 if (ui != _currentScene)
                 {
-                    // FIX (BGM/button-sound regression after LevelResult):
-                    // When returning from a level to the main menu, GameManager
-                    // destroys itself but MusicManager persists. _currentScene
-                    // was still set to the level scene name, so the equality
-                    // check above was true and OnSceneChanged never fired for
-                    // the main menu — leaving BGM2 playing and buttons silent.
-                    // Setting _currentScene BEFORE calling OnSceneChanged ensures
-                    // the correct scene name is used for clip lookup inside it.
-                    _currentScene = ui;
                     OnSceneChanged(ui);
                 }
             }
-            // Scene/Settings wiring must continue while Planning or Pause has
-            // set Time.timeScale to zero.
             yield return new WaitForSecondsRealtime(0.1f);
         }
     }
 
     /// <summary>
     /// Forces MusicManager to treat the current scene as "new" on the next poll,
-    /// re-attaching button sounds and re-evaluating BGM.
-    /// Call this from any script that does a scene transition that MusicManager
-    /// might otherwise miss (e.g. PageManager.ForceChangeUI).
+    /// re-attaching button sounds and re-evaluating BGM. Used for scene transitions
+    /// that MusicManager might otherwise miss (e.g. PageManager.ForceChangeUI).
     /// </summary>
     public void InvalidateSceneCache()
     {
@@ -211,7 +194,6 @@ public class MusicManager : MonoBehaviour
             }
         }
 
-        // Same clip already playing — do nothing
         if (target == _currentBGM) return;
 
         _currentBGM = target;
@@ -309,7 +291,6 @@ public class MusicManager : MonoBehaviour
 
         foreach (Slider slider in Object.FindObjectsByType<Slider>(FindObjectsSortMode.None))
         {
-            // Skip the volume control sliders themselves if desired — remove this guard to include them
             Slider captured = slider;
             slider.onValueChanged.RemoveListener(_ => PlaySliderSound());
             slider.onValueChanged.AddListener(_ => PlaySliderSound());
@@ -353,9 +334,6 @@ public class MusicManager : MonoBehaviour
 
         if (masterSlider != null)
         {
-            // Slider Direction is Right To Left, so its raw value
-            // is mirrored — convert both ways through ToSliderRaw/FromSliderRaw
-            // so rightmost = 100% and leftmost = 0%.
             masterSlider.value = ToSliderRaw(_masterVolume);
             masterSlider.onValueChanged.RemoveAllListeners();
             masterSlider.onValueChanged.AddListener(v => SetMasterVolume(FromSliderRaw(v)));
@@ -442,11 +420,6 @@ public class MusicManager : MonoBehaviour
     /// Mutes or unmutes the Slider AudioSource without changing its volume value.
     /// Called by LevelAudioManager.SetSFXPaused when the game is paused.
     ///
-    /// NOTE: _sfxSource is intentionally NOT muted here because it is also used
-    /// by HookPausePanel to play button-click sounds while the pause panel is
-    /// open. Muting it would silence every button inside the pause panel.
-    /// LevelAudioManager already mutes its own dedicated _loopSource (the car
-    /// driving ambient) independently, so level SFX loops are still silenced.
     /// </summary>
     public void SetSFXMuted(bool muted)
     {
@@ -455,11 +428,6 @@ public class MusicManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Wires every Button and volume Slider inside the panel so that:
-    ///   • Buttons play the button click sound.
-    ///   • Sliders named "master", "music", or "sfx" drive the matching volume
-    ///     AND update their paired percentage TextMeshPro label.
-    ///
     /// Uses Time.unscaledDeltaTime-safe AudioSource.PlayOneShot so sounds work
     /// even though Time.timeScale is 0 while the panel is visible.
     /// </summary>
@@ -489,7 +457,7 @@ public class MusicManager : MonoBehaviour
         {
             string n = slider.gameObject.name.ToLower();
 
-            // is mirrored — convert both ways through ToSliderRaw/FromSliderRaw
+            // Convert both ways through ToSliderRaw/FromSliderRaw
             // so rightmost = 100% and leftmost = 0%.
             if (n.Contains("master"))
             {
@@ -525,9 +493,9 @@ public class MusicManager : MonoBehaviour
 
     /// <summary>
     /// Attaches the current scene's button sound to every Button and
-    /// TMP_Dropdown inside <paramref name="panel"/>.  Call this from any
-    /// manager that activates a panel after the initial scene-load sweep
-    /// (e.g. AuthManager activating confirmationPanel or nameErrorPanel).
+    /// TMP_Dropdown inside <paramref name="panel"/>. Used by managers that
+    /// activate a panel after the initial scene-load sweep (e.g. AuthManager
+    /// activating confirmationPanel or nameErrorPanel).
     /// </summary>
     public void HookPanel(GameObject panel)
     {

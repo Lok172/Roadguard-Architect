@@ -2,20 +2,14 @@ using System.IO;
 using UnityEngine;
 
 // ─────────────────────────────────────────────────────────────────
-//  USER SESSION  
+//  USER SESSION
 //
-//  Design
-//  ──────
-//  • The game is single-player.  No password is required.
-//  • On first launch the player is asked for a display name.
-//  • The profile is stored in a JSON file at:
-//      Application.persistentDataPath/userprofile.json
-//  • When an internet connection is available AND the player does not
-//    yet have a server-assigned userId (userId == 0), UserSession
-//    calls the backend to register/fetch the userId and persists it
-//    back to the local file.
-//  • Subsequent launches load the saved profile immediately.
-//
+//  Manages the local player profile for the single-player game.
+//  The profile (display name and server-assigned userId) is stored
+//  as JSON at Application.persistentDataPath/userprofile.json and
+//  loaded on each launch. When online and no userId has been
+//  assigned yet, the backend registers the player and the returned
+//  id is persisted back to the local file.
 // ─────────────────────────────────────────────────────────────────
 
 public static class UserSession

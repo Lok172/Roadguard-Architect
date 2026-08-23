@@ -2,20 +2,11 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-// CarCollisionHandler detects a car flipping over or colliding, and on either triggers the
-// accident sequence: playing the accident sound, spawning smoke and a crash alert icon, halting
-// the car, notifying the assigned StopScript, and fading the car out before destroying it.
-//
-// CHANGES:
-//   - Two-car collisions used to spawn TWO CrashAlertMarker instances (one from each car's
-//     OnCollisionEnter), which made the off-screen edge indicator show two bubbles for a single
-//     crash. OnCollisionEnter now deterministically suppresses the marker on one of the two cars
-//     so only one marker is spawned per crash. Flip-over accidents (single car) are unaffected.
-//   - Crash alert spawning (prefab, world-position offset, appearance) moved out of this script
-//     and into CrashAlertIndicatorManager, since that config previously had to be duplicated
-//     identically on every car. This script now just finds the singleton
-//     (CrashAlertIndicatorManager.Instance — there's only ever one in a level) and asks it to
-//     spawn the alert at this car's position.
+// This script is used to detect a car flipping over or colliding, and to
+// trigger the accident sequence in response: playing the accident sound,
+// spawning smoke and a crash alert marker, halting the car, notifying the
+// assigned StopScript, and fading the car out before it is destroyed.
+
 [RequireComponent(typeof(CarAIController))]
 public class CarCollisionHandler : MonoBehaviour
 {
@@ -88,10 +79,6 @@ public class CarCollisionHandler : MonoBehaviour
     {
         bool suppressMarker = false;
 
-        // If the thing we hit is also a car with its own CarCollisionHandler, only ONE of the
-        // two cars should spawn the shared crash marker — otherwise a single two-car crash
-        // spawns two markers at two slightly different positions, which the edge-indicator
-        // system then shows as two separate off-screen bubbles.
         CarCollisionHandler other = collision.collider.GetComponentInParent<CarCollisionHandler>();
         if (other != null && other != this)
         {

@@ -2,7 +2,8 @@ using System;
 using System.Collections;
 using UnityEngine;
 
-// Backend connectivity is tested here, and the result is persisted.
+// This script is used to manage backend connectivity testing, with the
+// result of each test persisted for display in the settings UI.
 
 public enum ConnectionTestStatus { Disconnected, Connecting, Connected }
 
