@@ -1,0 +1,6 @@
+@RoadguardAPI_HostAddress = http://localhost:5230
+
+GET {{RoadguardAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

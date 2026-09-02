@@ -1,0 +1,14 @@
+C:\Users\kin\Documents\Uni Work\FYP\RoadguardAPI\publish\RoadguardAPI.exe
+C:\Users\kin\Documents\Uni Work\FYP\RoadguardAPI\publish\appsettings.Development.json
+C:\Users\kin\Documents\Uni Work\FYP\RoadguardAPI\publish\appsettings.json
+C:\Users\kin\Documents\Uni Work\FYP\RoadguardAPI\publish\RoadguardAPI.dll
+C:\Users\kin\Documents\Uni Work\FYP\RoadguardAPI\publish\RoadguardAPI.runtimeconfig.json
+C:\Users\kin\Documents\Uni Work\FYP\RoadguardAPI\publish\RoadguardAPI.pdb
+C:\Users\kin\Documents\Uni Work\FYP\RoadguardAPI\publish\Microsoft.AspNetCore.OpenApi.dll
+C:\Users\kin\Documents\Uni Work\FYP\RoadguardAPI\publish\Microsoft.EntityFrameworkCore.dll
+C:\Users\kin\Documents\Uni Work\FYP\RoadguardAPI\publish\Microsoft.EntityFrameworkCore.Abstractions.dll
+C:\Users\kin\Documents\Uni Work\FYP\RoadguardAPI\publish\Microsoft.EntityFrameworkCore.Relational.dll
+C:\Users\kin\Documents\Uni Work\FYP\RoadguardAPI\publish\Microsoft.OpenApi.dll
+C:\Users\kin\Documents\Uni Work\FYP\RoadguardAPI\publish\Npgsql.dll
+C:\Users\kin\Documents\Uni Work\FYP\RoadguardAPI\publish\Npgsql.EntityFrameworkCore.PostgreSQL.dll
+C:\Users\kin\Documents\Uni Work\FYP\RoadguardAPI\publish\RoadguardAPI.deps.json
