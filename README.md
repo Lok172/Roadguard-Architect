@@ -150,9 +150,7 @@ Add a PostgreSQL connection string to `appsettings.json` (or `appsettings.Develo
 For production, avoid committing credentials and instead set the connection string as an environment variable, which ASP.NET Core will pick up automatically:
 
 ```bash
-export ConnectionStrings_DefaultConnection="Host=<img width="1280" height="720" alt="Tutorial  (9)" src="https://github.com/user-attachments/assets/4fd96e7d-d122-4192-981d-7c2ca7a8f135" />
-<img width="797" height="455" alt="Tutorial  (1)" src="https://github.com/user-attachments/assets/4051872b-c719-4658-9573-fc56e5d92867" />
-[your-host];Port=5432;Database=RoadGuard;Usernameyour-username];Password=[your-password]"
+export ConnectionStrings_DefaultConnection="Host=[your-host];Port=5432;Database=RoadGuard;Usernameyour-username];Password=[your-password]"
 ```
 
 ### Commands to run the backend API
@@ -184,10 +182,13 @@ curl http://localhost:5000/api/health
 Alternatively, if a pre-built version is provided, simply open the `Roadguard Architect` folder and run `Roadguard Architect.exe` to play the game directly without opening Unity.
 
 ## 📸 Screenshots
-<img width="797" height="455" alt="Tutorial  (1)" src="https://github.com/user-attachments/assets/76faa7fc-4784-4263-89c9-af38c1cd0181" />
-*Players place traffic infrastructure and manage Capital and Happiness while the accident rate is simulated in real time.*
 
-*<img width="1280" height="720" alt="Tutorial  (9)" src="https://github.com/user-attachments/assets/a6ad2bbb-c485-4004-9b6b-2603c28326f2" />
-*The level outcome screen shows whether the mission was a Victory or a Loss.
+<img width="797" height="455" alt="Tutorial  (1)" src="https://github.com/user-attachments/assets/76faa7fc-4784-4263-89c9-af38c1cd0181" />
+
+**Players place traffic infrastructure and manage Capital and Happiness while the accident rate is simulated in real time.**
+
+<img width="1280" height="720" alt="Tutorial  (9)" src="https://github.com/user-attachments/assets/a6ad2bbb-c485-4004-9b6b-2603c28326f2" />
+
+**The level outcome screen shows whether the mission was a Victory or a Loss.**
 
 
