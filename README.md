@@ -71,7 +71,7 @@ Unity Client  <->  ASP.NET Core API  <->  PostgreSQL Database
 **Example response for `/api/leaderboard/top10/{level}`:**
 
 ```json
-\\\\\\\[
+[
   {
     "rank": 1,
     "playerId": 9,
@@ -107,7 +107,7 @@ Unity Client  <->  ASP.NET Core API  <->  PostgreSQL Database
 
 ### Prerequisites
 
-* **Unity 6000.3.11f1**
+* **Unity 6000.3.11f1** or later
 * **.NET SDK 8.0** or later
 * **PostgreSQL 13** or later
 * **Entity Framework Core CLI tools** (`dotnet-ef`)
@@ -126,13 +126,13 @@ dotnet restore
 dotnet tool install --global dotnet-ef
 
 # Apply the database schema (creates Players, LevelResults, and
-# \\\\\\\_\\\\\\\_EFMigrationsHistory tables via EF Core migrations)
+# EFMigrationsHistory tables via EF Core migrations)
 dotnet ef database update
 ```
 
-> If you would rather restore the existing dataset from the provided database dump instead of running migrations on an empty database, use `pg\\\\\\\_restore` (the dump is in PostgreSQL custom format, not plain SQL, so it cannot be run with `psql -f`):
+> If you would rather restore the existing dataset from the provided database dump instead of running migrations on an empty database, use `pg_restore` (the dump is in PostgreSQL custom format, not plain SQL, so it cannot be run with `psql -f`):
 > ```bash
-> pg\\\\\\\_restore -h localhost -U postgres -d RoadGuard --clean --if-exists Data.sql
+> pg_restore -h localhost -U postgres -d RoadGuard --clean --if-exists Data.sql
 > ```
 
 ### Database connection string / environment variable setup
@@ -142,7 +142,7 @@ Add a PostgreSQL connection string to `appsettings.json` (or `appsettings.Develo
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Host=localhost;Port=5432;Database=RoadGuard;Username=postgres;Password=\\\\\\\[your-password]"
+    "DefaultConnection": "Host=localhost;Port=5432;Database=RoadGuard;Username=postgres;Password=[your-password]"
   }
 }
 ```
@@ -150,7 +150,9 @@ Add a PostgreSQL connection string to `appsettings.json` (or `appsettings.Develo
 For production, avoid committing credentials and instead set the connection string as an environment variable, which ASP.NET Core will pick up automatically:
 
 ```bash
-export ConnectionStrings\\\\\\\_\\\\\\\_DefaultConnection="Host=\\\\\\\[your-host];Port=5432;Database=RoadGuard;Username=\\\\\\\[your-username];Password=\\\\\\\[your-password]"
+export ConnectionStrings_DefaultConnection="Host=<img width="1280" height="720" alt="Tutorial  (9)" src="https://github.com/user-attachments/assets/4fd96e7d-d122-4192-981d-7c2ca7a8f135" />
+<img width="797" height="455" alt="Tutorial  (1)" src="https://github.com/user-attachments/assets/4051872b-c719-4658-9573-fc56e5d92867" />
+[your-host];Port=5432;Database=RoadGuard;Usernameyour-username];Password=[your-password]"
 ```
 
 ### Commands to run the backend API
@@ -182,10 +184,10 @@ curl http://localhost:5000/api/health
 Alternatively, if a pre-built version is provided, simply open the `Roadguard Architect` folder and run `Roadguard Architect.exe` to play the game directly without opening Unity.
 
 ## 📸 Screenshots
-
-!\[Gameplay - Execution Phase](Screenshot/Tutorial-1.png)
+<img width="797" height="455" alt="Tutorial  (1)" src="https://github.com/user-attachments/assets/76faa7fc-4784-4263-89c9-af38c1cd0181" />
 *Players place traffic infrastructure and manage Capital and Happiness while the accident rate is simulated in real time.*
 
-!\[Level outcome screen](Screenshot/Tutorial-2.png)
-*The level outcome screen shows whether the mission was a Victory or a Loss.*
+*<img width="1280" height="720" alt="Tutorial  (9)" src="https://github.com/user-attachments/assets/a6ad2bbb-c485-4004-9b6b-2603c28326f2" />
+*The level outcome screen shows whether the mission was a Victory or a Loss.
+
 
